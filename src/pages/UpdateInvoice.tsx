@@ -15,8 +15,8 @@ import Notification from "../elements/Notification";
 export interface InvoiceUpdateType {
   orderNumber?: string;
   invoiceForcedName?: string;
-  invoiceDate?: string;
-  dueDate?: string;
+  invoiceDate?: Date;
+  dueDate?: Date;
   customerName?: string;
   addressLine1?: string;
   city?: string;
@@ -44,8 +44,8 @@ const UpdateInvoice: React.FC = () => {
   const [formData, setFormData] = useState<InvoiceUpdateType>({
     orderNumber: "",
     invoiceForcedName: "",
-    invoiceDate: "",
-    dueDate: "",
+    invoiceDate: new Date(),
+    dueDate: new Date(),
     customerName: "",
     addressLine1: "",
     city: "",
@@ -140,6 +140,7 @@ const UpdateInvoice: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      console.log(JSON.stringify(formData))
       const response = await fetch(`http://localhost:3000/invoices/${id}`, {
         method: "PUT",
         headers: {
