@@ -73,7 +73,7 @@ const Invoices: React.FC = () => {
       const monthNumber = getMonthNumber(month);
       if (monthNumber !== null) {
         const response = await axios.get(
-          `http://localhost:3000/invoices?month=${monthNumber}&year=${currentYear}`
+          `${import.meta.env.API_URL}invoices?month=${monthNumber}&year=${currentYear}`
         );
         setInvoices(response.data);
         setView("invoices");
