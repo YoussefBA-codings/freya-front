@@ -29,10 +29,10 @@ export interface InvoiceUpdateType {
 }
 
 export interface ItemType {
-  name: string; // Nom de l'article
-  quantity: number; // Quantité
-  price: number; // Prix
-  sku: string; // Référence de l'article
+  name: string; // Name of the item
+  quantity: number; // Quantity
+  price: number; // Price
+  sku: string; // SKU of the item
 }
 
 const UpdateInvoice: React.FC = () => {
@@ -44,7 +44,7 @@ const UpdateInvoice: React.FC = () => {
   const [formData, setFormData] = useState<InvoiceUpdateType>({
     orderNumber: "",
     invoiceForcedName: "",
-    invoiceDate: new Date(),
+    invoiceDate: new Date(), // Format date YYYY-MM-DD
     dueDate: new Date(),
     customerName: "",
     addressLine1: "",
@@ -140,7 +140,7 @@ const UpdateInvoice: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      console.log(JSON.stringify(formData))
+      console.log(JSON.stringify(formData));
       const response = await fetch(`http://localhost:3000/invoices/${id}`, {
         method: "PUT",
         headers: {
@@ -154,12 +154,12 @@ const UpdateInvoice: React.FC = () => {
       }
 
       setNotify(true);
-      setNotifyMessage("Invoice updated with success !");
+      setNotifyMessage("Invoice updated successfully!");
       setNotifyStatus("success");
     } catch (error) {
       setNotify(true);
-      setNotifyMessage("Error updating invoice, PLEASE check logs !");
-      setNotifyStatus('error');
+      setNotifyMessage("Error updating invoice, PLEASE check logs!");
+      setNotifyStatus("error");
       console.error("Error updating invoice:", error);
     } finally {
       setLoading(false);
@@ -167,23 +167,13 @@ const UpdateInvoice: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        padding: 4,
-        maxWidth: 600,
-        margin: "0 auto",
-        backgroundColor: "#f9f9f9",
-        borderRadius: "8px",
-        boxShadow: 2,
-      }}
-    >
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ width: "100%", padding: 2, overflowX: "hidden" }}>
+      <Typography variant="h2" gutterBottom>
         Update Invoice {id}
       </Typography>
 
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
-          {/* Champs de facture ici ... */}
           <Grid item xs={12}>
             <FormControlLabel
               control={
@@ -340,11 +330,11 @@ const UpdateInvoice: React.FC = () => {
                   onChange={() => handleFieldToggle("zip")}
                 />
               }
-              label="Edit Zip"
+              label="Edit Zip Code"
             />
             <TextField
               fullWidth
-              label="Zip"
+              label="Zip Code"
               name="zip"
               value={formData.zip}
               onChange={handleChange}
@@ -435,83 +425,71 @@ const UpdateInvoice: React.FC = () => {
             />
           </Grid>
 
-          {/* Section pour gérer les items */}
+          {/* Items Section */}
           <Grid item xs={12}>
             <Typography variant="h6">Items</Typography>
             {formData.items?.map((item, index) => (
-              <Box key={index} sx={{ marginBottom: 2 }}>
+              <Box key={index} sx={{ border: "1px solid #ccc", padding: 2, marginBottom: 2 }}>
                 <Grid container spacing={2}>
-                  <Grid item xs={3}>
+                  <Grid item xs={4}>
                     <TextField
                       fullWidth
-                      label="Name"
+                      label="Item Name"
                       name="name"
                       value={item.name}
-                      onChange={(e : React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
                     />
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid item xs={4}>
                     <TextField
                       fullWidth
                       label="Quantity"
                       type="number"
                       name="quantity"
                       value={item.quantity}
-                      onChange={(e : React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
                     />
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid item xs={4}>
                     <TextField
                       fullWidth
                       label="Price"
                       type="number"
                       name="price"
                       value={item.price}
-                      onChange={(e : React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
                     />
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="SKU"
                       name="sku"
                       value={item.sku}
-                      onChange={(e : React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleItemChange(index, e)}
                     />
                   </Grid>
+                  <Grid item xs={12}>
+                    <Button variant="outlined" color="error" onClick={() => handleRemoveItem(index)}>
+                      Remove Item
+                    </Button>
+                  </Grid>
                 </Grid>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => handleRemoveItem(index)}
-                  sx={{ marginTop: 1 }}
-                >
-                  Remove Item
-                </Button>
               </Box>
             ))}
-            <Button
-              variant="outlined"
-              onClick={handleAddItem}
-              sx={{ marginTop: 1 }}
-            >
+            <Button variant="contained" onClick={handleAddItem}>
               Add Item
             </Button>
           </Grid>
 
           <Grid item xs={12}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={loading}
-              sx={{ marginTop: 2 }}
-            >
+            <Button type="submit" variant="contained" color="primary" disabled={loading}>
               {loading ? <CircularProgress size={24} /> : "Update Invoice"}
             </Button>
           </Grid>
         </Grid>
       </form>
+
       {notify && (
         <Notification message={notifyMessage} type={notifyStatus} />
       )}
