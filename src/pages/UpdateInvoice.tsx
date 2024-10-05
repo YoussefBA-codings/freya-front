@@ -76,7 +76,7 @@ const UpdateInvoice: React.FC = () => {
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const response = await fetch(`${import.meta.env.API_URL}invoices/${id}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}invoices/${id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch invoice");
         }
@@ -141,7 +141,7 @@ const UpdateInvoice: React.FC = () => {
     setLoading(true);
     try {
       console.log(JSON.stringify(formData));
-      const response = await fetch(`${import.meta.env.API_URL}invoices/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}invoices/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

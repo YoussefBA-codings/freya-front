@@ -108,7 +108,7 @@ const CreateInvoice: React.FC = () => {
     };
 
     try {
-      const response = await fetch(import.meta.env.API_URL + "invoices/create", {
+      const response = await fetch(import.meta.env.VITE_API_URL + "invoices/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
