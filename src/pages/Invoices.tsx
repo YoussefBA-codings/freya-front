@@ -247,7 +247,7 @@ const Invoices: React.FC = () => {
                             />{" "}
                             Total Discount:{" "}
                             {invoice.totalDiscount !== undefined
-                              ? invoice.totalDiscount?.toFixed(2)
+                              ? invoice.totalDiscount
                               : "0.00"}{" "}
                           </Typography>
                           <Typography>
@@ -259,7 +259,7 @@ const Invoices: React.FC = () => {
                             />{" "}
                             Shipping Amount:{" "}
                             {invoice.shippingAmount !== undefined
-                              ? invoice.shippingAmount?.toFixed(2)
+                              ? invoice.shippingAmount
                               : "0.00"}{" "}
                           </Typography>
                           <Typography variant="h6" marginTop="1rem">
@@ -305,7 +305,7 @@ const Invoices: React.FC = () => {
                                           marginRight: "0.5rem",
                                         }}
                                       />{" "}
-                                      Price: { item.unit_cost !== undefined ? item.unit_cost.toFixed(2) : ""}
+                                      Price: { item.unit_cost !== undefined ? item.unit_cost : ""}
                                     </Typography>
                                   </CardContent>
                                 </Card>
