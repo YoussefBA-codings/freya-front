@@ -301,7 +301,7 @@ const Invoices: React.FC = () => {
                                 : "0.00"}{" "}
                             </Typography>
                             <Typography variant="h6" marginTop="1rem">
-                              Items:
+                              {invoice.items.length > 0 ? 'Items' : 'No items for this order'}
                             </Typography>
                             <Grid container spacing={1}>
                               {invoice.items.map((item, index) => (
