@@ -4,20 +4,25 @@ import { Link } from "react-router-dom";
 // Dummy data for services, allowing for easy future expansion
 const services = [
   {
-    name: "Invoice Manager",
-    description: "Manage new invoices effortlessly.",
-    path: "/invoices",
+    name: "Create Invoice",
+    description: "Generate and manage new invoices effortlessly.",
+    path: "/create-invoice",
+  },
+  {
+    name: "Update Invoice",
+    description: "Edit existing invoices and update their details.",
+    path: "/all-invoices",
   },
 ];
 
-const HomePage = () => {
+const InvoiceManager = () => {
   return (
     <Box sx={{ flexGrow: 1, padding: 3 }}>
       <Typography variant="h4" sx={{ marginBottom: 2, textAlign: 'center' }}>
-        Admin Dashboard
+        Invoice Manager
       </Typography>
       <Typography variant="h6" sx={{ marginBottom: 4, textAlign: 'center' }}>
-        Welcome to the admin dashboard. Select a service to get started.
+        All services related to Invoices
       </Typography>
       <Grid container spacing={3} justifyContent="center">
         {services.map((service, index) => (
@@ -53,4 +58,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default InvoiceManager;

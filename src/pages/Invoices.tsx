@@ -13,10 +13,10 @@ import {
   AccountCircle as AccountCircleIcon,
   AttachMoney as AttachMoneyIcon,
   LocalOffer as LocalOfferIcon,
-  Inventory as InventoryIcon,
   ExpandMore as ExpandMoreIcon,
+  ReceiptLong as ReceiptLongIcon, // Nouvelle icône pour Order Number
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom"; // Import de useNavigate
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 interface Invoice {
@@ -27,6 +27,7 @@ interface Invoice {
   customerName: string;
   totalDiscount: number | null;
   shippingAmount: number | null;
+  isInvoiceCreated: boolean; // Ajout de cette propriété
   items: Array<{
     sku: string;
     name: string;
@@ -63,7 +64,7 @@ const Invoices: React.FC = () => {
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<number | null>(
     null
   );
-  const navigate = useNavigate(); // Hook pour la navigation
+  const navigate = useNavigate();
 
   const fetchInvoices = async (month: string) => {
     setLoading(true);
@@ -72,7 +73,9 @@ const Invoices: React.FC = () => {
       const monthNumber = getMonthNumber(month);
       if (monthNumber !== null) {
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}invoices?month=${monthNumber}&year=${currentYear}`
+          `${
+            import.meta.env.VITE_API_URL
+          }invoices?month=${monthNumber}&year=${currentYear}`
         );
         setInvoices(response.data);
         setView("invoices");
@@ -98,7 +101,7 @@ const Invoices: React.FC = () => {
   };
 
   const handleEditClick = (invoiceId: number) => {
-    navigate(`/update-invoice/${invoiceId}`); // Redirection vers la page d'édition
+    navigate(`/update-invoice/${invoiceId}`);
   };
 
   return (
@@ -157,173 +160,225 @@ const Invoices: React.FC = () => {
             </Box>
           )}
 
+          {/* Bloc des couleurs déplacé ici */}
           {!loading && invoices.length > 0 && (
-            <Box marginTop="2rem">
-              <Typography variant="h6" align="center" marginBottom="1rem">
-                Invoices for {selectedMonth}
-              </Typography>
-              <Grid
-                container
-                spacing={2}
-                justifyContent="center"
-                marginTop="1rem"
-              >
-                {invoices.map((invoice) => (
-                  <Grid item xs={12} sm={6} md={4} key={invoice.id}>
-                    <Card
-                      variant="outlined"
+            <>
+              <Box marginBottom="2rem">
+                <Typography variant="h6" align="center" gutterBottom>
+                  Color Codes:
+                </Typography>
+                <Box display="flex" justifyContent="center" gap="2rem">
+                  <Box display="flex" alignItems="center">
+                    <Box
                       sx={{
-                        width: "100%",
-                        marginBottom: "1rem",
-                        position: "relative",
-                        borderRadius: "12px",
-                        boxShadow: 2,
+                        width: "20px",
+                        height: "20px",
+                        backgroundColor: "red",
+                        marginRight: "0.5rem",
                       }}
-                    >
-                      <CardContent>
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            onClick={() => handleEditClick(invoice.id)} // Appel de la fonction de clic d'édition
-                            sx={{ marginBottom: "1rem", borderRadius: "8px" }}
+                    />
+                    <Typography>Invoice Not Created</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center">
+                    <Box
+                      sx={{
+                        width: "20px",
+                        height: "20px",
+                        backgroundColor: "#ffffff",
+                        marginRight: "0.5rem",
+                      }}
+                    />
+                    <Typography>Invoice Created</Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              <Box marginTop="2rem">
+                <Typography variant="h6" align="center" marginBottom="1rem">
+                  Invoices for {selectedMonth}
+                </Typography>
+                <Grid
+                  container
+                  spacing={2}
+                  justifyContent="center"
+                  marginTop="1rem"
+                >
+                  {invoices.map((invoice) => (
+                    <Grid item xs={12} sm={6} md={4} key={invoice.id}>
+                      <Card
+                        variant="outlined"
+                        sx={{
+                          width: "100%",
+                          marginBottom: "1rem",
+                          position: "relative",
+                          borderRadius: "12px",
+                          boxShadow: 2,
+                          backgroundColor: invoice.isInvoiceCreated
+                            ? "#ffffff"
+                            : "red", // Couleur de fond en fonction de isInvoiceCreated
+                        }}
+                      >
+                        <CardContent>
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
                           >
-                            Edit
-                          </Button>
-                          <IconButton
-                            onClick={() => handleExpandClick(invoice.id)}
-                            sx={{
-                              color: "#1976d2",
-                              "&:hover": { color: "#1565c0" },
-                            }}
-                          >
-                            <ExpandMoreIcon />
-                          </IconButton>
-                        </Box>
-                        <Typography variant="h6">
-                          Invoice: {invoice.invoiceNumber}
-                        </Typography>
-                        <Typography>
-                          <AccountCircleIcon
-                            sx={{
-                              verticalAlign: "middle",
-                              marginRight: "0.5rem",
-                            }}
-                          />{" "}
-                          Customer: {invoice.customerName}
-                        </Typography>
-                        <Typography>
-                          <AttachMoneyIcon
-                            sx={{
-                              verticalAlign: "middle",
-                              marginRight: "0.5rem",
-                            }}
-                          />{" "}
-                          Order Number: {invoice.orderNumber}
-                        </Typography>
-                        <Typography>
-                          <LocalOfferIcon
-                            sx={{
-                              verticalAlign: "middle",
-                              marginRight: "0.5rem",
-                            }}
-                          />{" "}
-                          Date:{" "}
-                          {new Date(invoice.invoiceDate).toLocaleDateString()}
-                        </Typography>
-                      </CardContent>
-                      {expandedInvoiceId === invoice.id && (
-                        <CardContent sx={{ backgroundColor: "#e3f2fd" }}>
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              onClick={() => handleEditClick(invoice.id)}
+                              sx={{ marginBottom: "1rem", borderRadius: "8px" }}
+                            >
+                              Edit
+                            </Button>
+                            <IconButton
+                              onClick={() => handleExpandClick(invoice.id)}
+                              sx={{
+                                color: "#1976d2",
+                                "&:hover": { color: "#1565c0" },
+                              }}
+                            >
+                              <ExpandMoreIcon />
+                            </IconButton>
+                          </Box>
+                          <Typography variant="h6">
+                            Invoice: {invoice.invoiceNumber}
+                          </Typography>
                           <Typography>
-                            <AttachMoneyIcon
+                            <AccountCircleIcon
                               sx={{
                                 verticalAlign: "middle",
                                 marginRight: "0.5rem",
                               }}
                             />{" "}
-                            Total Discount:{" "}
-                            {invoice.totalDiscount !== undefined
-                              ? invoice.totalDiscount
-                              : "0.00"}{" "}
+                            Customer: {invoice.customerName}
                           </Typography>
                           <Typography>
-                            <AttachMoneyIcon
+                            <ReceiptLongIcon
                               sx={{
                                 verticalAlign: "middle",
                                 marginRight: "0.5rem",
                               }}
                             />{" "}
-                            Shipping Amount:{" "}
-                            {invoice.shippingAmount !== undefined
-                              ? invoice.shippingAmount
-                              : "0.00"}{" "}
+                            Order Number: {invoice.orderNumber}
                           </Typography>
-                          <Typography variant="h6" marginTop="1rem">
-                            Items:
+                          <Typography>
+                            <LocalOfferIcon
+                              sx={{
+                                verticalAlign: "middle",
+                                marginRight: "0.5rem",
+                              }}
+                            />{" "}
+                            Date:{" "}
+                            {new Date(invoice.invoiceDate).toLocaleDateString()}
                           </Typography>
-                          <Grid container spacing={1}>
-                            {invoice.items.map((item, index) => (
-                              <Grid item xs={12} sm={6} key={index}>
-                                <Card
-                                  variant="outlined"
-                                  sx={{
-                                    marginBottom: "0.5rem",
-                                    borderRadius: "8px",
-                                    boxShadow: 1,
-                                  }}
-                                >
-                                  <CardContent>
-                                    <Typography variant="h6">
+                        </CardContent>
+                        {expandedInvoiceId === invoice.id && (
+                          <CardContent sx={{ backgroundColor: "#e3f2fd" }}>
+                            <Typography>
+                              <AttachMoneyIcon
+                                sx={{
+                                  verticalAlign: "middle",
+                                  marginRight: "0.5rem",
+                                }}
+                              />{" "}
+                              Total Discount:{" "}
+                              {invoice.totalDiscount !== undefined
+                                ? invoice.totalDiscount
+                                : "0.00"}{" "}
+                            </Typography>
+                            <Typography>
+                              <AttachMoneyIcon
+                                sx={{
+                                  verticalAlign: "middle",
+                                  marginRight: "0.5rem",
+                                }}
+                              />{" "}
+                              Shipping Amount:{" "}
+                              {invoice.shippingAmount !== undefined
+                                ? invoice.shippingAmount
+                                : "0.00"}{" "}
+                            </Typography>
+                            <Typography variant="h6" marginTop="1rem">
+                              Items:
+                            </Typography>
+                            <Grid container spacing={1}>
+                              {invoice.items.map((item, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={index}>
+                                  <Card
+                                    variant="outlined"
+                                    sx={{
+                                      marginBottom: "1.5rem",
+                                      padding: "1rem",
+                                      backgroundColor: "#f9f9f9",
+                                      borderRadius: "12px",
+                                      boxShadow:
+                                        "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                      transition:
+                                        "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                                      "&:hover": {
+                                        transform: "translateY(-10px)",
+                                        boxShadow:
+                                          "0 6px 18px rgba(0, 0, 0, 0.15)",
+                                      },
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        fontSize: "1.1rem",
+                                        fontWeight: 600,
+                                        marginBottom: "0.5rem",
+                                        color: "#333",
+                                      }}
+                                    >
                                       {item.name}
                                     </Typography>
-                                    <Typography>
-                                      <InventoryIcon
-                                        sx={{
-                                          verticalAlign: "middle",
-                                          marginRight: "0.5rem",
-                                        }}
-                                      />{" "}
-                                      SKU: {item.sku}
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#555",
+                                        marginBottom: "0.25rem",
+                                      }}
+                                    >
+                                      <strong>SKU:</strong> {item.sku}
                                     </Typography>
-                                    <Typography>
-                                      <LocalOfferIcon
-                                        sx={{
-                                          verticalAlign: "middle",
-                                          marginRight: "0.5rem",
-                                        }}
-                                      />{" "}
-                                      Quantity: {item.quantity}
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#555",
+                                        marginBottom: "0.25rem",
+                                      }}
+                                    >
+                                      <strong>Quantity:</strong> {item.quantity}
                                     </Typography>
-                                    <Typography>
-                                      <AttachMoneyIcon
-                                        sx={{
-                                          verticalAlign: "middle",
-                                          marginRight: "0.5rem",
-                                        }}
-                                      />{" "}
-                                      Price: { item.unit_cost !== undefined ? item.unit_cost : ""}
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#555",
+                                      }}
+                                    >
+                                      <strong>Unit Cost:</strong> 
+                                      {item.unit_cost} DT
                                     </Typography>
-                                  </CardContent>
-                                </Card>
-                              </Grid>
-                            ))}
-                          </Grid>
-                        </CardContent>
-                      )}
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
+                                  </Card>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          </CardContent>
+                        )}
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </>
           )}
 
           {!loading && invoices.length === 0 && (
-            <Typography align="center" marginTop="2rem">
-              No invoices available for this month.
+            <Typography align="center" variant="h6" marginTop="2rem">
+              No invoices found for {selectedMonth}
             </Typography>
           )}
         </>

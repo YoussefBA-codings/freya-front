@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
 import "./index.css";
-import Invoices from "./pages/Invoices";
 import UpdateInvoice from "./pages/UpdateInvoice";
 import PrivateRoute from "./elements/PrivateRoute";
 import NotFound from "./pages/NotFound";
@@ -11,6 +10,8 @@ import Navbar from "./elements/Nav";
 import CreateInvoice from "./pages/CreateInvoice";
 import HomePage from "./pages/Home";
 import UserProfile from "./pages/UserProfile";
+import InvoiceManager from "./pages/InvoiceManager";
+import Invoices from "./pages/Invoices";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
@@ -44,6 +45,17 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         />
         <Route
           path="/invoices"
+          element={
+            <PrivateRoute>
+              <>
+                <Navbar /> {/* La Navbar sera affichée ici */}
+                <InvoiceManager />
+              </>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/all-invoices"
           element={
             <PrivateRoute>
               <>
