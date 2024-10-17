@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import {
+  Snackbar,
+  SnackbarContent,
   TextField,
   Button,
   Box,
@@ -7,9 +9,6 @@ import {
   Grid,
   CircularProgress,
 } from "@mui/material";
-import Notification from "../elements/Notification";
-
-// Interface pour l'InvoiceData
 export interface InvoiceData {
   shipping_address: {
     first_name: string;
@@ -47,9 +46,8 @@ const CreateInvoice: React.FC = () => {
     current_total_discounts: 0,
     invoice_forced_name: "", // Champ optionnel pour le nom de la facture
   });
-
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notify, setNotify] = useState(false);
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
 
@@ -113,9 +111,9 @@ const CreateInvoice: React.FC = () => {
         throw new Error("Failed to create invoice");
       }
 
-      setNotify(true);
       setNotifyMessage("Invoice created successfully!");
       setNotifyStatus("success");
+      setSnackbarOpen(true);
 
       // Reset form after successful submission
       setFormData({
@@ -132,10 +130,10 @@ const CreateInvoice: React.FC = () => {
         invoice_forced_name: "", // Réinitialiser le champ optionnel
       });
     } catch (error) {
-      setNotify(true);
       setNotifyMessage("Error creating invoice, please check logs!");
       setNotifyStatus("error");
       console.error("Error creating invoice:", error);
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
@@ -327,9 +325,17 @@ const CreateInvoice: React.FC = () => {
         </Button>
       </Box>
 
-      {notify && (
-        <Notification message={notifyMessage} type={notifyStatus} />
-      )}
+    
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <SnackbarContent
+          message={notifyMessage}
+          sx={{ backgroundColor: notifyStatus === 'error' ? 'red' : 'green'}}
+        />
+      </Snackbar>
     </Box>
   );
 };

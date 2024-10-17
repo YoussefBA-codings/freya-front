@@ -1,6 +1,8 @@
 import React, { ChangeEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  Snackbar,
+  SnackbarContent,
   TextField,
   Button,
   Box,
@@ -13,7 +15,6 @@ import {
   IconButton,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import Notification from "../elements/Notification";
 
 export interface InvoiceUpdateType {
   orderNumber?: string;
@@ -40,9 +41,9 @@ export interface ItemType {
 const UpdateInvoice: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
-  const [notify, setNotify] = useState(false);
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyStatus, setNotifyStatus] = useState("error");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [formData, setFormData] = useState<InvoiceUpdateType>({
     orderNumber: "",
     invoiceForcedName: "",
@@ -158,14 +159,14 @@ const UpdateInvoice: React.FC = () => {
         throw new Error("Failed to update invoice");
       }
 
-      setNotify(true);
       setNotifyMessage("Invoice updated successfully!");
       setNotifyStatus("success");
+      setSnackbarOpen(true);
     } catch (error) {
-      setNotify(true);
       setNotifyMessage("Error updating invoice, PLEASE check logs!");
       setNotifyStatus("error");
       console.error("Error updating invoice:", error);
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
@@ -504,9 +505,16 @@ const UpdateInvoice: React.FC = () => {
         </Box>
       </form>
 
-      {notify && (
-        <Notification message={notifyMessage} type={notifyStatus} />
-      )}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <SnackbarContent
+          message={notifyMessage}
+          sx={{ backgroundColor: notifyStatus === 'error' ? 'red' : 'green'}}
+        />
+      </Snackbar>
     </Box>
   );
 };

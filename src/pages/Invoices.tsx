@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import {
+  Snackbar,
+  SnackbarContent,
   Box,
   Typography,
   Grid,
@@ -10,6 +12,7 @@ import {
   IconButton,
 } from "@mui/material";
 import {
+  ContentCopy as ContentCopyIcon,
   AccountCircle as AccountCircleIcon,
   AttachMoney as AttachMoneyIcon,
   LocalOffer as LocalOfferIcon,
@@ -22,6 +25,7 @@ import axios from "axios";
 interface Invoice {
   id: number;
   orderNumber: string;
+  invoiceUrl: string;
   invoiceNumber: string;
   invoiceDate: Date;
   customerName: string;
@@ -57,6 +61,7 @@ const getMonthNumber = (monthName: string): number | null => {
 };
 
 const Invoices: React.FC = () => {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -86,6 +91,19 @@ const Invoices: React.FC = () => {
     setLoading(false);
   };
 
+  const handleSyncClick = async (invoiceId: number) => {
+    setLoading(true);
+    try {
+        await axios.get(`${import.meta.env.VITE_API_URL}invoices/sync/${invoiceId}`);
+      if (selectedMonth) {
+        fetchInvoices(selectedMonth);
+      }
+    } catch (error) {
+      console.error("Error syncing invoice:", error);
+    }
+    setLoading(false);
+  };
+
   const handleMonthClick = (month: string) => {
     setSelectedMonth(month);
     fetchInvoices(month);
@@ -102,6 +120,11 @@ const Invoices: React.FC = () => {
 
   const handleEditClick = (invoiceId: number) => {
     navigate(`/update-invoice/${invoiceId}`);
+  };
+  
+  const handleCopyClick = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setSnackbarOpen(true);
   };
 
   return (
@@ -232,6 +255,7 @@ const Invoices: React.FC = () => {
                             >
                               Edit
                             </Button>
+                            
                             <IconButton
                               onClick={() => handleExpandClick(invoice.id)}
                               sx={{
@@ -273,6 +297,43 @@ const Invoices: React.FC = () => {
                             Date:{" "}
                             {new Date(invoice.invoiceDate).toLocaleDateString()}
                           </Typography>
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            marginTop="1rem"
+                          >
+                            <Typography variant="body2">
+                              Invoice URL:
+                              <a
+                                href={invoice.invoiceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  marginLeft: "0.5rem",
+                                  color: "#1976d2",
+                                  textDecoration: "underline",
+                                }}
+                              >
+                                {invoice.invoiceUrl}
+                              </a>
+                            </Typography>
+                            <IconButton
+                              onClick={() =>
+                                handleCopyClick(invoice.invoiceUrl)
+                              }
+                              sx={{ marginLeft: "0.5rem" }}
+                            >
+                              <ContentCopyIcon />
+                            </IconButton>
+                          </Box>
+                          <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => handleSyncClick(invoice.id)}
+                          sx={{ marginTop: "1rem", borderRadius: "8px" }}
+                        >
+                          Sync Invoice
+                        </Button>
                         </CardContent>
                         {expandedInvoiceId === invoice.id && (
                           <CardContent sx={{ backgroundColor: "#e3f2fd" }}>
@@ -395,8 +456,20 @@ const Invoices: React.FC = () => {
           )}
         </>
       )}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <SnackbarContent
+          message="Invoice URL copied to clipboard!"
+          sx={{ backgroundColor: "green" }}
+        />
+      </Snackbar>
     </Box>
   );
 };
 
 export default Invoices;
+
+
