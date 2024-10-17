@@ -300,9 +300,18 @@ const Invoices: React.FC = () => {
                                 ? invoice.shippingAmount
                                 : "0.00"}{" "}
                             </Typography>
-                            <Typography variant="h6" marginTop="1rem">
-                              {invoice.items.length > 0 ? 'Items' : 'No items for this order'}
-                            </Typography>
+                            {invoice.items.length > 0 ? (
+                              <Typography variant="h6" marginTop="1rem">
+                                Products
+                              </Typography>
+                            ) : (
+                              <Typography
+                                variant="h6"
+                                sx={{ marginTop: "10px", color: "#333" }}
+                              >
+                                No Products for this order
+                              </Typography>
+                            )}
                             <Grid container spacing={1}>
                               {invoice.items.map((item, index) => (
                                 <Grid item xs={12} sm={6} md={4} key={index}>
@@ -359,7 +368,7 @@ const Invoices: React.FC = () => {
                                         color: "#555",
                                       }}
                                     >
-                                      <strong>Unit Cost:</strong> 
+                                      <strong>Unit Cost:</strong>
                                       {item.unit_cost} DT
                                     </Typography>
                                   </Card>
