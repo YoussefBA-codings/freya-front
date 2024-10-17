@@ -25,7 +25,6 @@ interface Invoice {
   invoiceNumber: string;
   invoiceDate: Date;
   customerName: string;
-  totalTax: number | null;
   totalDiscount: number | null;
   shippingAmount: number | null;
   items: Array<{
@@ -239,18 +238,6 @@ const Invoices: React.FC = () => {
                       </CardContent>
                       {expandedInvoiceId === invoice.id && (
                         <CardContent sx={{ backgroundColor: "#e3f2fd" }}>
-                          <Typography>
-                            <AttachMoneyIcon
-                              sx={{
-                                verticalAlign: "middle",
-                                marginRight: "0.5rem",
-                              }}
-                            />
-                            Total Tax:{" "}
-                            {invoice.totalTax !== undefined
-                              ? invoice.totalTax?.toFixed(2)
-                              : "0.00"}{" "}
-                          </Typography>
                           <Typography>
                             <AttachMoneyIcon
                               sx={{

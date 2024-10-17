@@ -22,7 +22,6 @@ export interface InvoiceUpdateType {
   city?: string;
   zip?: string;
   country?: string;
-  totalTax?: number;
   totalDiscount?: number;
   shippingAmount?: number;
   items?: ItemType[];
@@ -51,7 +50,6 @@ const UpdateInvoice: React.FC = () => {
     city: "",
     zip: "",
     country: "",
-    totalTax: 0,
     totalDiscount: 0,
     shippingAmount: 0,
     items: [],
@@ -67,7 +65,6 @@ const UpdateInvoice: React.FC = () => {
     city: false,
     zip: false,
     country: false,
-    totalTax: false,
     totalDiscount: false,
     shippingAmount: false,
     items: true,
@@ -361,28 +358,6 @@ const UpdateInvoice: React.FC = () => {
               disabled={!editFields.country}
             />
           </Grid>
-
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={editFields.totalTax}
-                  onChange={() => handleFieldToggle("totalTax")}
-                />
-              }
-              label="Edit Total Tax"
-            />
-            <TextField
-              fullWidth
-              label="Total Tax"
-              type="number"
-              name="totalTax"
-              value={formData.totalTax}
-              onChange={handleChange}
-              disabled={!editFields.totalTax}
-            />
-          </Grid>
-
           <Grid item xs={12}>
             <FormControlLabel
               control={

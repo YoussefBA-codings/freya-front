@@ -26,13 +26,10 @@ export interface InvoiceData {
     quantity: number;
     price: number;
   }[];
-  total_shipping_price_set: {
-    presentment_money: {
-      amount: number;
-    };
-  };
-  total_discounts: number;
-  total_tax: number;
+  shipping_lines: {
+    price: number;
+  }[];
+  current_total_discounts: number;
   invoice_forced_name?: string; // Ajout du champ optionnel
 }
 
@@ -47,8 +44,7 @@ const CreateInvoice: React.FC = () => {
     processed_at: new Date().toISOString(),
     line_items: [{ sku: "", name: "", quantity: 1, price: 0 }],
     total_shipping_price: 0,
-    total_discounts: 0,
-    total_tax: 0,
+    current_total_discounts: 0,
     invoice_forced_name: "", // Champ optionnel pour le nom de la facture
   });
 
@@ -97,14 +93,11 @@ const CreateInvoice: React.FC = () => {
         quantity: Number(item.quantity),
         price: Number(item.price),
       })),
-      total_shipping_price_set: {
-        presentment_money: {
-          amount: Number(formData.total_shipping_price),
-        },
-      },
-      total_discounts: Number(formData.total_discounts),
-      total_tax: Number(formData.total_tax),
-      invoice_forced_name: formData.invoice_forced_name, // Ajout du champ optionnel dans le body
+      shipping_lines: [{
+        price:  Number(formData.total_shipping_price),
+      }],
+      current_total_discounts: Number(formData.current_total_discounts),
+      invoice_forced_name: formData.invoice_forced_name,
     };
 
     try {
@@ -135,8 +128,7 @@ const CreateInvoice: React.FC = () => {
         processed_at: new Date().toISOString(),
         line_items: [{ sku: "", name: "", quantity: 1, price: 0 }],
         total_shipping_price: 0,
-        total_discounts: 0,
-        total_tax: 0,
+        current_total_discounts: 0,
         invoice_forced_name: "", // Réinitialiser le champ optionnel
       });
     } catch (error) {
@@ -321,20 +313,8 @@ const CreateInvoice: React.FC = () => {
             variant="outlined"
             type="number"
             label="Total Discounts"
-            name="total_discounts"
-            value={formData.total_discounts}
-            onChange={handleInputChange}
-            required
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            type="number"
-            label="Total Tax"
-            name="total_tax"
-            value={formData.total_tax}
+            name="current_total_discounts"
+            value={formData.current_total_discounts}
             onChange={handleInputChange}
             required
           />
