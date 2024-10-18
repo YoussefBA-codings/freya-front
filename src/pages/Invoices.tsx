@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  //TextField,
   Snackbar,
   SnackbarContent,
   Box,
@@ -61,6 +62,8 @@ const getMonthNumber = (monthName: string): number | null => {
 };
 
 const Invoices: React.FC = () => {
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [invoicesPerPage] = useState<number>(9);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -70,6 +73,26 @@ const Invoices: React.FC = () => {
     null
   );
   const navigate = useNavigate();
+
+  const indexOfLastInvoice = currentPage * invoicesPerPage;
+  const indexOfFirstInvoice = indexOfLastInvoice - invoicesPerPage;
+  const currentInvoices = invoices.slice(
+    indexOfFirstInvoice,
+    indexOfLastInvoice
+  );
+  const totalPages = Math.ceil(invoices.length / invoicesPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   const fetchInvoices = async (month: string) => {
     setLoading(true);
@@ -94,7 +117,9 @@ const Invoices: React.FC = () => {
   const handleSyncClick = async (invoiceId: number) => {
     setLoading(true);
     try {
-        await axios.get(`${import.meta.env.VITE_API_URL}invoices/sync/${invoiceId}`);
+      await axios.get(
+        `${import.meta.env.VITE_API_URL}invoices/sync/${invoiceId}`
+      );
       if (selectedMonth) {
         fetchInvoices(selectedMonth);
       }
@@ -121,7 +146,7 @@ const Invoices: React.FC = () => {
   const handleEditClick = (invoiceId: number) => {
     navigate(`/update-invoice/${invoiceId}`);
   };
-  
+
   const handleCopyClick = (url: string) => {
     navigator.clipboard.writeText(url);
     setSnackbarOpen(true);
@@ -216,6 +241,27 @@ const Invoices: React.FC = () => {
                 </Box>
               </Box>
 
+              {/* {invoices.length > 0 && (
+                <div className="search-bar-container">
+                  <TextField
+                    label="Search by Order Number"
+                    variant="outlined"
+                    fullWidth
+                    value={searchTerm}
+                    onChange={handleSearch}
+                    sx={{
+                      maxWidth: 500,
+                      borderRadius: "50px",
+                      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                      marginBottom: "20px",
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "50px",
+                      },
+                    }}
+                  />
+                </div>
+              )} */}
+
               <Box marginTop="2rem">
                 <Typography variant="h6" align="center" marginBottom="1rem">
                   Invoices for {selectedMonth}
@@ -226,7 +272,7 @@ const Invoices: React.FC = () => {
                   justifyContent="center"
                   marginTop="1rem"
                 >
-                  {invoices.map((invoice) => (
+                  {currentInvoices.map((invoice) => (
                     <Grid item xs={12} sm={6} md={4} key={invoice.id}>
                       <Card
                         variant="outlined"
@@ -255,7 +301,7 @@ const Invoices: React.FC = () => {
                             >
                               Edit
                             </Button>
-                            
+
                             <IconButton
                               onClick={() => handleExpandClick(invoice.id)}
                               sx={{
@@ -327,13 +373,13 @@ const Invoices: React.FC = () => {
                             </IconButton>
                           </Box>
                           <Button
-                          variant="contained"
-                          color="secondary"
-                          onClick={() => handleSyncClick(invoice.id)}
-                          sx={{ marginTop: "1rem", borderRadius: "8px" }}
-                        >
-                          Sync Invoice
-                        </Button>
+                            variant="contained"
+                            color="secondary"
+                            onClick={() => handleSyncClick(invoice.id)}
+                            sx={{ marginTop: "1rem", borderRadius: "8px" }}
+                          >
+                            Sync Invoice
+                          </Button>
                         </CardContent>
                         {expandedInvoiceId === invoice.id && (
                           <CardContent sx={{ backgroundColor: "#e3f2fd" }}>
@@ -456,6 +502,28 @@ const Invoices: React.FC = () => {
           )}
         </>
       )}
+      {!loading && invoices.length > 0 && (
+        <Box display="flex" justifyContent="center" marginTop="2rem">
+          <Button
+            variant="outlined"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+            sx={{ marginRight: "1rem" }}
+          >
+            Previous
+          </Button>
+          <Typography variant="body1" sx={{ margin: "0 1rem" }}>
+            Page {currentPage} of {totalPages}
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </Box>
+      )}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -471,5 +539,3 @@ const Invoices: React.FC = () => {
 };
 
 export default Invoices;
-
-
