@@ -18,10 +18,11 @@ import {
   AttachMoney as AttachMoneyIcon,
   LocalOffer as LocalOfferIcon,
   ExpandMore as ExpandMoreIcon,
-  ReceiptLong as ReceiptLongIcon, // Nouvelle icône pour Order Number
+  ReceiptLong as ReceiptLongIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import InvoiceFilter from "../elements/InvoiceFilter";
 
 interface Invoice {
   id: number;
@@ -32,7 +33,8 @@ interface Invoice {
   customerName: string;
   totalDiscount: number | null;
   shippingAmount: number | null;
-  isInvoiceCreated: boolean; // Ajout de cette propriété
+  isInvoiceCreated: boolean;
+  isCancelled: boolean;
   items: Array<{
     sku: string;
     name: string;
@@ -68,7 +70,7 @@ const Invoices: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [view, setView] = useState<"months" | "invoices">("months");
+  const [view, setView] = useState<"months" | "invoices" | "credits">("months");
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<number | null>(
     null
   );
@@ -157,8 +159,18 @@ const Invoices: React.FC = () => {
     setSearchTerm(event.target.value);
   };
 
+  const handleFilterChange = (
+    selectedView: "months" | "invoices" | "credits"
+  ) => {
+    setView(selectedView);
+    console.log("Vue sélectionnée:", selectedView);
+  };
+
   const filteredInvoices = currentInvoices.filter((invoice) =>
     invoice.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const filteredCredits = currentInvoices.filter(
+    (invoice) => invoice.isCancelled
   );
 
   return (
@@ -250,14 +262,25 @@ const Invoices: React.FC = () => {
                 </Box>
               </Box>
 
-              <div className="search-bar-container">
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{
+                  mb: 2, // Margin Bottom
+                  p: 2,
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)",
+                  backgroundColor: "#f9f9f9",
+                }}
+              >
                 <TextField
                   label="Search by Order Number"
                   variant="outlined"
-                  fullWidth
                   value={searchTerm}
                   onChange={handleSearch}
                   sx={{
+                    flex: 1,
                     maxWidth: 400,
                     borderRadius: "50px",
                     boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
@@ -278,7 +301,10 @@ const Invoices: React.FC = () => {
                     },
                   }}
                 />
-              </div>
+                <Box ml={2}>
+                  <InvoiceFilter onFilterChange={handleFilterChange} />
+                </Box>
+              </Box>
 
               <Box marginTop="2rem">
                 <Typography variant="h6" align="center" marginBottom="1rem">
@@ -387,24 +413,24 @@ const Invoices: React.FC = () => {
                                   </a>
                                 </Typography>
                                 <IconButton
-                                onClick={() =>
-                                  handleCopyClick(invoice.invoiceUrl)
-                                }
-                                sx={{ marginLeft: "0.5rem" }}
-                              >
-                                <ContentCopyIcon />
-                              </IconButton>
+                                  onClick={() =>
+                                    handleCopyClick(invoice.invoiceUrl)
+                                  }
+                                  sx={{ marginLeft: "0.5rem" }}
+                                >
+                                  <ContentCopyIcon />
+                                </IconButton>
                               </>
                             ) : (
                               <Typography
-                              variant="h6"
-                              align="center"
-                              style={{
-                                fontWeight: "bold",
-                              }}
-                            >
-                              No invoice associated with this order.
-                            </Typography>
+                                variant="h6"
+                                align="center"
+                                style={{
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                No invoice associated with this order.
+                              </Typography>
                             )}
                           </Box>
                           <Button
@@ -537,6 +563,358 @@ const Invoices: React.FC = () => {
           )}
         </>
       )}
+
+      {view === "credits" && (
+        <>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleBackClick}
+            sx={{ marginBottom: "1rem" }}
+          >
+            Back to Months
+          </Button>
+          {loading && (
+            <Box display="flex" justifyContent="center" marginTop="2rem">
+              <CircularProgress />
+            </Box>
+          )}
+
+          {/* Bloc des couleurs déplacé ici */}
+          {!loading && filteredCredits.length > 0 && (
+            <>
+              <Box marginBottom="2rem">
+                <Typography variant="h6" align="center" gutterBottom>
+                  Color Codes:
+                </Typography>
+                <Box display="flex" justifyContent="center" gap="2rem">
+                  <Box display="flex" alignItems="center">
+                    <Box
+                      sx={{
+                        width: "20px",
+                        height: "20px",
+                        backgroundColor: "grey",
+                        marginRight: "0.5rem",
+                      }}
+                    />
+                    <Typography>Credit Not Created</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center">
+                    <Box
+                      sx={{
+                        width: "20px",
+                        height: "20px",
+                        backgroundColor: "#ffffff",
+                        marginRight: "0.5rem",
+                      }}
+                    />
+                    <Typography>Credit Created</Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{
+                  mb: 2, // Margin Bottom
+                  p: 2,
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)",
+                  backgroundColor: "#f9f9f9",
+                }}
+              >
+                <TextField
+                  label="Search by Order Number"
+                  variant="outlined"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  sx={{
+                    flex: 1,
+                    maxWidth: 400,
+                    borderRadius: "50px",
+                    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "50px",
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#1565c0",
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#1976d2",
+                      },
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#1976d2",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2",
+                    },
+                  }}
+                />
+                <Box ml={2}>
+                  <InvoiceFilter onFilterChange={handleFilterChange} />
+                </Box>
+              </Box>
+
+              <Box marginTop="2rem">
+                <Typography variant="h6" align="center" marginBottom="1rem">
+                  Credits for {selectedMonth}
+                </Typography>
+                <Grid
+                  container
+                  spacing={2}
+                  justifyContent="center"
+                  marginTop="1rem"
+                >
+                  {filteredCredits.map((credit) => (
+                    <Grid item xs={12} sm={6} md={4} key={credit.id}>
+                      <Card
+                        variant="outlined"
+                        sx={{
+                          minHeight: "320px",
+                          width: "100%",
+                          marginBottom: "1rem",
+                          position: "relative",
+                          borderRadius: "12px",
+                          boxShadow: 2,
+                          backgroundColor: credit.isInvoiceCreated
+                            ? "#ffffff"
+                            : "grey",
+                        }}
+                      >
+                        <CardContent>
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              onClick={() => handleEditClick(credit.id)}
+                              sx={{ marginBottom: "1rem", borderRadius: "8px" }}
+                            >
+                              Edit
+                            </Button>
+
+                            <IconButton
+                              onClick={() => handleExpandClick(credit.id)}
+                              sx={{
+                                color: "#1976d2",
+                                "&:hover": { color: "#1565c0" },
+                              }}
+                            >
+                              <ExpandMoreIcon />
+                            </IconButton>
+                          </Box>
+                          <Typography variant="h6">
+                            Credit: {credit.invoiceNumber}
+                          </Typography>
+                          <Typography>
+                            <AccountCircleIcon
+                              sx={{
+                                verticalAlign: "middle",
+                                marginRight: "0.5rem",
+                              }}
+                            />{" "}
+                            Customer: {credit.customerName}
+                          </Typography>
+                          <Typography>
+                            <ReceiptLongIcon
+                              sx={{
+                                verticalAlign: "middle",
+                                marginRight: "0.5rem",
+                              }}
+                            />{" "}
+                            Order Number: {credit.orderNumber}
+                          </Typography>
+                          <Typography>
+                            <LocalOfferIcon
+                              sx={{
+                                verticalAlign: "middle",
+                                marginRight: "0.5rem",
+                              }}
+                            />{" "}
+                            Date:{" "}
+                            {new Date(credit.invoiceDate).toLocaleDateString()}
+                          </Typography>
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            marginTop="1rem"
+                          >
+                            {credit.invoiceUrl ? (
+                              <>
+                                <Typography variant="body2">
+                                  Credit URL:
+                                  <a
+                                    href={credit.invoiceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      marginLeft: "0.5rem",
+                                      color: "#1976d2",
+                                      textDecoration: "underline",
+                                    }}
+                                  >
+                                    {credit.invoiceUrl.length > 40
+                                      ? `${credit.invoiceUrl.slice(0, 40)}...`
+                                      : credit.invoiceUrl}
+                                  </a>
+                                </Typography>
+                                <IconButton
+                                  onClick={() =>
+                                    handleCopyClick(credit.invoiceUrl)
+                                  }
+                                  sx={{ marginLeft: "0.5rem" }}
+                                >
+                                  <ContentCopyIcon />
+                                </IconButton>
+                              </>
+                            ) : (
+                              <Typography
+                                variant="h6"
+                                align="center"
+                                style={{
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                No credit associated with this order.
+                              </Typography>
+                            )}
+                          </Box>
+                          <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={() => handleSyncClick(credit.id)}
+                            sx={{ marginTop: "1rem", borderRadius: "8px" }}
+                          >
+                            Sync Credit
+                          </Button>
+                        </CardContent>
+                        {expandedInvoiceId === credit.id && (
+                          <CardContent sx={{ backgroundColor: "#e3f2fd" }}>
+                            <Typography>
+                              <AttachMoneyIcon
+                                sx={{
+                                  verticalAlign: "middle",
+                                  marginRight: "0.5rem",
+                                }}
+                              />{" "}
+                              Total Discount:{" "}
+                              {credit.totalDiscount !== undefined
+                                ? credit.totalDiscount
+                                : "0.00"}{" "}
+                            </Typography>
+                            <Typography>
+                              <AttachMoneyIcon
+                                sx={{
+                                  verticalAlign: "middle",
+                                  marginRight: "0.5rem",
+                                }}
+                              />{" "}
+                              Shipping Amount:{" "}
+                              {credit.shippingAmount !== undefined
+                                ? credit.shippingAmount
+                                : "0.00"}{" "}
+                            </Typography>
+                            {credit.items.length > 0 ? (
+                              <Typography variant="h6" marginTop="1rem">
+                                Products
+                              </Typography>
+                            ) : (
+                              <Typography
+                                variant="h6"
+                                sx={{ marginTop: "10px", color: "#333" }}
+                              >
+                                No Products for this order
+                              </Typography>
+                            )}
+                            <Grid container spacing={1}>
+                              {credit.items.map((item, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={index}>
+                                  <Card
+                                    variant="outlined"
+                                    sx={{
+                                      marginBottom: "1.5rem",
+                                      padding: "1rem",
+                                      backgroundColor:
+                                        !item.sku || item.sku.startsWith("B_")
+                                          ? "#cecece"
+                                          : "#f9f9f9", // Change background color based on SKU
+                                      borderRadius: "12px",
+                                      boxShadow:
+                                        "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                      transition:
+                                        "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                                      "&:hover": {
+                                        transform: "translateY(-10px)",
+                                        boxShadow:
+                                          "0 6px 18px rgba(0, 0, 0, 0.15)",
+                                      },
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        fontSize: "1.1rem",
+                                        fontWeight: 600,
+                                        marginBottom: "0.5rem",
+                                        color: "#333",
+                                      }}
+                                    >
+                                      {item.name}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#555",
+                                        marginBottom: "0.25rem",
+                                      }}
+                                    >
+                                      <strong>SKU:</strong> {item.sku}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#555",
+                                        marginBottom: "0.25rem",
+                                      }}
+                                    >
+                                      <strong>Quantity:</strong> {item.quantity}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#555",
+                                      }}
+                                    >
+                                      <strong>Unit Cost:</strong>{" "}
+                                      {item.unit_cost} DT
+                                    </Typography>
+                                  </Card>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          </CardContent>
+                        )}
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </>
+          )}
+
+          {!loading && invoices.length === 0 && (
+            <Typography align="center" variant="h6" marginTop="2rem">
+              No credits found for {selectedMonth}
+            </Typography>
+          )}
+        </>
+      )}
+
       {!loading && invoices.length > 0 && (
         <Box display="flex" justifyContent="center" marginTop="2rem">
           <Button
