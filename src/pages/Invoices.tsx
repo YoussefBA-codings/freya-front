@@ -230,7 +230,7 @@ const Invoices: React.FC = () => {
                       sx={{
                         width: "20px",
                         height: "20px",
-                        backgroundColor: "red",
+                        backgroundColor: "grey",
                         marginRight: "0.5rem",
                       }}
                     />
@@ -295,6 +295,7 @@ const Invoices: React.FC = () => {
                       <Card
                         variant="outlined"
                         sx={{
+                          minHeight: "320px",
                           width: "100%",
                           marginBottom: "1rem",
                           position: "relative",
@@ -302,7 +303,7 @@ const Invoices: React.FC = () => {
                           boxShadow: 2,
                           backgroundColor: invoice.isInvoiceCreated
                             ? "#ffffff"
-                            : "red", // Couleur de fond en fonction de isInvoiceCreated
+                            : "grey",
                         }}
                       >
                         <CardContent>
@@ -366,29 +367,45 @@ const Invoices: React.FC = () => {
                             alignItems="center"
                             marginTop="1rem"
                           >
-                            <Typography variant="body2">
-                              Invoice URL:
-                              <a
-                                href={invoice.invoiceUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  marginLeft: "0.5rem",
-                                  color: "#1976d2",
-                                  textDecoration: "underline",
-                                }}
+                            {invoice.invoiceUrl ? (
+                              <>
+                                <Typography variant="body2">
+                                  Invoice URL:
+                                  <a
+                                    href={invoice.invoiceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      marginLeft: "0.5rem",
+                                      color: "#1976d2",
+                                      textDecoration: "underline",
+                                    }}
+                                  >
+                                    {invoice.invoiceUrl.length > 40
+                                      ? `${invoice.invoiceUrl.slice(0, 40)}...`
+                                      : invoice.invoiceUrl}
+                                  </a>
+                                </Typography>
+                                <IconButton
+                                onClick={() =>
+                                  handleCopyClick(invoice.invoiceUrl)
+                                }
+                                sx={{ marginLeft: "0.5rem" }}
                               >
-                                {invoice.invoiceUrl}
-                              </a>
-                            </Typography>
-                            <IconButton
-                              onClick={() =>
-                                handleCopyClick(invoice.invoiceUrl)
-                              }
-                              sx={{ marginLeft: "0.5rem" }}
+                                <ContentCopyIcon />
+                              </IconButton>
+                              </>
+                            ) : (
+                              <Typography
+                              variant="h6"
+                              align="center"
+                              style={{
+                                fontWeight: "bold",
+                              }}
                             >
-                              <ContentCopyIcon />
-                            </IconButton>
+                              No invoice associated with this order.
+                            </Typography>
+                            )}
                           </Box>
                           <Button
                             variant="contained"
@@ -447,7 +464,7 @@ const Invoices: React.FC = () => {
                                       padding: "1rem",
                                       backgroundColor:
                                         !item.sku || item.sku.startsWith("B_")
-                                          ? "#ffcccc"
+                                          ? "#cecece"
                                           : "#f9f9f9", // Change background color based on SKU
                                       borderRadius: "12px",
                                       boxShadow:
