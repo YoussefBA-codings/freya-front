@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  //TextField,
+  TextField,
   Snackbar,
   SnackbarContent,
   Box,
@@ -72,6 +72,7 @@ const Invoices: React.FC = () => {
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<number | null>(
     null
   );
+  const [searchTerm, setSearchTerm] = useState<string>(""); // State for search term
   const navigate = useNavigate();
 
   const indexOfLastInvoice = currentPage * invoicesPerPage;
@@ -151,6 +152,14 @@ const Invoices: React.FC = () => {
     navigator.clipboard.writeText(url);
     setSnackbarOpen(true);
   };
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredInvoices = currentInvoices.filter((invoice) =>
+    invoice.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Box padding="2rem" sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
@@ -241,26 +250,35 @@ const Invoices: React.FC = () => {
                 </Box>
               </Box>
 
-              {/* {invoices.length > 0 && (
-                <div className="search-bar-container">
-                  <TextField
-                    label="Search by Order Number"
-                    variant="outlined"
-                    fullWidth
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    sx={{
-                      maxWidth: 500,
+              <div className="search-bar-container">
+                <TextField
+                  label="Search by Order Number"
+                  variant="outlined"
+                  fullWidth
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  sx={{
+                    maxWidth: 400,
+                    borderRadius: "50px",
+                    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
+                    "& .MuiOutlinedInput-root": {
                       borderRadius: "50px",
-                      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                      marginBottom: "20px",
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "50px",
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#1565c0",
                       },
-                    }}
-                  />
-                </div>
-              )} */}
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#1976d2",
+                      },
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#1976d2",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2",
+                    },
+                  }}
+                />
+              </div>
 
               <Box marginTop="2rem">
                 <Typography variant="h6" align="center" marginBottom="1rem">
@@ -272,7 +290,7 @@ const Invoices: React.FC = () => {
                   justifyContent="center"
                   marginTop="1rem"
                 >
-                  {currentInvoices.map((invoice) => (
+                  {filteredInvoices.map((invoice) => (
                     <Grid item xs={12} sm={6} md={4} key={invoice.id}>
                       <Card
                         variant="outlined"
