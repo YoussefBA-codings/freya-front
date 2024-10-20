@@ -97,6 +97,41 @@ const Invoices: React.FC = () => {
     }
   };
 
+  const handleGenerateRecap = async () => {
+    setLoading(true);
+    try {
+      if (selectedMonth) {
+        fetchInvoices(selectedMonth);
+        const currentYear = new Date().getFullYear();
+        const monthNumber = getMonthNumber(selectedMonth);
+        
+        const response = await fetch(
+          `http://localhost:3000/invoices/generate/monthly-recap?year=${currentYear}&month=${monthNumber}`
+        );
+  
+        if (!response.ok) {
+          throw new Error("Failed to generate recap");
+        }
+  
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: 'text/csv' }); // Indiquer le type de fichier
+        const url = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `monthly_recap_${currentYear}_${monthNumber}.csv`); // Nom du fichier
+        document.body.appendChild(link);
+        link.click();
+  
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };  
   const fetchInvoices = async (month: string) => {
     setLoading(true);
     try {
@@ -274,6 +309,7 @@ const Invoices: React.FC = () => {
                   backgroundColor: "#f9f9f9",
                 }}
               >
+                {/* Champ de recherche à gauche */}
                 <TextField
                   label="Search by Order Number"
                   variant="outlined"
@@ -301,8 +337,31 @@ const Invoices: React.FC = () => {
                     },
                   }}
                 />
-                <Box ml={2}>
-                  <InvoiceFilter onFilterChange={handleFilterChange} />
+
+                {/* Filtres et bouton collés à droite */}
+                <Box display="flex" alignItems="center" ml="auto">
+                  <Box>
+                    <InvoiceFilter onFilterChange={handleFilterChange} />
+                  </Box>
+                  <Box ml={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleGenerateRecap}
+                      disabled={loading}
+                      sx={{
+                        borderRadius: "50px",
+                        padding: "10px 20px",
+                        backgroundColor: "#1976d2",
+                        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
+                        "&:hover": {
+                          backgroundColor: "#1565c0",
+                        },
+                      }}
+                    >
+                      {loading ? "Generating..." : "Generate Recap"}
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
 
