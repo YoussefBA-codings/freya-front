@@ -106,7 +106,7 @@ const Invoices: React.FC = () => {
         const monthNumber = getMonthNumber(selectedMonth);
         
         const response = await fetch(
-          `http://localhost:3000/invoices/generate/monthly-recap?year=${currentYear}&month=${monthNumber}`
+          `${import.meta.env.VITE_API_URL}invoices/generate/monthly-recap?year=${currentYear}&month=${monthNumber}`
         );
   
         if (!response.ok) {
