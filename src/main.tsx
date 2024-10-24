@@ -11,86 +11,103 @@ import CreateInvoice from "./pages/CreateInvoice";
 import HomePage from "./pages/Home";
 import UserProfile from "./pages/UserProfile";
 import InvoiceManager from "./pages/InvoiceManager";
-import Invoices from "./pages/Invoices";
+import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Calendar } from "./pages/Calendar";
+const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <Router>
-      <Routes>
-        {/* Routes sans Navbar */}
-        <Route path="/login" element={<Login />} />
-        
-        {/* Routes avec la Navbar */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <>
-                <Navbar /> {/* La Navbar sera affichée ici */}
-                <HomePage />
-              </>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <>
-              <Navbar /> {/* La Navbar sera affichée ici */}
-              <UserProfile />
-              </>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/invoices"
-          element={
-            <PrivateRoute>
-              <>
-                <Navbar /> {/* La Navbar sera affichée ici */}
-                <InvoiceManager />
-              </>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/all-invoices"
-          element={
-            <PrivateRoute>
-              <>
-                <Navbar /> {/* La Navbar sera affichée ici */}
-                <Invoices />
-              </>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/update-invoice/:id"
-          element={
-            <PrivateRoute>
-              <>
-                <Navbar /> {/* La Navbar sera affichée ici */}
-                <UpdateInvoice />
-              </>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/create-invoice"
-          element={
-            <PrivateRoute>
-              <>
-                <Navbar /> {/* La Navbar sera affichée ici */}
-                <CreateInvoice />
-              </>
-            </PrivateRoute>
-          }
-        />
-        
-        {/* Route Not Found */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Routes>
+          {/* Routes sans Navbar */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Routes avec la Navbar */}
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <HomePage />
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <UserProfile />
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <InvoiceManager />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/calendar"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <Calendar />
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/all-invoices"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <NewInvoices />
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/update-invoice/:id"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <UpdateInvoice />
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/create-invoice"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <CreateInvoice />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+          {/* Route Not Found */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </QueryClientProvider>
   </React.StrictMode>
 );

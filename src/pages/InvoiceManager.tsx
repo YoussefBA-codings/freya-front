@@ -11,7 +11,7 @@ const services = [
   {
     name: "Update Invoice",
     description: "Edit existing invoices and update their details.",
-    path: "/all-invoices",
+    path: "/calendar",
   },
 ];
 
