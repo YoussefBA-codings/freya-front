@@ -13,7 +13,6 @@ import UserProfile from "./pages/UserProfile";
 import InvoiceManager from "./pages/InvoiceManager";
 import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Calendar } from "./pages/Calendar";
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
@@ -48,11 +47,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             }
           />
           <Route
-            path="/invoices"
+            path="/invoice-manager"
             element={
               <PrivateRoute>
                 <>
-                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <Navbar />
                   <InvoiceManager />
                 </>
               </PrivateRoute>
@@ -60,22 +59,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           />
 
           <Route
-            path="/calendar"
-            element={
-              <PrivateRoute>
-                <>
-                  <Navbar /> {/* La Navbar sera affichée ici */}
-                  <Calendar />
-                </>
-              </PrivateRoute>
-            }
-          />
-          <Route
             path="/all-invoices"
             element={
               <PrivateRoute>
                 <>
-                  <Navbar /> {/* La Navbar sera affichée ici */}
+                  <Navbar /> 
                   <NewInvoices />
                 </>
               </PrivateRoute>

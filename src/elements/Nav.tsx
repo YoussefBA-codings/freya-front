@@ -13,7 +13,6 @@ import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import InvoiceIcon from "@mui/icons-material/Receipt";
-import CreateInvoiceIcon from "@mui/icons-material/AddBox";
 import HomeIcon from "@mui/icons-material/Home";
 import { Link } from "react-router-dom";
 import Fab from "@mui/material/Fab";
@@ -31,8 +30,7 @@ const Navbar = () => {
 
   const drawerItems = [
     { text: "Home", icon: <HomeIcon />, to: "/" },
-    { text: "Invoice Management", icon: <InvoiceIcon />, to: "/invoices" },
-    { text: "Create Invoice", icon: <CreateInvoiceIcon />, to: "/create-invoice" },
+    { text: "Invoice Management", icon: <InvoiceIcon />, to: "/invoice-manager" },
     { text: "About", icon: <InfoIcon />, to: "/about" },
     { text: "Profile", icon: <AccountCircle />, to: "/profile" },
   ];

@@ -1,7 +1,10 @@
-import { Button, Box, TextField, CircularProgress } from "@mui/material";
+import { Button, Box, TextField, CircularProgress, Select, MenuItem } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { useGetInvoicesByOrderNameQuery, useGetInvoicesQuery } from "../../api/invoices/getInvoices/useGetInvoicesQuery";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  useGetInvoicesByOrderNameQuery,
+  useGetInvoicesQuery,
+} from "../../api/invoices/getInvoices/useGetInvoicesQuery";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useSyncsInvoicesQuery } from "../../api/invoices/syncInvoice/useSyncInvoiceQuery";
 import { useGenerateRecapQuery } from "../../api/invoices/generateRecap/useGenerateRecapQuery";
@@ -28,24 +31,27 @@ interface Invoice {
 
 export const Invoices = () => {
   const navigate = useNavigate();
-  const [generateRecap] = useState(false);
-  const [syncInvoiceId, setSyncInvoiceId] = useState<string>("");
+  const [syncInvoiceId, setSyncInvoiceId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isSyncLoading, setIsSyncLoading] = useState<boolean>(false);
-  const [isGlobalLoading, setIsGlobalLoading] = useState<boolean>(false);
+  const [, setIsGlobalLoading] = useState<boolean>(false);
+  const [monthNumber, setMonth] = useState<number>(new Date().getMonth() + 1);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  const handleEditClick = (invoiceId: string) => {
-    navigate(`/update-invoice/${invoiceId}`);
+  const handleEditClick = () => {
+    if (syncInvoiceId) navigate(`/update-invoice/${syncInvoiceId}`);
   };
 
-  const handleSyncClick = (invoiceId: string) => {
-    setSyncInvoiceId(invoiceId);
-    setIsSyncLoading(true);
-    setIsGlobalLoading(true);
+  const handleSyncClick = () => {
+    if (syncInvoiceId) {
+      setSyncInvoiceId(syncInvoiceId);
+      setIsSyncLoading(true);
+      setIsGlobalLoading(true);
+    }
   };
 
   const handleExport = () => {
@@ -54,9 +60,9 @@ export const Invoices = () => {
     saveAs(blob, "invoices.csv");
   };
 
-  const [searchParams] = useSearchParams();
-  const monthNumber = searchParams.get("month") as string;
-  const year = searchParams.get("year") as string;
+  const handleFilterChange = () => {
+    navigate(`/all-invoices?month=${monthNumber}&year=${year}`);
+  };
 
   const { data: invoicesData, refetch: refetchInvoices } = useGetInvoicesQuery({
     monthNumber,
@@ -70,20 +76,20 @@ export const Invoices = () => {
   });
 
   const { isFetching: isSyncInvoiceFetching } = useSyncsInvoicesQuery({
-    invoiceId: syncInvoiceId,
+    invoiceId: syncInvoiceId || "",
   });
 
   useGenerateRecapQuery({
     monthNumber: monthNumber,
     currentYear: year,
-    generate: generateRecap,
+    generate: false,
   });
 
   const invoices: Invoice[] =
     searchData?.data?.length > 0 ? searchData.data : invoicesData?.data || [];
 
   useEffect(() => {
-    if (!isSyncInvoiceFetching && syncInvoiceId !== null) {
+    if (!isSyncInvoiceFetching && syncInvoiceId) {
       refetchInvoices();
       setIsSyncLoading(false);
       setIsGlobalLoading(false);
@@ -109,40 +115,11 @@ export const Invoices = () => {
       headerName: "Invoice URL",
       width: 150,
       renderCell: (params: GridRenderCellParams<Invoice>) => (
-        <a href={params.value} target="_blank" rel="noopener noreferrer">
-          View Invoice
-        </a>
-      ),
-    },
-    {
-      field: "sync",
-      headerName: "Action",
-      width: 220,
-      renderCell: (params: GridRenderCellParams<Invoice>) => (
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          gap="1rem"
-          width="100%"
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => handleSyncClick(params.row.id)}
-            disabled={isSyncLoading}
-            sx={{ flexGrow: 1 }}
-          >
-            Sync
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => handleEditClick(params.row.id)}
-            sx={{ flexGrow: 1 }}
-          >
-            Edit
-          </Button>
-        </Box>
+        params.value ? (
+          <a href={params.value} target="_blank" rel="noopener noreferrer">
+            View Invoice
+          </a>
+        ) : null
       ),
     },
   ];
@@ -153,53 +130,90 @@ export const Invoices = () => {
       sx={{
         backgroundColor: "#f5f5f5",
         minHeight: "100vh",
-        position: "relative",
       }}
     >
-      {isGlobalLoading && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(255, 255, 255, 0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
-          }}
+      <Box display="flex" gap={2} marginBottom={2} alignItems="center">
+        <Select
+          value={monthNumber}
+          onChange={(e) => setMonth(e.target.value as number)}
+          displayEmpty
+          sx={{ width: "100px" }}
         >
-          <CircularProgress />
-        </Box>
-      )}
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => navigate("/calendar")}
-        sx={{ marginBottom: "1rem" }}
-      >
-        Back to Months
-      </Button>
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={handleExport}
-        sx={{ marginBottom: "1rem", marginLeft: "1rem" }}
-      >
-        Export Invoices
-      </Button>
+          {[...Array(12)].map((_, i) => (
+            <MenuItem key={i + 1} value={i + 1}>
+              {i + 1}
+            </MenuItem>
+          ))}
+        </Select>
+        <Select
+          value={year}
+          onChange={(e) => setYear(e.target.value as number)}
+          displayEmpty
+          sx={{ width: "120px" }}
+        >
+          {[2022, 2023, 2024, 2025].map((yearOption) => (
+            <MenuItem key={yearOption} value={yearOption}>
+              {yearOption}
+            </MenuItem>
+          ))}
+        </Select>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleFilterChange}
+          sx={{ minWidth: "100px" }}
+        >
+          Filter
+        </Button>
+      </Box>
+      
       <TextField
         label="Search by Order Number"
         variant="outlined"
+        value={searchTerm}
         onChange={handleSearch}
         fullWidth
-        sx={{ marginBottom: "1rem" }}
+        margin="normal"
       />
-      <div style={{ height: "90%", width: "100%" }}>
-        <DataGrid rows={invoices} columns={columns} />
-      </div>
+
+      <Box display="flex" gap={2} marginY={2} justifyContent="center">
+        <Button
+          variant="contained"
+          onClick={handleSyncClick}
+          disabled={!syncInvoiceId || isSyncLoading}
+          sx={{ flex: "1", minWidth: "120px" }}
+        >
+          {isSyncLoading ? <CircularProgress size={24} /> : "Sync"}
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleEditClick}
+          disabled={!syncInvoiceId}
+          sx={{ flex: "1", minWidth: "120px" }}
+        >
+          Edit
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleExport}
+          sx={{ flex: "1", minWidth: "120px" }}
+        >
+          Export
+        </Button>
+      </Box>
+
+      <DataGrid
+        rows={invoices}
+        columns={columns}
+        onRowSelectionModelChange={(newSelection) => {
+          if (newSelection.length === 1) {
+            setSyncInvoiceId(String(newSelection[0]));
+          } else {
+            setSyncInvoiceId(null);
+          }
+        }}
+        checkboxSelection
+      />
     </Box>
   );
 };

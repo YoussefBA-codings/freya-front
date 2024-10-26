@@ -1,8 +1,8 @@
 import { AxiosInstance } from "../../axios/axiosInstance";
 
 export type GenerateRecapParams = {
-    monthNumber: string;
-    currentYear: string;
+    monthNumber: string | number;
+    currentYear: string | number;
     generate: boolean
 }
 

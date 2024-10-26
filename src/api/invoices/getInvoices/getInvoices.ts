@@ -1,8 +1,8 @@
 import { AxiosInstance } from "../../axios/axiosInstance";
 
 export type GetInvoicesParams = {
-  monthNumber: string;
-  year: string;
+  monthNumber: string | number;
+  year: string | number;
   page: string;
   limit: string;
 };

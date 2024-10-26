@@ -6,7 +6,7 @@ const services = [
   {
     name: "Invoice Manager",
     description: "Manage new invoices effortlessly.",
-    path: "/invoices",
+    path: "/invoice-manager",
   },
 ];
 

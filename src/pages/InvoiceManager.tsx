@@ -9,10 +9,10 @@ const services = [
     path: "/create-invoice",
   },
   {
-    name: "Update Invoice",
-    description: "Edit existing invoices and update their details.",
-    path: "/calendar",
-  },
+    name: "Invoice Management",
+    description: "A comprehensive service to synchronize, update, and extract invoices efficiently.",
+    path: "/all-invoices",
+  }
 ];
 
 const InvoiceManager = () => {
