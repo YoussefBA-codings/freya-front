@@ -27,6 +27,7 @@ interface Invoice {
   totalDiscount: number;
   shippingAmount: number;
   invoiceUrl: string;
+  creditUrl: string;
 }
 
 export const Invoices = () => {
@@ -118,6 +119,18 @@ export const Invoices = () => {
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
             View Invoice
+          </a>
+        ) : null
+      ),
+    },
+    {
+      field: "creditUrl",
+      headerName: "Credit URL",
+      width: 150,
+      renderCell: (params: GridRenderCellParams<Invoice>) => (
+        params.value ? (
+          <a href={params.value} target="_blank" rel="noopener noreferrer">
+            View Credit
           </a>
         ) : null
       ),
