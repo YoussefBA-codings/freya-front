@@ -4,12 +4,12 @@ import {
   TextField,
   CircularProgress,
   Select,
-  MenuItem
+  MenuItem,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
   useGetInvoicesByOrderNameQuery,
-  useGetInvoicesQuery
+  useGetInvoicesQuery,
 } from "../../api/invoices/getInvoices/useGetInvoicesQuery";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -87,7 +87,7 @@ export const Invoices = () => {
 
   const { isFetching: isSyncInvoiceFetching } = useSyncsInvoicesQuery({
     invoiceId: syncInvoiceId || "",
-    launchSync
+    launchSync,
   });
 
   useGenerateRecapQuery({
@@ -126,25 +126,23 @@ export const Invoices = () => {
       field: "invoiceUrl",
       headerName: "Invoice URL",
       width: 150,
-      renderCell: (params: GridRenderCellParams<Invoice>) => (
+      renderCell: (params: GridRenderCellParams<Invoice>) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
             View Invoice
           </a>
-        ) : null
-      ),
+        ) : null,
     },
     {
       field: "creditUrl",
       headerName: "Credit URL",
       width: 150,
-      renderCell: (params: GridRenderCellParams<Invoice>) => (
+      renderCell: (params: GridRenderCellParams<Invoice>) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
             View Credit
           </a>
-        ) : null
-      ),
+        ) : null,
     },
   ];
 
@@ -200,12 +198,12 @@ export const Invoices = () => {
         margin="normal"
       />
 
-      <Box display="flex" gap={2} marginY={2} justifyContent="center">
+      <Box display="flex" gap={2} marginY={2} justifyContent="left">
         <Button
           variant="contained"
           onClick={handleSyncClick}
           disabled={!syncInvoiceId || isSyncLoading}
-          sx={{ flex: "1", minWidth: "120px" }}
+          sx={{ maxWidth: "120px" }}
         >
           {isSyncLoading ? <CircularProgress size={24} /> : "Sync"}
         </Button>
@@ -213,14 +211,14 @@ export const Invoices = () => {
           variant="contained"
           onClick={handleEditClick}
           disabled={!editInvoiceId}
-          sx={{ flex: "1", minWidth: "120px" }}
+          sx={{ maxWidth: "120px" }}
         >
           Edit
         </Button>
         <Button
           variant="contained"
           onClick={handleExport}
-          sx={{ flex: "1", minWidth: "120px" }}
+          sx={{ maxWidth: "120px" }}
         >
           Export
         </Button>
