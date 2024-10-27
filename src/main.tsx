@@ -8,9 +8,7 @@ import PrivateRoute from "./elements/PrivateRoute";
 import NotFound from "./pages/NotFound";
 import Navbar from "./elements/Nav";
 import CreateInvoice from "./pages/CreateInvoice";
-import HomePage from "./pages/Home";
 import UserProfile from "./pages/UserProfile";
-import InvoiceManager from "./pages/InvoiceManager";
 import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const queryClient = new QueryClient();
@@ -29,8 +27,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             element={
               <PrivateRoute>
                 <>
-                  <Navbar /> {/* La Navbar sera affichée ici */}
-                  <HomePage />
+                  <Navbar>
+                    <NewInvoices />
+                  </Navbar>
                 </>
               </PrivateRoute>
             }
@@ -40,31 +39,21 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             element={
               <PrivateRoute>
                 <>
-                  <Navbar /> {/* La Navbar sera affichée ici */}
-                  <UserProfile />
+                  <Navbar>
+                    <UserProfile />
+                  </Navbar>
                 </>
               </PrivateRoute>
             }
           />
-          <Route
-            path="/invoice-manager"
-            element={
-              <PrivateRoute>
-                <>
-                  <Navbar />
-                  <InvoiceManager />
-                </>
-              </PrivateRoute>
-            }
-          />
-
           <Route
             path="/all-invoices"
             element={
               <PrivateRoute>
                 <>
-                  <Navbar /> 
-                  <NewInvoices />
+                  <Navbar>
+                    <NewInvoices />
+                  </Navbar>
                 </>
               </PrivateRoute>
             }
@@ -74,8 +63,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             element={
               <PrivateRoute>
                 <>
-                  <Navbar /> {/* La Navbar sera affichée ici */}
-                  <UpdateInvoice />
+                  <Navbar>
+                    <UpdateInvoice />
+                  </Navbar>
                 </>
               </PrivateRoute>
             }
@@ -85,8 +75,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             element={
               <PrivateRoute>
                 <>
-                  <Navbar /> {/* La Navbar sera affichée ici */}
-                  <CreateInvoice />
+                  <Navbar>
+                    <CreateInvoice />
+                  </Navbar>
                 </>
               </PrivateRoute>
             }

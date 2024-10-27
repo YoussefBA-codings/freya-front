@@ -1,7 +1,6 @@
-import { Container, Box, Typography, Avatar, Paper, Grid, Chip, Divider } from "@mui/material";
+import { Container, Box, Typography, Avatar, Paper, Grid } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import EmailIcon from "@mui/icons-material/Email";
-import BadgeIcon from "@mui/icons-material/Badge";
 import GroupIcon from "@mui/icons-material/Group";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
@@ -16,22 +15,20 @@ const UserProfile = () => {
 
   return (
     <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ padding: 4, marginTop: 4, borderRadius: 3 }}>
-        <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
-          <Avatar sx={{ width: 100, height: 100, backgroundColor: "#3f51b5", mb: 2 }}>
-            <AccountCircleIcon sx={{ fontSize: 60 }} />
+      <Paper elevation={3} sx={{ padding: 4, marginTop: 4, borderRadius: 2 }}>
+        <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
+          <Avatar sx={{ width: 80, height: 80, backgroundColor: "#3f51b5" }}>
+            <AccountCircleIcon sx={{ fontSize: 40 }} />
           </Avatar>
-          <Typography variant="h4" component="div" fontWeight="bold" textAlign="center">
+          <Typography variant="h5" component="div" textAlign="center" mt={2}>
             {userData.firstName} {userData.lastName}
           </Typography>
-          <Typography variant="subtitle1" color="textSecondary">
+          <Typography variant="body2" color="textSecondary">
             {userData.role}
           </Typography>
         </Box>
 
-        <Divider sx={{ my: 2 }} />
-
-        <Grid container spacing={2}>
+        <Grid container spacing={1}>
           {/* Email Section */}
           <Grid item xs={12}>
             <Box display="flex" alignItems="center">
@@ -62,21 +59,6 @@ const UserProfile = () => {
             </Box>
           </Grid>
         </Grid>
-
-        {/* Additional Details */}
-        <Box mt={3} textAlign="center">
-          <Chip
-            icon={<BadgeIcon />}
-            label={`${userData.firstName} ${userData.lastName} - ${userData.role}`}
-            color="primary"
-            sx={{ mr: 1 }}
-          />
-          <Chip
-            icon={<GroupIcon />}
-            label={`Team: ${userData.team}`}
-            color="secondary"
-          />
-        </Box>
       </Paper>
     </Container>
   );

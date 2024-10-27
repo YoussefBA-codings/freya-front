@@ -17,7 +17,7 @@ const services = [
 
 const InvoiceManager = () => {
   return (
-    <Box sx={{ flexGrow: 1, padding: 3 }}>
+    <Box>
       <Typography variant="h4" sx={{ marginBottom: 2, textAlign: 'center' }}>
         Invoice Manager
       </Typography>
