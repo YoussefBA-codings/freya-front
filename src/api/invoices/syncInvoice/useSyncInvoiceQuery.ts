@@ -8,6 +8,6 @@ export const useSyncsInvoicesQuery = (params: SyncInvoiceParams) =>
     queryFn: () => syncInvoice(params),
     queryKey: [useGetInvoicesQueryKey, params],
     enabled: Boolean(
-      params.invoiceId
+      params.invoiceId && params.launchSync
     ),
   });

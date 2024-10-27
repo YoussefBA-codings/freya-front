@@ -1,8 +1,15 @@
-import { Button, Box, TextField, CircularProgress, Select, MenuItem } from "@mui/material";
+import {
+  Button,
+  Box,
+  TextField,
+  CircularProgress,
+  Select,
+  MenuItem
+} from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
   useGetInvoicesByOrderNameQuery,
-  useGetInvoicesQuery,
+  useGetInvoicesQuery
 } from "../../api/invoices/getInvoices/useGetInvoicesQuery";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -33,8 +40,10 @@ interface Invoice {
 export const Invoices = () => {
   const navigate = useNavigate();
   const [syncInvoiceId, setSyncInvoiceId] = useState<string | null>(null);
+  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isSyncLoading, setIsSyncLoading] = useState<boolean>(false);
+  const [launchSync, setLaunchSync] = useState<boolean>(false);
   const [, setIsGlobalLoading] = useState<boolean>(false);
   const [monthNumber, setMonth] = useState<number>(new Date().getMonth() + 1);
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -44,12 +53,12 @@ export const Invoices = () => {
   };
 
   const handleEditClick = () => {
-    if (syncInvoiceId) navigate(`/update-invoice/${syncInvoiceId}`);
+    if (editInvoiceId) navigate(`/update-invoice/${editInvoiceId}`);
   };
 
   const handleSyncClick = () => {
     if (syncInvoiceId) {
-      setSyncInvoiceId(syncInvoiceId);
+      setLaunchSync(true);
       setIsSyncLoading(true);
       setIsGlobalLoading(true);
     }
@@ -78,6 +87,7 @@ export const Invoices = () => {
 
   const { isFetching: isSyncInvoiceFetching } = useSyncsInvoicesQuery({
     invoiceId: syncInvoiceId || "",
+    launchSync
   });
 
   useGenerateRecapQuery({
@@ -94,6 +104,7 @@ export const Invoices = () => {
       refetchInvoices();
       setIsSyncLoading(false);
       setIsGlobalLoading(false);
+      setLaunchSync(false);
     }
   }, [isSyncInvoiceFetching, syncInvoiceId, refetchInvoices]);
 
@@ -179,7 +190,7 @@ export const Invoices = () => {
           Filter
         </Button>
       </Box>
-      
+
       <TextField
         label="Search by Order Number"
         variant="outlined"
@@ -201,7 +212,7 @@ export const Invoices = () => {
         <Button
           variant="contained"
           onClick={handleEditClick}
-          disabled={!syncInvoiceId}
+          disabled={!editInvoiceId}
           sx={{ flex: "1", minWidth: "120px" }}
         >
           Edit
@@ -221,8 +232,10 @@ export const Invoices = () => {
         onRowSelectionModelChange={(newSelection) => {
           if (newSelection.length === 1) {
             setSyncInvoiceId(String(newSelection[0]));
+            setEditInvoiceId(String(newSelection[0]));
           } else {
             setSyncInvoiceId(null);
+            setEditInvoiceId(null);
           }
         }}
         checkboxSelection

@@ -2,6 +2,7 @@ import { AxiosInstance } from "../../axios/axiosInstance";
 
 export type SyncInvoiceParams = {
     invoiceId: string;
+    launchSync: boolean;
 }
 
 export const syncInvoice = async ({invoiceId}: SyncInvoiceParams) => {
