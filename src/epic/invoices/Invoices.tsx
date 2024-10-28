@@ -17,6 +17,7 @@ import { useSyncsInvoicesQuery } from "../../api/invoices/syncInvoice/useSyncInv
 import { useGenerateRecapQuery } from "../../api/invoices/generateRecap/useGenerateRecapQuery";
 import { saveAs } from "file-saver";
 import Papa from "papaparse";
+import { format } from 'date-fns';
 
 interface Invoice {
   id: string;
@@ -73,6 +74,9 @@ export const Invoices = () => {
   const handleFilterChange = () => {
     navigate(`/all-invoices?month=${monthNumber}&year=${year}`);
   };
+  const handleCreateInvoice = () => {
+    navigate(`/create-invoice`);
+  }
 
   const { data: invoicesData, refetch: refetchInvoices } = useGetInvoicesQuery({
     monthNumber,
@@ -109,23 +113,23 @@ export const Invoices = () => {
   }, [isSyncInvoiceFetching, syncInvoiceId, refetchInvoices]);
 
   const columns: GridColDef<Invoice>[] = [
-    { field: "orderNumber", headerName: "Order Number", width: 150 },
-    { field: "orderShopifyID", headerName: "Shopify ID", width: 150 },
-    { field: "isCancelled", headerName: "Cancelled", width: 120 },
-    { field: "isInvoiceCreated", headerName: "Invoice Created", width: 150 },
-    { field: "invoiceNumber", headerName: "Invoice Number", width: 180 },
-    { field: "invoiceDate", headerName: "Invoice Date", width: 180 },
-    { field: "dueDate", headerName: "Due Date", width: 180 },
-    { field: "customerName", headerName: "Customer Name", width: 150 },
-    { field: "addressLine1", headerName: "Address", width: 200 },
-    { field: "city", headerName: "City", width: 120 },
-    { field: "zip", headerName: "ZIP", width: 100 },
-    { field: "totalDiscount", headerName: "Total Discount", width: 150 },
-    { field: "shippingAmount", headerName: "Shipping Amount", width: 150 },
+    { field: "orderNumber", headerName: "Order Number", flex: 1 },
+    { field: "invoiceNumber", headerName: "Invoice Number", flex: 1 },
+    { field: "isCancelled", headerName: "Cancelled", flex: 1 },
+    {
+      field: "invoiceDate",
+      headerName: "Invoice Date",
+      flex: 1,
+      renderCell: (params: GridRenderCellParams<Invoice>) => {
+        const date = new Date(params.value);
+        return !isNaN(date.getTime()) ? format(date, 'dd-MM-yyyy') : '';
+      },
+    },    { field: "customerName", headerName: "Customer Name", flex: 1 },
+    { field: "isInvoiceCreated", headerName: "Invoice Created", flex: 1 },
     {
       field: "invoiceUrl",
       headerName: "Invoice URL",
-      width: 150,
+      flex: 1,
       renderCell: (params: GridRenderCellParams<Invoice>) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
@@ -136,7 +140,7 @@ export const Invoices = () => {
     {
       field: "creditUrl",
       headerName: "Credit URL",
-      width: 150,
+      flex: 1,
       renderCell: (params: GridRenderCellParams<Invoice>) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
@@ -154,38 +158,48 @@ export const Invoices = () => {
         minHeight: "100vh",
       }}
     >
-      <Box display="flex" gap={2} marginBottom={2} alignItems="center">
-        <Select
-          value={monthNumber}
-          onChange={(e) => setMonth(e.target.value as number)}
-          displayEmpty
-          sx={{ width: "100px" }}
-        >
-          {[...Array(12)].map((_, i) => (
-            <MenuItem key={i + 1} value={i + 1}>
-              {i + 1}
-            </MenuItem>
-          ))}
-        </Select>
-        <Select
-          value={year}
-          onChange={(e) => setYear(e.target.value as number)}
-          displayEmpty
-          sx={{ width: "120px" }}
-        >
-          {[2022, 2023, 2024, 2025].map((yearOption) => (
-            <MenuItem key={yearOption} value={yearOption}>
-              {yearOption}
-            </MenuItem>
-          ))}
-        </Select>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box display="flex" gap={2} marginBottom={2} alignItems="center">
+          <Select
+            value={monthNumber}
+            onChange={(e) => setMonth(e.target.value as number)}
+            displayEmpty
+            sx={{ width: "100px" }}
+          >
+            {[...Array(12)].map((_, i) => (
+              <MenuItem key={i + 1} value={i + 1}>
+                {i + 1}
+              </MenuItem>
+            ))}
+          </Select>
+          <Select
+            value={year}
+            onChange={(e) => setYear(e.target.value as number)}
+            displayEmpty
+            sx={{ width: "120px" }}
+          >
+            {[2022, 2023, 2024, 2025].map((yearOption) => (
+              <MenuItem key={yearOption} value={yearOption}>
+                {yearOption}
+              </MenuItem>
+            ))}
+          </Select>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleFilterChange}
+            sx={{ minWidth: "100px" }}
+          >
+            Filter
+          </Button>
+        </Box>
         <Button
           variant="contained"
           color="primary"
-          onClick={handleFilterChange}
-          sx={{ minWidth: "100px" }}
+          onClick={handleCreateInvoice}
+          sx={{ minWidth: "100px", height: "100%" }} // Assurez-vous que la hauteur correspond à celle du bouton "Filter"
         >
-          Filter
+          CREATE INVOICE
         </Button>
       </Box>
 
@@ -225,6 +239,7 @@ export const Invoices = () => {
       </Box>
 
       <DataGrid
+        rowHeight={30}
         rows={invoices}
         columns={columns}
         onRowSelectionModelChange={(newSelection) => {
