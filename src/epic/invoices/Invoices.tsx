@@ -17,7 +17,8 @@ import { useSyncsInvoicesQuery } from "../../api/invoices/syncInvoice/useSyncInv
 import { useGenerateRecapQuery } from "../../api/invoices/generateRecap/useGenerateRecapQuery";
 import { saveAs } from "file-saver";
 import Papa from "papaparse";
-import { format } from 'date-fns';
+import { format } from "date-fns";
+import InvoiceDetailsDrawer from "./InvoiceDetailsDrawer";
 
 interface Invoice {
   id: string;
@@ -36,6 +37,12 @@ interface Invoice {
   shippingAmount: number;
   invoiceUrl: string;
   creditUrl: string;
+  items: Array<{
+    sku: string;
+    name: string;
+    quantity: number;
+    unit_cost: number;
+  }>;
 }
 
 export const Invoices = () => {
@@ -48,6 +55,14 @@ export const Invoices = () => {
   const [, setIsGlobalLoading] = useState<boolean>(false);
   const [monthNumber, setMonth] = useState<number>(new Date().getMonth() + 1);
   const [year, setYear] = useState<number>(new Date().getFullYear());
+
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+
+  const handleRowClick = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setDrawerOpen(true);
+  };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -76,7 +91,7 @@ export const Invoices = () => {
   };
   const handleCreateInvoice = () => {
     navigate(`/create-invoice`);
-  }
+  };
 
   const { data: invoicesData, refetch: refetchInvoices } = useGetInvoicesQuery({
     monthNumber,
@@ -122,9 +137,10 @@ export const Invoices = () => {
       flex: 1,
       renderCell: (params: GridRenderCellParams<Invoice>) => {
         const date = new Date(params.value);
-        return !isNaN(date.getTime()) ? format(date, 'dd-MM-yyyy') : '';
+        return !isNaN(date.getTime()) ? format(date, "dd-MM-yyyy") : "";
       },
-    },    { field: "customerName", headerName: "Customer Name", flex: 1 },
+    },
+    { field: "customerName", headerName: "Customer Name", flex: 1 },
     { field: "isInvoiceCreated", headerName: "Invoice Created", flex: 1 },
     {
       field: "invoiceUrl",
@@ -158,13 +174,25 @@ export const Invoices = () => {
         minHeight: "100vh",
       }}
     >
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box display="flex" gap={2} marginBottom={2} alignItems="center">
+      <Box
+        display="flex"
+        flexDirection={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        gap={{ xs: 1, sm: 2 }} 
+      >
+        <Box
+          display="flex"
+          gap={2}
+          marginBottom={{ xs: 1, sm: 2 }}
+          alignItems="center"
+          flexWrap="wrap"
+        >
           <Select
             value={monthNumber}
             onChange={(e) => setMonth(e.target.value as number)}
             displayEmpty
-            sx={{ width: "100px" }}
+            sx={{ width: { xs: "100%", sm: "100px" } }}
           >
             {[...Array(12)].map((_, i) => (
               <MenuItem key={i + 1} value={i + 1}>
@@ -176,7 +204,7 @@ export const Invoices = () => {
             value={year}
             onChange={(e) => setYear(e.target.value as number)}
             displayEmpty
-            sx={{ width: "120px" }}
+            sx={{ width: { xs: "100%", sm: "120px" } }}
           >
             {[2022, 2023, 2024, 2025].map((yearOption) => (
               <MenuItem key={yearOption} value={yearOption}>
@@ -188,7 +216,7 @@ export const Invoices = () => {
             variant="contained"
             color="primary"
             onClick={handleFilterChange}
-            sx={{ minWidth: "100px" }}
+            sx={{ minWidth: "100px", width: { xs: "100%", sm: "auto" } }}
           >
             Filter
           </Button>
@@ -197,7 +225,11 @@ export const Invoices = () => {
           variant="contained"
           color="primary"
           onClick={handleCreateInvoice}
-          sx={{ minWidth: "100px", height: "100%" }} // Assurez-vous que la hauteur correspond à celle du bouton "Filter"
+          sx={{
+            minWidth: "100px",
+            width: { xs: "100%", sm: "auto" },
+            height: { xs: "auto", sm: "100%" },
+          }}
         >
           CREATE INVOICE
         </Button>
@@ -242,6 +274,12 @@ export const Invoices = () => {
         rowHeight={30}
         rows={invoices}
         columns={columns}
+        initialState={{
+          sorting: {
+            sortModel: [{ field: "invoiceDate", sort: "desc" }],
+          },
+        }}
+        onRowClick={(params) => handleRowClick(params.row as Invoice)}
         onRowSelectionModelChange={(newSelection) => {
           if (newSelection.length === 1) {
             setSyncInvoiceId(String(newSelection[0]));
@@ -252,6 +290,11 @@ export const Invoices = () => {
           }
         }}
         checkboxSelection
+      />
+      <InvoiceDetailsDrawer
+        open={isDrawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        invoice={selectedInvoice}
       />
     </Box>
   );
