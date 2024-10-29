@@ -80,14 +80,14 @@ const InvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({ open, onClo
               <AttachMoneyIcon fontSize="small" style={{ marginRight: 4 }} />
               <Typography variant="subtitle1">Réduction totale :</Typography>
               <Typography variant="body2" color="textSecondary" style={{ marginLeft: 8 }}>
-                {invoice.totalDiscount.toFixed(2)} TND
+                {invoice.totalDiscount} TND
               </Typography>
             </Grid>
             <Grid item xs={6} md={4} display="flex" alignItems="center">
               <AttachMoneyIcon fontSize="small" style={{ marginRight: 4 }} />
               <Typography variant="subtitle1">Frais de livraison :</Typography>
               <Typography variant="body2" color="textSecondary" style={{ marginLeft: 8 }}>
-                {invoice.shippingAmount.toFixed(2)} TND
+                {invoice.shippingAmount} TND
               </Typography>
             </Grid>
           </Grid>
@@ -108,9 +108,9 @@ const InvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({ open, onClo
                   </Box>
                   <Box display="flex" alignItems="center">
                     <Typography variant="body2" style={{ marginRight: 8 }}>
-                      {item.quantity} x {item.unit_cost.toFixed(2)} TND
+                      {item.quantity} x {item.unit_cost} TND
                     </Typography>
-                    <Typography variant="body2">{(item.quantity * item.unit_cost).toFixed(2)} TND</Typography>
+                    <Typography variant="body2">{(item.quantity * item.unit_cost)} TND</Typography>
                   </Box>
                 </Box>
               ))
