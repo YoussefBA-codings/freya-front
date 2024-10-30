@@ -41,6 +41,7 @@ interface Invoice {
     name: string;
     current_quantity: number;
     price: number;
+    vendor: string;
   }>;
 }
 
@@ -176,7 +177,7 @@ const PrepareInvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({
                 paddingY={1}
                 borderBottom="1px solid #e0e0e0"
               >
-                <Typography variant="body1">{item.name}</Typography>
+                <Typography variant="body1">{item.vendor} - {item.name}</Typography>
                 <Typography variant="body1">
                   {item.current_quantity} unité(s)
                 </Typography>

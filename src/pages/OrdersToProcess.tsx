@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   Box,
-  Button,
   Typography,
   Divider,
   Table,
@@ -13,6 +12,7 @@ import {
   TableRow,
   Paper,
   Checkbox,
+  Button
 } from "@mui/material";
 import PrepareInvoiceDetailsDrawer from "../epic/invoices/PrepareInvoiceDetailsDrawer";
 import { saveAs } from "file-saver";
@@ -39,7 +39,7 @@ interface Invoice {
     name: string;
     current_quantity: number;
     price: number;
-    vendor: string
+    vendor: string;
   }>;
 }
 
@@ -87,9 +87,9 @@ const OrdersToProcess: React.FC = () => {
   
     const csvData = selectedInvoices.map((invoice) => {
       const customerDetails = [
-        invoice.customer.first_name ? `Prénom: ${invoice.customer.first_name}` : "",
-        invoice.customer.last_name ? `Nom: ${invoice.customer.last_name}` : "",
-        invoice.customer.phone ? `Téléphone: ${invoice.customer.phone}` : "",
+        invoice.customer.first_name ? `First Name: ${invoice.customer.first_name}` : "",
+        invoice.customer.last_name ? `Last Name: ${invoice.customer.last_name}` : "",
+        invoice.customer.phone ? `Phone: ${invoice.customer.phone}` : "",
         invoice.customer.email ? `Email: ${invoice.customer.email}` : ""
       ].filter(Boolean).join('\n');
 
@@ -115,21 +115,11 @@ const OrdersToProcess: React.FC = () => {
   
       const combinedTotal = gbTotalPrice + blackTotalPrice;
   
-      const gbProductsDetails = gbDistributionItems.map((item) => ({
-        "Produit": `${item.vendor} - ${item.name}`,
-        "Quantité": item.current_quantity,
-      }));
-  
-      const blackProductsDetails = blackItems.map((item) => ({
-        "Produit": `${item.vendor} - ${item.name}`,
-        "Quantité": item.current_quantity,
-      }));
-  
       return {
         "Client": customerDetails,
-        "Produits GB Distribution": gbProductsDetails.map(p => `${p.Produit} (${p.Quantité})`).join(', '),
-        "Produits Black": blackProductsDetails.map(p => `${p.Produit} (${p.Quantité})`).join(', '),
-        "Total TTC": combinedTotal.toFixed(2), 
+        "GB Distribution Products": gbDistributionItems.map(item => `${item.vendor} - ${item.name} (${item.current_quantity})`).join(', '),
+        "Black Products": blackItems.map(item => `${item.vendor} - ${item.name} (${item.current_quantity})`).join(', '),
+        "Total (incl. tax)": combinedTotal.toFixed(2), 
       };
     });
   
@@ -137,10 +127,11 @@ const OrdersToProcess: React.FC = () => {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "fulfillment.csv");
   };    
+
   return (
     <Box padding={3}>
       <Typography variant="h4" gutterBottom>
-        Commandes à traiter
+        Orders to Process
       </Typography>
 
       <Divider />
@@ -151,7 +142,7 @@ const OrdersToProcess: React.FC = () => {
         disabled={selectedOrders.size === 0}
         sx={{ margin: "16px 0" }}
       >
-        Exporter Sélection
+        Export Selected
       </Button>
 
       <TableContainer component={Paper} sx={{ marginTop: 2 }}>
@@ -167,32 +158,58 @@ const OrdersToProcess: React.FC = () => {
                       : new Set(invoices.map((invoice) => invoice.id));
                     setSelectedOrders(newSelectedOrders);
                   }}
+                  sx={{ padding: 0 }} // Align the checkbox padding
                 />
               </TableCell>
               <TableCell>Shopify Order ID</TableCell>
-              <TableCell>Numéro de commande</TableCell>
-              <TableCell>Date de traitement</TableCell>
-              <TableCell>Client</TableCell>
-              <TableCell>Action</TableCell>
+              <TableCell>Order Number</TableCell>
+              <TableCell>Processing Date</TableCell>
+              <TableCell>Customer</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {invoices.map((invoice) => (
-              <TableRow key={invoice.id}>
+              <TableRow 
+                key={invoice.id} 
+                sx={{ cursor: 'pointer', '&:hover': { backgroundColor: '#f5f5f5' } }} // Change row color on hover
+              >
                 <TableCell padding="checkbox">
                   <Checkbox
                     checked={selectedOrders.has(invoice.id)}
-                    onChange={() => handleSelectOrder(invoice.id)}
+                    onChange={(event) => {
+                      event.stopPropagation(); // Prevent row click event when clicking checkbox
+                      handleSelectOrder(invoice.id);
+                    }}
+                    sx={{ padding: 0 }} // Remove padding for compactness
                   />
                 </TableCell>
-                <TableCell>{invoice.id}</TableCell>
-                <TableCell>{invoice.name}</TableCell>
-                <TableCell>{invoice.processed_at.split("T")[0]}</TableCell>
-                <TableCell>{`${invoice.customer.first_name} ${invoice.customer.last_name}`}</TableCell>
-                <TableCell>
-                  <Button variant="contained" onClick={() => handleOpen(invoice)}>
-                    Voir Détails
-                  </Button>
+                <TableCell 
+                  padding="none" 
+                  sx={{ padding: '4px 8px' }}
+                  onClick={() => handleOpen(invoice)} // Only open drawer when clicking the cell
+                >
+                  {invoice.id}
+                </TableCell>
+                <TableCell 
+                  padding="none" 
+                  sx={{ padding: '4px 8px' }}
+                  onClick={() => handleOpen(invoice)} 
+                >
+                  {invoice.name}
+                </TableCell>
+                <TableCell 
+                  padding="none" 
+                  sx={{ padding: '4px 8px' }}
+                  onClick={() => handleOpen(invoice)} 
+                >
+                  {invoice.processed_at.split("T")[0]}
+                </TableCell>
+                <TableCell 
+                  padding="none" 
+                  sx={{ padding: '4px 8px' }}
+                  onClick={() => handleOpen(invoice)} 
+                >
+                  {`${invoice.customer.first_name} ${invoice.customer.last_name}`}
                 </TableCell>
               </TableRow>
             ))}
@@ -200,7 +217,7 @@ const OrdersToProcess: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* Détails de la facture */}
+      {/* Invoice Details */}
       <PrepareInvoiceDetailsDrawer
         open={open}
         onClose={handleClose}
