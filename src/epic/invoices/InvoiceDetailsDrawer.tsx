@@ -80,14 +80,14 @@ const InvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({ open, onClo
               <AttachMoneyIcon fontSize="small" style={{ marginRight: 4 }} />
               <Typography variant="subtitle1">Réduction totale :</Typography>
               <Typography variant="body2" color="textSecondary" style={{ marginLeft: 8 }}>
-                {invoice.totalDiscount} TND
+                {invoice.totalDiscount ? invoice.totalDiscount : 0 } TND
               </Typography>
             </Grid>
             <Grid item xs={6} md={4} display="flex" alignItems="center">
               <AttachMoneyIcon fontSize="small" style={{ marginRight: 4 }} />
               <Typography variant="subtitle1">Frais de livraison :</Typography>
               <Typography variant="body2" color="textSecondary" style={{ marginLeft: 8 }}>
-                {invoice.shippingAmount} TND
+                {invoice.shippingAmount ? invoice.shippingAmount : 0} TND
               </Typography>
             </Grid>
           </Grid>

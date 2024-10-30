@@ -233,14 +233,14 @@ const PrepareInvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({
                 variant="body2"
                 sx={{ color: "green", fontWeight: "bold" }}
               >
-                {invoice.shippingAmount} TND
+                {invoice.shippingAmount ? invoice.shippingAmount : 0} TND
               </Typography>
               <Typography variant="subtitle1">Réduction totale :</Typography>
               <Typography
                 variant="body2"
                 sx={{ color: "red", fontWeight: "bold" }}
               >
-                {invoice.totalDiscount} TND
+                {invoice.totalDiscount ? invoice.totalDiscount : 0} TND
               </Typography>
             </Box>
           </Box>
