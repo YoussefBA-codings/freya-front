@@ -11,6 +11,7 @@ import CreateInvoice from "./pages/CreateInvoice";
 import UserProfile from "./pages/UserProfile";
 import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import OrdersToProcess from "./pages/OrdersToProcess";
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
@@ -82,7 +83,18 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               </PrivateRoute>
             }
           />
-
+            <Route
+            path="/orders-to-prepare"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar>
+                    <OrdersToProcess />
+                  </Navbar>
+                </>
+              </PrivateRoute>
+            }
+          />
           {/* Route Not Found */}
           <Route path="*" element={<NotFound />} />
         </Routes>

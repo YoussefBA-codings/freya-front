@@ -20,7 +20,7 @@ import {
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
-
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 interface NavbarProps {
   children: React.ReactNode;
 }
@@ -36,15 +36,23 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
 
   const drawerContent = (
     <List>
-      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle}>
-        <Tooltip title="Invoice Management" placement="right" arrow>
-          <ListItemIcon>
-            <InvoiceIcon />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Invoice Management" />
-      </ListItem>
-    </List>
+    <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle}>
+      <Tooltip title="Invoice Management" placement="right" arrow>
+        <ListItemIcon>
+          <InvoiceIcon />
+        </ListItemIcon>
+      </Tooltip>
+      <ListItemText primary="Invoice Management" />
+    </ListItem>
+    <ListItem component={Link} to="/orders-to-prepare" onClick={handleDrawerToggle}>
+      <Tooltip title="Prepare Orders" placement="right" arrow>
+        <ListItemIcon>
+          <ShoppingCartIcon />
+        </ListItemIcon>
+      </Tooltip>
+      <ListItemText primary="Prepare Orders" />
+    </ListItem>
+  </List>
   );
 
   return (
