@@ -1,4 +1,5 @@
 import React from "react";
+import { pdfjs } from 'react-pdf';
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
@@ -12,7 +13,10 @@ import UserProfile from "./pages/UserProfile";
 import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import OrdersToProcess from "./pages/OrdersToProcess";
+import FormatSlips from "./pages/FormatSlips";
 const queryClient = new QueryClient();
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
@@ -90,6 +94,18 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <>
                   <Navbar>
                     <OrdersToProcess />
+                  </Navbar>
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/delivery-slips"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar>
+                    <FormatSlips />
                   </Navbar>
                 </>
               </PrivateRoute>
