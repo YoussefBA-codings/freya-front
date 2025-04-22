@@ -48,7 +48,6 @@ interface Invoice {
 export const Invoices = () => {
   const navigate = useNavigate();
   const [syncInvoiceId, setSyncInvoiceId] = useState<string | null>(null);
-  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isSyncLoading, setIsSyncLoading] = useState<boolean>(false);
   const [launchSync, setLaunchSync] = useState<boolean>(false);
@@ -66,10 +65,6 @@ export const Invoices = () => {
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-  };
-
-  const handleEditClick = () => {
-    if (editInvoiceId) navigate(`/update-invoice/${editInvoiceId}`);
   };
 
   const handleSyncClick = () => {
@@ -275,10 +270,8 @@ export const Invoices = () => {
         onRowSelectionModelChange={(newSelection) => {
           if (newSelection.length === 1) {
             setSyncInvoiceId(String(newSelection[0]));
-            setEditInvoiceId(String(newSelection[0]));
           } else {
             setSyncInvoiceId(null);
-            setEditInvoiceId(null);
           }
         }}
         checkboxSelection
