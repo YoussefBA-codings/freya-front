@@ -255,14 +255,6 @@ export const Invoices = () => {
         </Button>
         <Button
           variant="contained"
-          onClick={handleEditClick}
-          disabled={!editInvoiceId}
-          sx={{ maxWidth: "120px" }}
-        >
-          Edit
-        </Button>
-        <Button
-          variant="contained"
           onClick={handleExport}
           sx={{ maxWidth: "120px" }}
         >
