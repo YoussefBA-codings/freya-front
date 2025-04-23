@@ -16,6 +16,7 @@ import {
   Receipt as InvoiceIcon,
   AccountCircle as AccountCircleIcon,
   Menu as MenuIcon,
+  CheckCircle as CheckIcon,
 } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -43,6 +44,15 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Invoice Management" />
+      </ListItem>
+
+      <ListItem component={Link} to="/droppex-invoices" onClick={handleDrawerToggle}>
+        <Tooltip title="Droppex Invoices" placement="right" arrow>
+          <ListItemIcon>
+            <CheckIcon />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Droppex Invoices" />
       </ListItem>
     </List>
   );
