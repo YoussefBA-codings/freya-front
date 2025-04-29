@@ -13,6 +13,7 @@ import {
 const SyncInvoice: React.FC = () => {
   const [invoiceShopifyId, setInvoiceShopifyId] = useState("");
   const [invoiceForcedName, setInvoiceForcedName] = useState<string>("");
+  const [forcedDate, setForcedDate] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -40,6 +41,7 @@ const SyncInvoice: React.FC = () => {
         {
           orderShopifyId: invoiceShopifyId,
           invoiceForcedName: invoiceForcedName || undefined,
+          forcedDate: forcedDate || undefined,
         },
         {
           headers: {
@@ -82,6 +84,17 @@ const SyncInvoice: React.FC = () => {
         name="invoiceForcedName"
         value={invoiceForcedName}
         onChange={(e) => setInvoiceForcedName(e.target.value)}
+        sx={{ marginBottom: 3 }}
+      />
+      <TextField
+        fullWidth
+        variant="outlined"
+        label="Forced Date (Optional)"
+        name="forcedDate"
+        type="date"
+        InputLabelProps={{ shrink: true }}
+        value={forcedDate}
+        onChange={(e) => setForcedDate(e.target.value)}
         sx={{ marginBottom: 3 }}
       />
       <Button
