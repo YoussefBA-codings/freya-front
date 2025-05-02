@@ -43,6 +43,25 @@ interface Invoice {
     quantity: number;
     unit_cost: number;
   }>;
+  countedProducts: Array<{
+    sku?: string;
+    name?: string;
+    quantity?: number;
+    unit_cost?: number;
+  }>;
+  ignoredProducts: Array<{
+    sku?: string;
+    name?: string;
+    quantity?: number;
+    unit_cost?: number;
+  }>
+  totalAmountExcludingTax: string,
+  totalAmountIncludingTax: string,
+  TVA: string,
+  fiscalStamp: string,
+  gbDroppexRef: string;
+  blkDroppexRef: string;
+
 }
 
 export const Invoices = () => {
@@ -76,10 +95,57 @@ export const Invoices = () => {
   };
 
   const handleExport = () => {
-    const csvData = Papa.unparse(invoices);
+    const cleanedData = invoices.map((invoice) => {
+      const formatItems = (items: Array<{
+        sku?: string;
+        name?: string;
+        quantity?: number;
+        unit_cost?: number;
+      }>) =>
+        items
+          ?.map(
+            (item) =>
+              `sku: ${item.sku}, name: ${item.name}, unit_cost: ${item.unit_cost}${
+                item.quantity ? `, quantity: ${item.quantity}` : ""
+              }`
+          )
+          .join(" | ") || "";
+  
+      const formatDate = (dateStr?: string) =>
+        dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
+  
+      const cleanDroppexRef = (ref?: string) =>
+        ref?.startsWith("default") ? "" : ref;
+  
+      return {
+        orderNumber: invoice.orderNumber,
+        orderShopifyID: invoice.orderShopifyID,
+        isCancelled: invoice.isCancelled,
+        isInvoiceCreated: invoice.isInvoiceCreated,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: formatDate(invoice.invoiceDate),
+        customerName: invoice.customerName,
+        addressLine1: invoice.addressLine1,
+        city: invoice.city,
+        invoiceUrl: invoice.invoiceUrl,
+        creditUrl: invoice.creditUrl,
+        items: formatItems(invoice.items),
+        countedProducts: formatItems(invoice.countedProducts || []),
+        ignoredProducts: formatItems(invoice.ignoredProducts || []),
+        totalAmountExcludingTax: invoice.totalAmountExcludingTax,
+        totalAmountIncludingTax: invoice.totalAmountIncludingTax,
+        TVA: invoice.TVA,
+        fiscalStamp: invoice.fiscalStamp,
+        gbDroppexRef: cleanDroppexRef(invoice.gbDroppexRef),
+        blkDroppexRef: cleanDroppexRef(invoice.blkDroppexRef),
+      };
+    });
+  
+    const csvData = Papa.unparse(cleanedData);
     const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "invoices.csv");
+    saveAs(blob, "accounting_export.csv");
   };
+  
 
   const handleFilterChange = () => {
     navigate(`/all-invoices?month=${monthNumber}&year=${year}`);
