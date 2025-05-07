@@ -4,6 +4,12 @@ import {
   TextField,
   CircularProgress,
   Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormHelperText,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useState } from "react";
@@ -25,13 +31,17 @@ interface DroppexInvoice {
   totalAmountIncludingTax: string;
   invoiceUrl: string;
   creditUrl: string;
-  inputRef?: string; // référence demandée à l’origine
+  inputRef?: string; // reference entered by the user
 }
 
 export const DroppexInvoices = () => {
   const [refs, setRefs] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<DroppexInvoice[]>([]);
+  const [selection, setSelection] = useState<number[]>([]); // To store selected rows
+  const [openDialog, setOpenDialog] = useState<boolean>(false); // To open the dialog
+  const [paymentReference, setPaymentReference] = useState<string>(""); // Payment reference state
+  const [paymentReferenceError, setPaymentReferenceError] = useState<boolean>(false); // For input validation
 
   const handleFetch = async () => {
     setLoading(true);
@@ -45,7 +55,7 @@ export const DroppexInvoices = () => {
       const response = await AxiosInstance.get<DroppexInvoice[]>(url);
       const fetchedData = response.data || [];
 
-      // Map par référence trouvée
+      // Map by reference found
       const byRef = new Map<string, DroppexInvoice>();
       fetchedData.forEach((inv) => {
         if (inv.gbDroppexRef) {
@@ -53,7 +63,7 @@ export const DroppexInvoices = () => {
         }
       });
 
-      // Fusion : refs trouvées + non trouvées
+      // Merge: found refs + not found
       const mergedData: DroppexInvoice[] = cleanedRefs.map((ref) => {
         if (byRef.has(ref)) {
           return { ...byRef.get(ref)!, inputRef: ref };
@@ -89,6 +99,36 @@ export const DroppexInvoices = () => {
     saveAs(blob, "droppex-invoices.csv");
   };
 
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleMarkAsPaid = async () => {
+    if (!paymentReference.trim()) {
+      setPaymentReferenceError(true);
+      return;
+    }
+  
+    try {
+      const orderIds = selection.map((rowId) => data[rowId].orderShopifyID);
+        await AxiosInstance.post(`/invoices/orders/mark-as-cashed`, {
+        orderIds,
+        refEncaissement: paymentReference,
+      });
+  
+      handleCloseDialog();
+      setPaymentReference("");
+      setSelection([]);
+    } catch (error) {
+      console.error("Error marking orders as paid", error);
+    }
+  };
+  
+
   const columns: GridColDef<DroppexInvoice>[] = [
     { field: "inputRef", headerName: "Searched Ref", flex: 1 },
     { field: "orderNumber", headerName: "Order Number", flex: 1 },
@@ -100,7 +140,7 @@ export const DroppexInvoices = () => {
     { field: "customerName", headerName: "Customer", flex: 1 },
     { field: "totalAmountExcludingTax", headerName: "HT", flex: 1 },
     { field: "TVA", headerName: "TVA", flex: 1 },
-    { field: "fiscalStamp", headerName: "Timbre", flex: 1 },
+    { field: "fiscalStamp", headerName: "Fiscal Stamp", flex: 1 },
     { field: "totalAmountIncludingTax", headerName: "TTC", flex: 1 },
     {
       field: "invoiceUrl",
@@ -162,15 +202,59 @@ export const DroppexInvoices = () => {
         >
           Export CSV
         </Button>
+        {selection.length > 0 && (
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleOpenDialog}
+          >
+            Mark as Paid
+          </Button>
+        )}
       </Box>
 
       <DataGrid
         rows={data.map((row, i) => ({ ...row, id: i }))}
         columns={columns}
+        checkboxSelection
         autoHeight
         rowHeight={30}
         disableRowSelectionOnClick
+        rowSelectionModel={selection}
+        onRowSelectionModelChange={(newSelection) => {
+          setSelection(newSelection as number[]);
+        }}
       />
+
+      {/* Dialog to enter Payment Reference */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Mark Orders as Paid</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth error={paymentReferenceError}>
+            <TextField
+              label="Payment Reference"
+              variant="outlined"
+              value={paymentReference}
+              onChange={(e) => {
+                setPaymentReference(e.target.value);
+                setPaymentReferenceError(false);
+              }}
+              fullWidth
+            />
+            {paymentReferenceError && (
+              <FormHelperText>This field is required</FormHelperText>
+            )}
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleMarkAsPaid} color="primary">
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
