@@ -61,6 +61,9 @@ export const DroppexInvoices = () => {
         if (inv.gbDroppexRef) {
           byRef.set(inv.gbDroppexRef, inv);
         }
+        if (inv.blkDroppexRef) {
+          byRef.set(inv.blkDroppexRef, inv);
+        }
       });
 
       // Merge: found refs + not found
@@ -133,10 +136,33 @@ export const DroppexInvoices = () => {
     { field: "inputRef", headerName: "Searched Ref", flex: 1 },
     { field: "orderNumber", headerName: "Order Number", flex: 1 },
     { field: "orderShopifyID", headerName: "Shopify ID", flex: 1 },
-    { field: "gbDroppexRef", headerName: "GB Ref", flex: 1 },
-    { field: "blkDroppexRef", headerName: "BLK Ref", flex: 1 },
+    {
+      field: "gbDroppexRef",
+      headerName: "GB Ref",
+      flex: 1,
+      renderCell: (params) =>
+        params.value?.startsWith("default") ? "" : params.value,
+    },
+    {
+      field: "blkDroppexRef",
+      headerName: "BLK Ref",
+      flex: 1,
+      renderCell: (params) =>
+        params.value?.startsWith("default") ? "" : params.value,
+    },
     { field: "invoiceNumber", headerName: "Invoice No", flex: 1 },
-    { field: "invoiceDate", headerName: "Invoice Date", flex: 1 },
+    {
+      field: "invoiceDate",
+      headerName: "Invoice Date",
+      flex: 1,
+      renderCell: (params) => {
+        const date = new Date(params.value);
+        if (isNaN(date.getTime())) return "-";
+        return `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${date.getFullYear()}`;
+      },
+    },
     { field: "customerName", headerName: "Customer", flex: 1 },
     { field: "totalAmountExcludingTax", headerName: "HT", flex: 1 },
     { field: "TVA", headerName: "TVA", flex: 1 },
@@ -169,7 +195,6 @@ export const DroppexInvoices = () => {
         ),
     },
   ];
-
   return (
     <Box padding="2rem" sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Typography variant="h5" mb={2}>
