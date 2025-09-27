@@ -12,6 +12,7 @@ import UserProfile from "./pages/UserProfile";
 import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DroppexInvoices } from "./epic/invoices/DroppexInvoices";
+import { B2BInvoiceDeposit } from "./epic/invoices/B2BInvoiceUploader";
 const queryClient = new QueryClient();
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -68,6 +69,18 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <>
                   <Navbar>
                     <DroppexInvoices />
+                  </Navbar>
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/deposit-b2b"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar>
+                    <B2BInvoiceDeposit />
                   </Navbar>
                 </>
               </PrivateRoute>

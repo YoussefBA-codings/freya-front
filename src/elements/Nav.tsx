@@ -17,6 +17,7 @@ import {
   AccountCircle as AccountCircleIcon,
   Menu as MenuIcon,
   CheckCircle as CheckIcon,
+  UploadFile as UploadFileIcon,
 } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -37,7 +38,11 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
 
   const drawerContent = (
     <List>
-      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle}>
+      <ListItem
+        component={Link}
+        to="/all-invoices"
+        onClick={handleDrawerToggle}
+      >
         <Tooltip title="Invoice Management" placement="right" arrow>
           <ListItemIcon>
             <InvoiceIcon />
@@ -45,8 +50,21 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Tooltip>
         <ListItemText primary="Invoice Management" />
       </ListItem>
+      <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle}>
+        <Tooltip title="Deposit B2B Invoice" placement="right" arrow>
+          <ListItemIcon>
+            <UploadFileIcon />{" "}
+            {/* Icône adaptée (importe depuis @mui/icons-material) */}
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Deposit B2B Invoice" />
+      </ListItem>
 
-      <ListItem component={Link} to="/droppex-invoices" onClick={handleDrawerToggle}>
+      <ListItem
+        component={Link}
+        to="/droppex-invoices"
+        onClick={handleDrawerToggle}
+      >
         <Tooltip title="Droppex Invoices" placement="right" arrow>
           <ListItemIcon>
             <CheckIcon />
@@ -59,7 +77,10 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
 
   return (
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+      <AppBar
+        position="fixed"
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      >
         <Toolbar>
           {isMobile && (
             <IconButton
