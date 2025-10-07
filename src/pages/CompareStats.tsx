@@ -261,7 +261,7 @@ const CompareStats: React.FC = () => {
                 <MenuItem value="all">All</MenuItem>
                 <MenuItem value="Freya cheaper">Freya cheaper</MenuItem>
                 <MenuItem value="TM cheaper">TM cheaper</MenuItem>
-                <MenuItem value="Same">Same</MenuItem>
+                <MenuItem value="Same">Same Price</MenuItem>
                 <MenuItem value="Only on Freya">Only on Freya</MenuItem>
                 <MenuItem value="Only on TM">Only on TM</MenuItem>
               </Select>
