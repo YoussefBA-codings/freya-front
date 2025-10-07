@@ -18,6 +18,7 @@ import {
   Menu as MenuIcon,
   CheckCircle as CheckIcon,
   UploadFile as UploadFileIcon,
+  BarChart as BarChartIcon, // 🆕 pour /statistics
 } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -38,6 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
 
   const drawerContent = (
     <List>
+      {/* --- Invoice Management --- */}
       <ListItem
         component={Link}
         to="/all-invoices"
@@ -50,16 +52,18 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Tooltip>
         <ListItemText primary="Invoice Management" />
       </ListItem>
+
+      {/* --- Deposit B2B --- */}
       <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle}>
         <Tooltip title="Deposit B2B Invoice" placement="right" arrow>
           <ListItemIcon>
-            <UploadFileIcon />{" "}
-            {/* Icône adaptée (importe depuis @mui/icons-material) */}
+            <UploadFileIcon />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Deposit B2B Invoice" />
       </ListItem>
 
+      {/* --- Droppex Invoices --- */}
       <ListItem
         component={Link}
         to="/droppex-invoices"
@@ -71,6 +75,20 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Droppex Invoices" />
+      </ListItem>
+
+      {/* --- 🔥 New Compare Statistics --- */}
+      <ListItem
+        component={Link}
+        to="/statistics"
+        onClick={handleDrawerToggle}
+      >
+        <Tooltip title="Compare Freya vs TunisiaMarka" placement="right" arrow>
+          <ListItemIcon>
+            <BarChartIcon color="primary" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Statistics / Compare" />
       </ListItem>
     </List>
   );
