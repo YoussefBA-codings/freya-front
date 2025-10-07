@@ -83,7 +83,7 @@ const CompareStats: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://13.39.45.220:4001/compare", {
+        const res = await axios.get("http://localhost:4001/compare", {
           timeout: 180000,
         });
         setData(res.data);
