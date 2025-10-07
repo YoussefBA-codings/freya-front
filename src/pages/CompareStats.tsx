@@ -18,10 +18,15 @@ import {
   Paper,
   Chip,
   Fade,
-  Slider,
   TextField,
   Grid,
+  Divider,
+  Card,
+  CardContent,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 interface ProductCompare {
   brand: string;
@@ -59,14 +64,13 @@ const CompareStats: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
-  // --- Filtres ---
+  // Filters
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedAvailability, setSelectedAvailability] = useState("all");
-  const [priceDiffRange, setPriceDiffRange] = useState<number[]>([-100, 100]);
   const [search, setSearch] = useState("");
 
-  // --- Fetch data ---
+  // Fetch data
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
@@ -76,7 +80,6 @@ const CompareStats: React.FC = () => {
       return;
     }
 
-    // eslint-disable-next-line prefer-const
     interval = setInterval(() => {
       setProgress((old) => (old >= 90 ? 90 : old + 1));
     }, 500);
@@ -101,7 +104,6 @@ const CompareStats: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // --- Loading state ---
   if (loading) {
     return (
       <Fade in>
@@ -117,14 +119,12 @@ const CompareStats: React.FC = () => {
         >
           <CircularProgress size={70} thickness={4} />
           <Typography variant="h5" fontWeight="bold">
-            Comparing prices...
+            Comparing data...
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            This may take up to a minute ⏳  
-            <br />
-            Please wait while real-time scraping is in progress.
+            This may take up to a minute.
           </Typography>
-          <Box sx={{ width: "60%", mt: 2 }}>
+          <Box sx={{ width: "50%", mt: 2 }}>
             <LinearProgress
               variant="determinate"
               value={progress}
@@ -142,12 +142,12 @@ const CompareStats: React.FC = () => {
   if (!data) {
     return (
       <Typography color="error" sx={{ textAlign: "center", mt: 5 }}>
-        ❌ Could not load comparison data. Please try again later.
+        Could not load comparison data.
       </Typography>
     );
   }
 
-  // --- Normalize and clean data ---
+  // Normalize
   const normalizedResults = data.results
     .map((r) => ({
       ...r,
@@ -155,32 +155,23 @@ const CompareStats: React.FC = () => {
     }))
     .filter((r) => r.brand && r.brand !== "Unknown");
 
-  // --- Brand list unique ---
+  // Brands
   const brands = Array.from(
     new Set(normalizedResults.map((r) => normalizeBrand(r.brand)))
   )
     .map((b) => capitalize(b))
     .sort();
 
-  // --- Filtering logic ---
+  // Filtering
   const filteredResults = normalizedResults.filter((r) => {
     const brandOk =
       selectedBrand === "all" ||
       normalizeBrand(r.brand) === normalizeBrand(selectedBrand);
-
     const statusOk =
       selectedStatus === "all" || r.status === selectedStatus;
-
-    const diffValue = parseFloat(r.diff_percent || "0");
-    const diffOk =
-      !isNaN(diffValue) &&
-      diffValue >= priceDiffRange[0] &&
-      diffValue <= priceDiffRange[1];
-
     const searchOk = r.product_name
       .toLowerCase()
       .includes(search.toLowerCase());
-
     const availabilityOk =
       selectedAvailability === "all" ||
       (selectedAvailability === "in_stock" &&
@@ -189,10 +180,10 @@ const CompareStats: React.FC = () => {
         !r.available &&
         !r.available_tm);
 
-    return brandOk && statusOk && diffOk && searchOk && availabilityOk;
+    return brandOk && statusOk && searchOk && availabilityOk;
   });
 
-  // --- Stats summary ---
+  // Stats
   const stats = {
     freyaCheaper: filteredResults.filter((r) => r.status === "Freya cheaper").length,
     tmCheaper: filteredResults.filter((r) => r.status === "TM cheaper").length,
@@ -201,20 +192,79 @@ const CompareStats: React.FC = () => {
     onlyTM: filteredResults.filter((r) => r.status === "Only on TM").length,
   };
 
-  // --- UI ---
+  // Price analytics
+  const validDiffs = filteredResults
+    .map((r) => parseFloat(r.diff_percent || "0"))
+    .filter((v) => !isNaN(v));
+
+  const avgDiff =
+    validDiffs.length > 0
+      ? validDiffs.reduce((a, b) => a + b, 0) / validDiffs.length
+      : 0;
+
+  const avgFreyaPrice =
+    filteredResults
+      .filter((r) => r.price_freya)
+      .reduce((acc, r) => acc + (r.price_freya || 0), 0) /
+    (filteredResults.filter((r) => r.price_freya).length || 1);
+
+  const avgTMPrice =
+    filteredResults
+      .filter((r) => r.price_tm)
+      .reduce((acc, r) => acc + (r.price_tm || 0), 0) /
+    (filteredResults.filter((r) => r.price_tm).length || 1);
+
+  const totalDiffDT = filteredResults.reduce((acc, r) => {
+    if (r.price_freya && r.price_tm) {
+      return acc + (r.price_freya - r.price_tm);
+    }
+    return acc;
+  }, 0);
+
+  const ratioFreyaCheaper =
+    stats.freyaCheaper / (stats.freyaCheaper + stats.tmCheaper) || 0;
+
+  const kpis = [
+    {
+      label: "Average Freya Price",
+      value: `${avgFreyaPrice.toFixed(2)} DT`,
+      tooltip: "Average selling price of products listed on Freya.",
+    },
+    {
+      label: "Average TM Price",
+      value: `${avgTMPrice.toFixed(2)} DT`,
+      tooltip: "Average selling price of the same products on TunisiaMarka.",
+    },
+    {
+      label: "Average Price Difference",
+      value: `${avgDiff.toFixed(2)} %`,
+      tooltip: "Average percentage difference between Freya and TM prices.",
+    },
+    {
+      label: "Global Price Gap",
+      value: `${totalDiffDT.toFixed(2)} DT`,
+      tooltip: "Total cumulative price difference across comparable items.",
+    },
+    {
+      label: "Freya Advantage Ratio",
+      value: `${(ratioFreyaCheaper * 100).toFixed(1)} %`,
+      tooltip: "Percentage of products where Freya is cheaper than TM.",
+    },
+  ];
+
+  // UI
   return (
     <Fade in={!loading}>
       <Box sx={{ padding: 3 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          📊 Freya vs TunisiaMarka
+          Freya vs TunisiaMarka — Price Comparison Dashboard
         </Typography>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
           Last updated: {new Date(data.date).toLocaleString()}
         </Typography>
 
-        {/* 🎯 Filters */}
+        {/* Filters */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          {/* Brand */}
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Brand</InputLabel>
@@ -233,7 +283,6 @@ const CompareStats: React.FC = () => {
             </FormControl>
           </Grid>
 
-          {/* Availability */}
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Availability</InputLabel>
@@ -243,13 +292,12 @@ const CompareStats: React.FC = () => {
                 onChange={(e) => setSelectedAvailability(e.target.value)}
               >
                 <MenuItem value="all">All</MenuItem>
-                <MenuItem value="in_stock">In Stock (Freya or TM)</MenuItem>
+                <MenuItem value="in_stock">In Stock</MenuItem>
                 <MenuItem value="out_of_stock">Out of Stock</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
-          {/* Status */}
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
@@ -268,7 +316,6 @@ const CompareStats: React.FC = () => {
             </FormControl>
           </Grid>
 
-          {/* Search */}
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
@@ -278,25 +325,59 @@ const CompareStats: React.FC = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </Grid>
-
-          {/* Price difference */}
-          <Grid item xs={12}>
-            <Typography variant="body2" gutterBottom>
-              💰 Price Difference (%)
-            </Typography>
-            <Slider
-              value={priceDiffRange}
-              onChange={(_, newValue) =>
-                setPriceDiffRange(newValue as number[])
-              }
-              valueLabelDisplay="auto"
-              min={-100}
-              max={100}
-            />
-          </Grid>
         </Grid>
 
-        {/* 📈 Summary */}
+        {/* KPI Cards */}
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {kpis.map((item, i) => (
+            <Grid item xs={12} sm={6} md={2.4} key={i}>
+              <Card
+                elevation={1}
+                sx={{
+                  borderRadius: 2,
+                  height: 120, // fixed equal height for all cards
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                <CardContent sx={{ height: "100%" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      {item.label}
+                    </Typography>
+                    <Tooltip title={item.tooltip} arrow>
+                      <IconButton size="small">
+                        <InfoOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ color: "#1A1A1A", mt: 1 }}
+                  >
+                    {item.value}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        <Divider sx={{ mb: 2 }} />
+
+        {/* Summary */}
         <Box sx={{ display: "flex", gap: 1.5, mb: 3, flexWrap: "wrap" }}>
           {[
             { label: `Freya cheaper: ${stats.freyaCheaper}`, color: "success" },
@@ -319,7 +400,7 @@ const CompareStats: React.FC = () => {
           ))}
         </Box>
 
-        {/* 🧾 Table */}
+        {/* Table */}
         <Paper sx={{ overflow: "auto", maxHeight: "70vh" }}>
           <Table stickyHeader>
             <TableHead>
