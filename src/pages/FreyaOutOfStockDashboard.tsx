@@ -54,6 +54,7 @@ const FreyaOutOfStockDashboard: React.FC = () => {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    // eslint-disable-next-line prefer-const
     interval = setInterval(() => {
       setProgress((old) => (old >= 90 ? 90 : old + 1));
     }, 500);

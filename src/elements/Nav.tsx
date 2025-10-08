@@ -18,7 +18,8 @@ import {
   Menu as MenuIcon,
   CheckCircle as CheckIcon,
   UploadFile as UploadFileIcon,
-  BarChart as BarChartIcon, // 🆕 pour /statistics
+  BarChart as BarChartIcon,
+  Inventory as InventoryIcon,
 } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -33,21 +34,15 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const drawerContent = (
     <List>
       {/* --- Invoice Management --- */}
-      <ListItem
-        component={Link}
-        to="/all-invoices"
-        onClick={handleDrawerToggle}
-      >
+      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle}>
         <Tooltip title="Invoice Management" placement="right" arrow>
           <ListItemIcon>
-            <InvoiceIcon />
+            <InvoiceIcon color="action" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Invoice Management" />
@@ -57,38 +52,44 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
       <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle}>
         <Tooltip title="Deposit B2B Invoice" placement="right" arrow>
           <ListItemIcon>
-            <UploadFileIcon />
+            <UploadFileIcon color="action" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Deposit B2B Invoice" />
       </ListItem>
 
       {/* --- Droppex Invoices --- */}
-      <ListItem
-        component={Link}
-        to="/droppex-invoices"
-        onClick={handleDrawerToggle}
-      >
+      <ListItem component={Link} to="/droppex-invoices" onClick={handleDrawerToggle}>
         <Tooltip title="Droppex Invoices" placement="right" arrow>
           <ListItemIcon>
-            <CheckIcon />
+            <CheckIcon color="action" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Droppex Invoices" />
       </ListItem>
 
-      {/* --- 🔥 New Compare Statistics --- */}
-      <ListItem
-        component={Link}
-        to="/statistics"
-        onClick={handleDrawerToggle}
-      >
+      {/* --- Compare Statistics --- */}
+      <ListItem component={Link} to="/statistics" onClick={handleDrawerToggle}>
         <Tooltip title="Compare Freya vs TunisiaMarka" placement="right" arrow>
           <ListItemIcon>
-            <BarChartIcon color="primary" />
+            <BarChartIcon color="action" />
           </ListItemIcon>
         </Tooltip>
-        <ListItemText primary="Statistics / Compare" />
+        <ListItemText primary="Price Comparison" />
+      </ListItem>
+
+      {/* --- Freya Stock Status Dashboard --- */}
+      <ListItem component={Link} to="/stock/status" onClick={handleDrawerToggle}>
+        <Tooltip
+          title="Freya Out-of-Stock Monitoring Dashboard"
+          placement="right"
+          arrow
+        >
+          <ListItemIcon>
+            <InventoryIcon color="action" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Stock Status" />
       </ListItem>
     </List>
   );

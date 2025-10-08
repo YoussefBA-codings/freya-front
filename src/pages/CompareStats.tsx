@@ -80,6 +80,7 @@ const CompareStats: React.FC = () => {
       return;
     }
 
+    // eslint-disable-next-line prefer-const
     interval = setInterval(() => {
       setProgress((old) => (old >= 90 ? 90 : old + 1));
     }, 500);
