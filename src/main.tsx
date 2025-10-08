@@ -14,6 +14,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DroppexInvoices } from "./epic/invoices/DroppexInvoices";
 import { B2BInvoiceDeposit } from "./epic/invoices/B2BInvoiceUploader";
 import CompareStats from "./pages/CompareStats";
+import FreyaOutOfStockDashboard from "./pages/FreyaOutOfStockDashboard";
 const queryClient = new QueryClient();
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -52,6 +53,18 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             }
           />
            <Route
+            path="/stock/status"
+            element={
+              <PrivateRoute>
+                <>
+                  <Navbar>
+                    <FreyaOutOfStockDashboard />
+                  </Navbar>
+                </>
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/statistics"
             element={
               <PrivateRoute>
