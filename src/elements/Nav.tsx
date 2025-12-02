@@ -9,9 +9,12 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  ListSubheader,
   Tooltip,
   useMediaQuery,
 } from "@mui/material";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+
 import {
   Receipt as InvoiceIcon,
   AccountCircle as AccountCircleIcon,
@@ -20,7 +23,9 @@ import {
   UploadFile as UploadFileIcon,
   BarChart as BarChartIcon,
   Inventory as InventoryIcon,
+  GroupAdd as GroupAddIcon,
 } from "@mui/icons-material";
+
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
@@ -38,8 +43,26 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
 
   const drawerContent = (
     <List>
-      {/* --- Invoice Management --- */}
-      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle}>
+      {/* ========================= */}
+      {/*          B2C SECTION      */}
+      {/* ========================= */}
+      <ListSubheader
+        sx={{
+          fontWeight: "bold",
+          color: "primary.main",
+          fontSize: "0.9rem",
+          mt: 1,
+        }}
+      >
+        B2C
+      </ListSubheader>
+
+      {/* Invoice Management */}
+      <ListItem
+        component={Link}
+        to="/all-invoices"
+        onClick={handleDrawerToggle}
+      >
         <Tooltip title="Invoice Management" placement="right" arrow>
           <ListItemIcon>
             <InvoiceIcon color="action" />
@@ -48,18 +71,12 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         <ListItemText primary="Invoice Management" />
       </ListItem>
 
-      {/* --- Deposit B2B --- */}
-      <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle}>
-        <Tooltip title="Deposit B2B Invoice" placement="right" arrow>
-          <ListItemIcon>
-            <UploadFileIcon color="action" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Deposit B2B Invoice" />
-      </ListItem>
-
-      {/* --- Droppex Invoices --- */}
-      <ListItem component={Link} to="/droppex-invoices" onClick={handleDrawerToggle}>
+      {/* Droppex Invoices */}
+      <ListItem
+        component={Link}
+        to="/droppex-invoices"
+        onClick={handleDrawerToggle}
+      >
         <Tooltip title="Droppex Invoices" placement="right" arrow>
           <ListItemIcon>
             <CheckIcon color="action" />
@@ -68,7 +85,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         <ListItemText primary="Droppex Invoices" />
       </ListItem>
 
-      {/* --- Compare Statistics --- */}
+      {/* Price Comparison */}
       <ListItem component={Link} to="/statistics" onClick={handleDrawerToggle}>
         <Tooltip title="Compare Freya vs TunisiaMarka" placement="right" arrow>
           <ListItemIcon>
@@ -78,8 +95,12 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         <ListItemText primary="Price Comparison" />
       </ListItem>
 
-      {/* --- Freya Stock Status Dashboard --- */}
-      <ListItem component={Link} to="/stock/status" onClick={handleDrawerToggle}>
+      {/* Stock Status */}
+      <ListItem
+        component={Link}
+        to="/stock/status"
+        onClick={handleDrawerToggle}
+      >
         <Tooltip
           title="Freya Out-of-Stock Monitoring Dashboard"
           placement="right"
@@ -90,6 +111,80 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Stock Status" />
+      </ListItem>
+
+      {/* ========================= */}
+      {/*           B2B SECTION     */}
+      {/* ========================= */}
+      <ListSubheader
+        sx={{
+          fontWeight: "bold",
+          color: "primary.main",
+          fontSize: "0.9rem",
+          mt: 3,
+        }}
+      >
+        B2B
+      </ListSubheader>
+
+      {/* Create Customer B2B */}
+      {/* Deposit B2B Invoice */}
+      <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle}>
+        <Tooltip title="Deposit B2B Invoice" placement="right" arrow>
+          <ListItemIcon>
+            <UploadFileIcon color="action" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Deposit B2B Invoice" />
+      </ListItem>
+
+      <ListItem
+        component={Link}
+        to="/b2b/customers/create"
+        onClick={handleDrawerToggle}
+      >
+        <Tooltip title="Create B2B Customer" placement="right" arrow>
+          <ListItemIcon>
+            <GroupAddIcon color="action" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Create Customer" />
+      </ListItem>
+      <ListItem
+        component={Link}
+        to="/b2b/products"
+        onClick={handleDrawerToggle}
+      >
+        <Tooltip title="Manage B2B Products" placement="right" arrow>
+          <ListItemIcon>
+            <InventoryIcon color="action" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Products B2B" />
+      </ListItem>
+      <ListItem
+        component={Link}
+        to="/b2b/orders/create"
+        onClick={handleDrawerToggle}
+      >
+        <Tooltip title="Create B2B Order" placement="right" arrow>
+          <ListItemIcon>
+            <ReceiptLongIcon color="action" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="Create B2B Order" />
+      </ListItem>
+      <ListItem
+        component={Link}
+        to="/b2b/orders/history"
+        onClick={handleDrawerToggle}
+      >
+        <Tooltip title="B2B Orders History" placement="right" arrow>
+          <ListItemIcon>
+            <ReceiptLongIcon color="action" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="B2B Orders History" />
       </ListItem>
     </List>
   );
@@ -111,14 +206,20 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
               <MenuIcon />
             </IconButton>
           )}
+
           <Typography
             variant="h6"
             component={Link}
             to="/"
-            sx={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}
+            sx={{
+              textDecoration: "none",
+              color: "inherit",
+              flexGrow: 1,
+            }}
           >
             Freya Hub
           </Typography>
+
           <IconButton color="inherit" component={Link} to="/profile">
             <AccountCircleIcon />
           </IconButton>
