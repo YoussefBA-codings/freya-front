@@ -16,6 +16,9 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+import html2pdf from "html2pdf.js";
+import { generateInvoiceHTML } from "./utils/invoiceTemplate";
+
 /* ------------------------------------------
    TYPES STRICTS
 ------------------------------------------ */
@@ -23,7 +26,14 @@ import DeleteIcon from "@mui/icons-material/Delete";
 interface ClientB2B {
   id: number;
   name: string;
+  tax_identification_number?: string;
+  address?: string;
+  zip?: string;
+  country?: string;
+
   responsable_name?: string | null;
+  responsable_phone?: string | null;
+  responsable_email?: string | null;
 }
 
 interface ProductB2B {
@@ -68,6 +78,9 @@ const CreateOrderB2B: React.FC = () => {
 
   const [selectedClient, setSelectedClient] = useState<ClientB2B | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+
+  const [invoiceNumber, setInvoiceNumber] = useState<string>("");
+  const [invoiceDate, setInvoiceDate] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
 
@@ -147,12 +160,44 @@ const CreateOrderB2B: React.FC = () => {
   const clearCart = () => setSelectedProducts([]);
 
   /* ------------------------------------------
+     GENERATE INVOICE PDF
+------------------------------------------ */
+
+  const generateInvoice = () => {
+    if (!selectedClient) return;
+
+    const productsForInvoice = selectedProducts.map((item) => ({
+      name: item.product.name,
+      variant_id: String(item.product.variant_id),
+      price_ht: item.product.price_ht,
+      tva_rate: item.product.tva_rate,
+      quantity: item.quantity,
+    }));
+
+    const html = generateInvoiceHTML(
+      selectedClient,
+      productsForInvoice,
+      invoiceNumber,
+      invoiceDate
+    );
+
+    html2pdf().from(html).save(`FACTURE-${invoiceNumber}.pdf`);
+  };
+
+  /* ------------------------------------------
      CREATE ORDER
 ------------------------------------------ */
 
   const handleCreateOrder = async () => {
     if (!selectedClient) {
       setNotifyMessage("Please select a client.");
+      setNotifyStatus("error");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    if (!invoiceNumber || !invoiceDate) {
+      setNotifyMessage("Please enter invoice number and date.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
       return;
@@ -186,8 +231,14 @@ const CreateOrderB2B: React.FC = () => {
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
+      // 🔥 GÉNÉRER FACTURE
+      generateInvoice();
+
       clearCart();
       setSelectedClient(null);
+      setInvoiceNumber("");
+      setInvoiceDate("");
+
     } catch {
       setNotifyMessage("Failed to create order.");
       setNotifyStatus("error");
@@ -349,6 +400,24 @@ const CreateOrderB2B: React.FC = () => {
         <Typography variant="subtitle1" sx={{ mb: 2 }}>
           Client: {selectedClient ? selectedClient.name : "None selected"}
         </Typography>
+
+        <TextField
+          fullWidth
+          label="Invoice Number"
+          value={invoiceNumber}
+          onChange={(e) => setInvoiceNumber(e.target.value)}
+          sx={{ mb: 2 }}
+        />
+
+        <TextField
+          fullWidth
+          label="Invoice Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={invoiceDate}
+          onChange={(e) => setInvoiceDate(e.target.value)}
+          sx={{ mb: 2 }}
+        />
 
         <Divider sx={{ mb: 2 }} />
 

@@ -14,6 +14,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import HistoryIcon from "@mui/icons-material/History";
 
 import {
   Receipt as InvoiceIcon,
@@ -135,7 +136,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
             <UploadFileIcon color="action" />
           </ListItemIcon>
         </Tooltip>
-        <ListItemText primary="Deposit B2B Invoice" />
+        <ListItemText primary="Deposit Invoice" />
       </ListItem>
 
       <ListItem
@@ -143,7 +144,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         to="/b2b/customers/create"
         onClick={handleDrawerToggle}
       >
-        <Tooltip title="Create B2B Customer" placement="right" arrow>
+        <Tooltip title="Create Customer" placement="right" arrow>
           <ListItemIcon>
             <GroupAddIcon color="action" />
           </ListItemIcon>
@@ -155,36 +156,36 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         to="/b2b/products"
         onClick={handleDrawerToggle}
       >
-        <Tooltip title="Manage B2B Products" placement="right" arrow>
+        <Tooltip title="Manage Products" placement="right" arrow>
           <ListItemIcon>
             <InventoryIcon color="action" />
           </ListItemIcon>
         </Tooltip>
-        <ListItemText primary="Products B2B" />
+        <ListItemText primary="Manage Products" />
       </ListItem>
       <ListItem
         component={Link}
         to="/b2b/orders/create"
         onClick={handleDrawerToggle}
       >
-        <Tooltip title="Create B2B Order" placement="right" arrow>
+        <Tooltip title="Create Order" placement="right" arrow>
           <ListItemIcon>
             <ReceiptLongIcon color="action" />
           </ListItemIcon>
         </Tooltip>
-        <ListItemText primary="Create B2B Order" />
+        <ListItemText primary="Create Order" />
       </ListItem>
       <ListItem
         component={Link}
         to="/b2b/orders/history"
         onClick={handleDrawerToggle}
       >
-        <Tooltip title="B2B Orders History" placement="right" arrow>
+        <Tooltip title="Orders History" placement="right" arrow>
           <ListItemIcon>
-            <ReceiptLongIcon color="action" />
+            <HistoryIcon color="action" />
           </ListItemIcon>
         </Tooltip>
-        <ListItemText primary="B2B Orders History" />
+        <ListItemText primary="Orders History" />
       </ListItem>
     </List>
   );
