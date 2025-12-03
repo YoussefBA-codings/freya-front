@@ -7,7 +7,6 @@ import {
   TextField,
   Drawer,
   IconButton,
-  Divider,
   MenuItem,
   FormControl,
   InputLabel,
@@ -20,6 +19,11 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Button,
+  Snackbar,
+  SnackbarContent,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -28,6 +32,9 @@ import { useParams } from "react-router-dom";
 /* ======================================================
    🔵 TYPES
 ====================================================== */
+
+type OrderB2BStatus = "CREATED" | "SHIPPED" | "DELIVERED";
+type PaymentMethod = "BANK_TRANSFER" | "CASH" | "CHEQUE" | "";
 
 interface ClientB2B {
   id: number;
@@ -54,6 +61,20 @@ interface OrderB2B {
   total_ht: string;
   total_ttc: string;
   created_at: string;
+
+  status: OrderB2BStatus;
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+
+  is_paid: boolean;
+  payment_method?: PaymentMethod | null;
+  payment_reference?: string | null;
+  payment_date?: string | null;
+
+  withholding_enabled: boolean;
+  withholding_received: boolean;
+  withholding_date?: string | null;
+
   items: OrderItemB2B[];
 }
 
@@ -69,7 +90,7 @@ const ClientOrderHistory: React.FC = () => {
   const [orders, setOrders] = useState<OrderB2B[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // UI state
+  // Drawer state
   const [selectedOrder, setSelectedOrder] = useState<OrderB2B | null>(null);
 
   // Filters
@@ -78,32 +99,56 @@ const ClientOrderHistory: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
+  // Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">(
+    "success"
+  );
+
+  // Editable fields for selected order
+  const [editStatus, setEditStatus] = useState<OrderB2BStatus>("CREATED");
+
+  const [editIsPaid, setEditIsPaid] = useState<boolean>(false);
+  const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>("");
+  const [editPaymentReference, setEditPaymentReference] = useState<string>("");
+  const [editPaymentDate, setEditPaymentDate] = useState<string>("");
+
+  const [editWithholdingEnabled, setEditWithholdingEnabled] =
+    useState<boolean>(false);
+  const [editWithholdingReceived, setEditWithholdingReceived] =
+    useState<boolean>(false);
+  const [editWithholdingDate, setEditWithholdingDate] = useState<string>("");
+
   /* ======================================================
      🔵 LOAD DATA
   ====================================================== */
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const clientRes = await axios.get<ClientB2B>(
+        `${import.meta.env.VITE_API_URL}client-b2b/${numericId}`
+      );
+
+      const ordersRes = await axios.get<OrderB2B[]>(
+        `${import.meta.env.VITE_API_URL}order-b2b/client/${numericId}`
+      );
+
+      setClient(clientRes.data);
+      setOrders(ordersRes.data);
+    } catch (error) {
+      console.error("Failed to load:", error);
+      setNotifyMessage("Failed to load data.");
+      setNotifyStatus("error");
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-
-        const clientRes = await axios.get<ClientB2B>(
-          `${import.meta.env.VITE_API_URL}client-b2b/${numericId}`
-        );
-
-        const ordersRes = await axios.get<OrderB2B[]>(
-          `${import.meta.env.VITE_API_URL}order-b2b/client/${numericId}`
-        );
-
-        setClient(clientRes.data);
-        setOrders(ordersRes.data);
-      } catch (error) {
-        console.error("Failed to load:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, [numericId]);
 
@@ -118,46 +163,147 @@ const ClientOrderHistory: React.FC = () => {
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((o) =>
-        o.items.some((item) =>
-          item.product.name.toLowerCase().includes(q)
-        )
+        o.items.some((item) => item.product.name.toLowerCase().includes(q))
       );
     }
 
     // 2. Date range filter
     if (startDate) {
-      result = result.filter(
-        (o) => new Date(o.created_at) >= startDate
-      );
+      result = result.filter((o) => new Date(o.created_at) >= startDate);
     }
     if (endDate) {
-      result = result.filter(
-        (o) => new Date(o.created_at) <= endDate
-      );
+      result = result.filter((o) => new Date(o.created_at) <= endDate);
     }
 
     // 3. Sorting
     if (sortBy === "newest") {
       result.sort(
         (a, b) =>
-          new Date(b.created_at).getTime() -
-          new Date(a.created_at).getTime()
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     } else if (sortBy === "oldest") {
       result.sort(
         (a, b) =>
-          new Date(a.created_at).getTime() -
-          new Date(b.created_at).getTime()
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
     } else if (sortBy === "amount") {
-      result.sort(
-        (a, b) =>
-          Number(b.total_ht) - Number(a.total_ht)
-      );
+      result.sort((a, b) => Number(b.total_ht) - Number(a.total_ht));
     }
 
     return result;
   }, [orders, search, sortBy, startDate, endDate]);
+
+  /* ======================================================
+     🔵 HANDLERS
+  ====================================================== */
+
+  const openOrderDrawer = (order: OrderB2B) => {
+    setSelectedOrder(order);
+
+    setEditStatus(order.status);
+
+    setEditIsPaid(order.is_paid);
+    setEditPaymentMethod((order.payment_method as PaymentMethod) || "");
+    setEditPaymentReference(order.payment_reference || "");
+    setEditPaymentDate(
+      order.payment_date ? order.payment_date.slice(0, 10) : ""
+    );
+
+    setEditWithholdingEnabled(order.withholding_enabled);
+    setEditWithholdingReceived(order.withholding_received);
+    setEditWithholdingDate(
+      order.withholding_date ? order.withholding_date.slice(0, 10) : ""
+    );
+  };
+
+  const closeDrawer = () => {
+    setSelectedOrder(null);
+  };
+
+  const updateLocalOrder = (updated: OrderB2B) => {
+    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    setSelectedOrder(updated);
+  };
+
+  // ---- Update status ----
+  const handleSaveStatus = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      const res = await axios.patch<OrderB2B>(
+        `${import.meta.env.VITE_API_URL}order-b2b/${selectedOrder.id}/status`,
+        { status: editStatus },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      updateLocalOrder(res.data);
+      setNotifyMessage("Status updated.");
+      setNotifyStatus("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      setNotifyMessage("Failed to update status.");
+      setNotifyStatus("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  // ---- Mark as paid / update payment ----
+  const handleSavePayment = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      const res = await axios.patch<OrderB2B>(
+        `${import.meta.env.VITE_API_URL}order-b2b/${selectedOrder.id}/pay`,
+        {
+          payment_method: editPaymentMethod || null,
+          payment_reference: editPaymentReference || null,
+          payment_date: editPaymentDate || null,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      updateLocalOrder(res.data);
+      setEditIsPaid(true); // L'API markAsPaid force is_paid = true
+      setNotifyMessage("Payment updated.");
+      setNotifyStatus("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Failed to update payment:", error);
+      setNotifyMessage("Failed to update payment.");
+      setNotifyStatus("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  // ---- Update withholding ----
+  const handleSaveWithholding = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      const res = await axios.patch<OrderB2B>(
+        `${import.meta.env.VITE_API_URL}order-b2b/${
+          selectedOrder.id
+        }/withholding`,
+        {
+          withholding_enabled: editWithholdingEnabled,
+          withholding_received: editWithholdingReceived,
+          withholding_date: editWithholdingDate || null,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      updateLocalOrder(res.data);
+      setNotifyMessage("Withholding updated.");
+      setNotifyStatus("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Failed to update withholding:", error);
+      setNotifyMessage("Failed to update withholding.");
+      setNotifyStatus("error");
+      setSnackbarOpen(true);
+    }
+  };
 
   /* ======================================================
      🔵 RENDER
@@ -223,9 +369,7 @@ const ClientOrderHistory: React.FC = () => {
           <Select
             label="Sort by"
             value={sortBy}
-            onChange={(e: SelectChangeEvent) =>
-              setSortBy(e.target.value)
-            }
+            onChange={(e: SelectChangeEvent) => setSortBy(e.target.value)}
           >
             <MenuItem value="newest">Newest first</MenuItem>
             <MenuItem value="oldest">Oldest first</MenuItem>
@@ -239,11 +383,21 @@ const ClientOrderHistory: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell><strong>ID</strong></TableCell>
-              <TableCell><strong>Date</strong></TableCell>
-              <TableCell><strong>Items</strong></TableCell>
-              <TableCell><strong>Total HT</strong></TableCell>
-              <TableCell><strong>Total TTC</strong></TableCell>
+              <TableCell>
+                <strong>Order</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Date</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Status</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Total TTC</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Paid</strong>
+              </TableCell>
             </TableRow>
           </TableHead>
 
@@ -253,15 +407,15 @@ const ClientOrderHistory: React.FC = () => {
                 key={order.id}
                 hover
                 sx={{ cursor: "pointer" }}
-                onClick={() => setSelectedOrder(order)}
+                onClick={() => openOrderDrawer(order)}
               >
-                <TableCell>{order.id}</TableCell>
+                <TableCell>{order.invoice_number}</TableCell>
                 <TableCell>
                   {new Date(order.created_at).toLocaleDateString()}
                 </TableCell>
-                <TableCell>{order.items.length}</TableCell>
-                <TableCell>{Number(order.total_ht).toFixed(2)} DT</TableCell>
+                <TableCell>{order.status}</TableCell>
                 <TableCell>{Number(order.total_ttc).toFixed(2)} DT</TableCell>
+                <TableCell>{order.is_paid ? "Yes" : "No"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -272,70 +426,304 @@ const ClientOrderHistory: React.FC = () => {
       <Drawer
         anchor="right"
         open={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
+        onClose={closeDrawer}
+        PaperProps={{
+          sx: {
+            width: 480,
+            borderLeft: "1px solid #ddd",
+            boxShadow: "-4px 0 18px rgba(0,0,0,0.05)",
+          },
+        }}
       >
-        <Box sx={{ width: 450, p: 3 }}>
+        <Box
+          sx={{
+            height: "100vh",
+            overflowY: "auto",
+            p: 3,
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+        >
+          {/* HEADER */}
           <Box
             sx={{
+              position: "sticky",
+              top: 0,
+              backgroundColor: "white",
+              zIndex: 10,
+              pb: 2,
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: "1px solid #eee",
             }}
           >
-            <Typography variant="h6">
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Order #{selectedOrder?.id}
             </Typography>
-            <IconButton onClick={() => setSelectedOrder(null)}>
+
+            <IconButton
+              onClick={closeDrawer}
+              sx={{
+                color: "grey.600",
+                "&:hover": { backgroundColor: "grey.100", color: "black" },
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </Box>
 
-          <Divider sx={{ my: 2 }} />
-
           {selectedOrder && (
-            <Box>
-              <Typography sx={{ mb: 2 }}>
-                <strong>Date:</strong>{" "}
-                {new Date(selectedOrder.created_at).toLocaleDateString()}
-              </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {/* SUMMARY */}
+              <Box
+                sx={{
+                  background: "#fafafa",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid #eee",
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  Summary
+                </Typography>
 
-              <Typography sx={{ mb: 2 }}>
-                <strong>Total HT:</strong>{" "}
-                {Number(selectedOrder.total_ht).toFixed(2)} DT
-              </Typography>
-
-              <Typography sx={{ mb: 2 }}>
-                <strong>Total TTC:</strong>{" "}
-                {Number(selectedOrder.total_ttc).toFixed(2)} DT
-              </Typography>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Items
-              </Typography>
-
-              {selectedOrder.items.map((item) => (
-                <Box key={item.id} sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1">
-                    {item.product.name}
+                <Box sx={{ lineHeight: 1.8 }}>
+                  <Typography>
+                    <strong>Date:</strong>{" "}
+                    {new Date(selectedOrder.created_at).toLocaleDateString()}
                   </Typography>
                   <Typography>
-                    Qty: {item.quantity}
+                    <strong>Invoice #:</strong>{" "}
+                    {selectedOrder.invoice_number || "N/A"}
                   </Typography>
                   <Typography>
-                    Line HT: {item.total_line_ht} DT
-                  </Typography>
-                  <Typography>
-                    Line TTC: {item.total_line_ttc} DT
+                    <strong>Invoice Date:</strong>{" "}
+                    {selectedOrder.invoice_date
+                      ? new Date(
+                          selectedOrder.invoice_date
+                        ).toLocaleDateString()
+                      : "N/A"}
                   </Typography>
 
-                  <Divider sx={{ my: 1 }} />
+                  <Box sx={{ mt: 1 }}>
+                    <Typography>
+                      <strong>Total HT:</strong>{" "}
+                      {Number(selectedOrder.total_ht).toFixed(2)} DT
+                    </Typography>
+                    <Typography>
+                      <strong>Total TTC:</strong>{" "}
+                      {Number(selectedOrder.total_ttc).toFixed(2)} DT
+                    </Typography>
+                  </Box>
                 </Box>
-              ))}
+              </Box>
+
+              {/* STATUS */}
+              <Box
+                sx={{
+                  background: "#fafafa",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid #eee",
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  Status
+                </Typography>
+
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    label="Status"
+                    value={editStatus}
+                    onChange={(e: SelectChangeEvent<OrderB2BStatus>) =>
+                      setEditStatus(e.target.value as OrderB2BStatus)
+                    }
+                  >
+                    <MenuItem value="CREATED">CREATED</MenuItem>
+                    <MenuItem value="SHIPPED">SHIPPED</MenuItem>
+                    <MenuItem value="DELIVERED">DELIVERED</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleSaveStatus}
+                >
+                  Save status
+                </Button>
+              </Box>
+
+              {/* PAYMENT */}
+              <Box
+                sx={{
+                  background: "#fafafa",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid #eee",
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  Payment
+                </Typography>
+
+                <Typography sx={{ mb: 1 }}>
+                  Current status:{" "}
+                  <strong>{selectedOrder.is_paid ? "Paid" : "Not paid"}</strong>
+                </Typography>
+
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Payment Method</InputLabel>
+                  <Select
+                    label="Payment Method"
+                    value={editPaymentMethod}
+                    onChange={(e: SelectChangeEvent<PaymentMethod>) =>
+                      setEditPaymentMethod(e.target.value as PaymentMethod)
+                    }
+                  >
+                    <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>
+                    <MenuItem value="BANK_TRANSFER">Bank transfer</MenuItem>
+                    <MenuItem value="CASH">Cash</MenuItem>
+                    <MenuItem value="CHEQUE">Cheque</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  fullWidth
+                  label="Payment Reference"
+                  value={editPaymentReference}
+                  onChange={(e) => setEditPaymentReference(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Payment Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={editPaymentDate}
+                  onChange={(e) => setEditPaymentDate(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+
+                <Button
+                  variant="contained"
+                  color={editIsPaid ? "success" : "primary"}
+                  onClick={handleSavePayment}
+                >
+                  {selectedOrder.is_paid ? "Update payment" : "Mark as paid"}
+                </Button>
+              </Box>
+
+              {/* WITHHOLDING */}
+              <Box
+                sx={{
+                  background: "#fafafa",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid #eee",
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  Withholding Tax
+                </Typography>
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={editWithholdingEnabled}
+                      onChange={(e) =>
+                        setEditWithholdingEnabled(e.target.checked)
+                      }
+                    />
+                  }
+                  label="Withholding enabled"
+                  sx={{ mb: 1 }}
+                />
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={editWithholdingReceived}
+                      onChange={(e) =>
+                        setEditWithholdingReceived(e.target.checked)
+                      }
+                    />
+                  }
+                  label="Document received"
+                  sx={{ mb: 2 }}
+                  disabled={!editWithholdingEnabled}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Withholding Date"
+                  type="date"
+                  InputLabelProps={{ shrink: true }}
+                  value={editWithholdingDate}
+                  onChange={(e) => setEditWithholdingDate(e.target.value)}
+                  sx={{ mb: 2 }}
+                  disabled={!editWithholdingEnabled}
+                />
+
+                <Button variant="contained" onClick={handleSaveWithholding}>
+                  Save withholding
+                </Button>
+              </Box>
+
+              {/* ITEMS */}
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  Items
+                </Typography>
+
+                {selectedOrder.items.map((item) => (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      borderRadius: 2,
+                      border: "1px solid #eee",
+                      background: "white",
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {item.product.name}
+                    </Typography>
+                    <Typography>Qty: {item.quantity}</Typography>
+                    <Typography>
+                      Line HT: {Number(item.total_line_ht).toFixed(2)} DT
+                    </Typography>
+                    <Typography>
+                      Line TTC: {Number(item.total_line_ttc).toFixed(2)} DT
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
             </Box>
           )}
         </Box>
       </Drawer>
+
+      {/* SNACKBAR */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <SnackbarContent
+          message={notifyMessage}
+          sx={{
+            backgroundColor: notifyStatus === "error" ? "red" : "green",
+          }}
+        />
+      </Snackbar>
     </Box>
   );
 };

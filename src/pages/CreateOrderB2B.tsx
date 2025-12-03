@@ -20,7 +20,7 @@ import html2pdf from "html2pdf.js";
 import { generateInvoiceHTML } from "./utils/invoiceTemplate";
 
 /* ------------------------------------------
-   TYPES STRICTS
+   TYPES
 ------------------------------------------ */
 
 interface ClientB2B {
@@ -39,7 +39,7 @@ interface ClientB2B {
 interface ProductB2B {
   id: number;
   name: string;
-  variant_id: number;
+  variant_id: string;
   price_ht: number;
   tva_rate: number;
 }
@@ -62,6 +62,11 @@ interface CreateOrderItemPayload {
 
 interface CreateOrderPayload {
   client_id: number;
+  status: string;
+  invoice_number: string;
+  invoice_date: string;
+  is_paid: boolean;
+  withholding_enabled: boolean;
   items: CreateOrderItemPayload[];
 }
 
@@ -82,6 +87,9 @@ const CreateOrderB2B: React.FC = () => {
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [invoiceDate, setInvoiceDate] = useState<string>("");
 
+  // Withholding tax (retenue à la source)
+  const [withholdingEnabled, setWithholdingEnabled] = useState<boolean>(false);
+
   const [loading, setLoading] = useState(true);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -90,7 +98,7 @@ const CreateOrderB2B: React.FC = () => {
 
   /* ------------------------------------------
      LOAD DATA
------------------------------------------- */
+  ------------------------------------------ */
 
   const loadData = async () => {
     setLoading(true);
@@ -105,13 +113,16 @@ const CreateOrderB2B: React.FC = () => {
 
       const withStock: ProductB2BWithStock[] = resProducts.data.map((p) => ({
         ...p,
-        inventory: 999, // temporaire
+        inventory: 999, // Temporaire, en attendant le vrai stock
       }));
 
       setClients(resClients.data);
       setProducts(withStock);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to load data:", error);
+      setNotifyMessage("Failed to load data.");
+      setNotifyStatus("error");
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
@@ -122,8 +133,8 @@ const CreateOrderB2B: React.FC = () => {
   }, []);
 
   /* ------------------------------------------
-     ADD PRODUCT
------------------------------------------- */
+     ADD / UPDATE / REMOVE PRODUCT
+  ------------------------------------------ */
 
   const handleAddProduct = (product: ProductB2BWithStock) => {
     const existing = selectedProducts.find((p) => p.product.id === product.id);
@@ -161,7 +172,7 @@ const CreateOrderB2B: React.FC = () => {
 
   /* ------------------------------------------
      GENERATE INVOICE PDF
------------------------------------------- */
+  ------------------------------------------ */
 
   const generateInvoice = () => {
     if (!selectedClient) return;
@@ -186,7 +197,7 @@ const CreateOrderB2B: React.FC = () => {
 
   /* ------------------------------------------
      CREATE ORDER
------------------------------------------- */
+  ------------------------------------------ */
 
   const handleCreateOrder = async () => {
     if (!selectedClient) {
@@ -212,6 +223,11 @@ const CreateOrderB2B: React.FC = () => {
 
     const payload: CreateOrderPayload = {
       client_id: selectedClient.id,
+      status: "CREATED", // par défaut
+      invoice_number: invoiceNumber,
+      invoice_date: invoiceDate,
+      is_paid: false, // paiement géré plus tard
+      withholding_enabled: withholdingEnabled,
       items: selectedProducts.map((item) => ({
         product_id: item.product.id,
         quantity: item.quantity,
@@ -231,15 +247,16 @@ const CreateOrderB2B: React.FC = () => {
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
-      // 🔥 GÉNÉRER FACTURE
+      // Génération de la facture PDF
       generateInvoice();
 
       clearCart();
       setSelectedClient(null);
       setInvoiceNumber("");
       setInvoiceDate("");
-
-    } catch {
+      setWithholdingEnabled(false);
+    } catch (error) {
+      console.error("Failed to create order:", error);
       setNotifyMessage("Failed to create order.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
@@ -248,7 +265,7 @@ const CreateOrderB2B: React.FC = () => {
 
   /* ------------------------------------------
      RENDER
------------------------------------------- */
+  ------------------------------------------ */
 
   if (loading) {
     return (
@@ -260,7 +277,6 @@ const CreateOrderB2B: React.FC = () => {
 
   return (
     <Box sx={{ display: "flex", gap: 3 }}>
-
       {/* CLIENTS */}
       <Box
         sx={{
@@ -369,7 +385,7 @@ const CreateOrderB2B: React.FC = () => {
           ))}
       </Box>
 
-      {/* CART */}
+      {/* CART / ORDER */}
       <Box
         sx={{
           flex: 1,
@@ -418,6 +434,19 @@ const CreateOrderB2B: React.FC = () => {
           onChange={(e) => setInvoiceDate(e.target.value)}
           sx={{ mb: 2 }}
         />
+
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          Withholding Tax
+        </Typography>
+
+        <Button
+          variant={withholdingEnabled ? "contained" : "outlined"}
+          color={withholdingEnabled ? "warning" : "primary"}
+          sx={{ mb: 2, mt: 1 }}
+          onClick={() => setWithholdingEnabled(!withholdingEnabled)}
+        >
+          {withholdingEnabled ? "Withholding Enabled" : "Enable Withholding"}
+        </Button>
 
         <Divider sx={{ mb: 2 }} />
 
