@@ -24,6 +24,7 @@ import {
   SnackbarContent,
   Switch,
   FormControlLabel,
+  Chip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -65,6 +66,7 @@ interface OrderB2B {
   status: OrderB2BStatus;
   invoice_number?: string | null;
   invoice_date?: string | null;
+  invoice_pdf_url?: string | null;
 
   is_paid: boolean;
   payment_method?: PaymentMethod | null;
@@ -90,7 +92,6 @@ const ClientOrderHistory: React.FC = () => {
   const [orders, setOrders] = useState<OrderB2B[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Drawer state
   const [selectedOrder, setSelectedOrder] = useState<OrderB2B | null>(null);
 
   // Filters
@@ -106,7 +107,7 @@ const ClientOrderHistory: React.FC = () => {
     "success"
   );
 
-  // Editable fields for selected order
+  // Editable fields
   const [editStatus, setEditStatus] = useState<OrderB2BStatus>("CREATED");
 
   const [editIsPaid, setEditIsPaid] = useState<boolean>(false);
@@ -153,13 +154,29 @@ const ClientOrderHistory: React.FC = () => {
   }, [numericId]);
 
   /* ======================================================
-     🔵 FILTERED DATA (search + date + sort)
+     🔵 STATUS COLORS
+  ====================================================== */
+
+  const getStatusColor = (status: OrderB2BStatus) => {
+    switch (status) {
+      case "CREATED":
+        return "info";
+      case "SHIPPED":
+        return "warning";
+      case "DELIVERED":
+        return "success";
+      default:
+        return "default";
+    }
+  };
+
+  /* ======================================================
+     🔵 FILTERED DATA
   ====================================================== */
 
   const filteredOrders = useMemo(() => {
     let result = [...orders];
 
-    // 1. Search by product name
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((o) =>
@@ -167,7 +184,6 @@ const ClientOrderHistory: React.FC = () => {
       );
     }
 
-    // 2. Date range filter
     if (startDate) {
       result = result.filter((o) => new Date(o.created_at) >= startDate);
     }
@@ -175,7 +191,6 @@ const ClientOrderHistory: React.FC = () => {
       result = result.filter((o) => new Date(o.created_at) <= endDate);
     }
 
-    // 3. Sorting
     if (sortBy === "newest") {
       result.sort(
         (a, b) =>
@@ -201,19 +216,14 @@ const ClientOrderHistory: React.FC = () => {
     setSelectedOrder(order);
 
     setEditStatus(order.status);
-
     setEditIsPaid(order.is_paid);
     setEditPaymentMethod((order.payment_method as PaymentMethod) || "");
     setEditPaymentReference(order.payment_reference || "");
-    setEditPaymentDate(
-      order.payment_date ? order.payment_date.slice(0, 10) : ""
-    );
+    setEditPaymentDate(order.payment_date?.slice(0, 10) || "");
 
     setEditWithholdingEnabled(order.withholding_enabled);
     setEditWithholdingReceived(order.withholding_received);
-    setEditWithholdingDate(
-      order.withholding_date ? order.withholding_date.slice(0, 10) : ""
-    );
+    setEditWithholdingDate(order.withholding_date?.slice(0, 10) || "");
   };
 
   const closeDrawer = () => {
@@ -225,33 +235,29 @@ const ClientOrderHistory: React.FC = () => {
     setSelectedOrder(updated);
   };
 
-  // ---- Update status ----
+  /* --- Save Status --- */
   const handleSaveStatus = async () => {
     if (!selectedOrder) return;
-
     try {
       const res = await axios.patch<OrderB2B>(
         `${import.meta.env.VITE_API_URL}order-b2b/${selectedOrder.id}/status`,
-        { status: editStatus },
-        { headers: { "Content-Type": "application/json" } }
+        { status: editStatus }
       );
 
       updateLocalOrder(res.data);
       setNotifyMessage("Status updated.");
       setNotifyStatus("success");
       setSnackbarOpen(true);
-    } catch (error) {
-      console.error("Failed to update status:", error);
+    } catch {
       setNotifyMessage("Failed to update status.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     }
   };
 
-  // ---- Mark as paid / update payment ----
+  /* --- Save Payment --- */
   const handleSavePayment = async () => {
     if (!selectedOrder) return;
-
     try {
       const res = await axios.patch<OrderB2B>(
         `${import.meta.env.VITE_API_URL}order-b2b/${selectedOrder.id}/pay`,
@@ -259,24 +265,22 @@ const ClientOrderHistory: React.FC = () => {
           payment_method: editPaymentMethod || null,
           payment_reference: editPaymentReference || null,
           payment_date: editPaymentDate || null,
-        },
-        { headers: { "Content-Type": "application/json" } }
+        }
       );
 
       updateLocalOrder(res.data);
-      setEditIsPaid(true); // L'API markAsPaid force is_paid = true
+      setEditIsPaid(true);
       setNotifyMessage("Payment updated.");
       setNotifyStatus("success");
       setSnackbarOpen(true);
-    } catch (error) {
-      console.error("Failed to update payment:", error);
+    } catch {
       setNotifyMessage("Failed to update payment.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     }
   };
 
-  // ---- Update withholding ----
+  /* --- Save Withholding --- */
   const handleSaveWithholding = async () => {
     if (!selectedOrder) return;
 
@@ -289,16 +293,14 @@ const ClientOrderHistory: React.FC = () => {
           withholding_enabled: editWithholdingEnabled,
           withholding_received: editWithholdingReceived,
           withholding_date: editWithholdingDate || null,
-        },
-        { headers: { "Content-Type": "application/json" } }
+        }
       );
 
       updateLocalOrder(res.data);
       setNotifyMessage("Withholding updated.");
       setNotifyStatus("success");
       setSnackbarOpen(true);
-    } catch (error) {
-      console.error("Failed to update withholding:", error);
+    } catch {
       setNotifyMessage("Failed to update withholding.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
@@ -328,7 +330,7 @@ const ClientOrderHistory: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* HEADER */}
-      <Typography variant="h4" sx={{ mb: 1 }}>
+      <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
         B2B Orders History
       </Typography>
       <Typography variant="subtitle1" sx={{ mb: 4 }}>
@@ -343,6 +345,10 @@ const ClientOrderHistory: React.FC = () => {
           mb: 3,
           flexWrap: "wrap",
           alignItems: "center",
+          background: "#fafafa",
+          borderRadius: 2,
+          p: 2,
+          border: "1px solid #eee",
         }}
       >
         <TextField
@@ -379,12 +385,18 @@ const ClientOrderHistory: React.FC = () => {
       </Box>
 
       {/* ORDERS TABLE */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+      <TableContainer
+        component={Paper}
+        sx={{
+          borderRadius: 2,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.05)",
+        }}
+      >
         <Table>
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ background: "#f6f8fa" }}>
               <TableCell>
-                <strong>Order</strong>
+                <strong>Invoice #</strong>
               </TableCell>
               <TableCell>
                 <strong>Date</strong>
@@ -406,14 +418,25 @@ const ClientOrderHistory: React.FC = () => {
               <TableRow
                 key={order.id}
                 hover
-                sx={{ cursor: "pointer" }}
+                sx={{
+                  cursor: "pointer",
+                  "&:hover": { backgroundColor: "#fdfdfd" },
+                }}
                 onClick={() => openOrderDrawer(order)}
               >
                 <TableCell>{order.invoice_number}</TableCell>
+
                 <TableCell>
                   {new Date(order.created_at).toLocaleDateString()}
                 </TableCell>
-                <TableCell>{order.status}</TableCell>
+
+                <TableCell>
+                  <Chip
+                    label={order.status}
+                    color={getStatusColor(order.status)}
+                  />
+                </TableCell>
+
                 <TableCell>{Number(order.total_ttc).toFixed(2)} DT</TableCell>
                 <TableCell>{order.is_paid ? "Yes" : "No"}</TableCell>
               </TableRow>
@@ -431,7 +454,7 @@ const ClientOrderHistory: React.FC = () => {
           sx: {
             width: 480,
             borderLeft: "1px solid #ddd",
-            boxShadow: "-4px 0 18px rgba(0,0,0,0.05)",
+            boxShadow: "-4px 0 18px rgba(0,0,0,0.08)",
           },
         }}
       >
@@ -459,7 +482,7 @@ const ClientOrderHistory: React.FC = () => {
               borderBottom: "1px solid #eee",
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Order #{selectedOrder?.id}
             </Typography>
 
@@ -474,6 +497,7 @@ const ClientOrderHistory: React.FC = () => {
             </IconButton>
           </Box>
 
+          {/* ORDER SUMMARY */}
           {selectedOrder && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               {/* SUMMARY */}
@@ -494,10 +518,12 @@ const ClientOrderHistory: React.FC = () => {
                     <strong>Date:</strong>{" "}
                     {new Date(selectedOrder.created_at).toLocaleDateString()}
                   </Typography>
+
                   <Typography>
                     <strong>Invoice #:</strong>{" "}
                     {selectedOrder.invoice_number || "N/A"}
                   </Typography>
+
                   <Typography>
                     <strong>Invoice Date:</strong>{" "}
                     {selectedOrder.invoice_date
@@ -507,7 +533,33 @@ const ClientOrderHistory: React.FC = () => {
                       : "N/A"}
                   </Typography>
 
-                  <Box sx={{ mt: 1 }}>
+                  {/* 🔵 NEW — Download Invoice */}
+                  {selectedOrder.invoice_pdf_url && (
+                    <Box sx={{ mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        href={selectedOrder.invoice_pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          textTransform: "none",
+                          fontWeight: 600,
+                          borderRadius: 2,
+                          py: 1,
+                          px: 2,
+                          boxShadow: "0px 3px 10px rgba(0,0,0,0.1)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
+                        📄 Télécharger la facture
+                      </Button>
+                    </Box>
+                  )}
+
+                  <Box sx={{ mt: 2 }}>
                     <Typography>
                       <strong>Total HT:</strong>{" "}
                       {Number(selectedOrder.total_ht).toFixed(2)} DT
@@ -533,20 +585,18 @@ const ClientOrderHistory: React.FC = () => {
                   Status
                 </Typography>
 
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    label="Status"
-                    value={editStatus}
-                    onChange={(e: SelectChangeEvent<OrderB2BStatus>) =>
-                      setEditStatus(e.target.value as OrderB2BStatus)
-                    }
-                  >
-                    <MenuItem value="CREATED">CREATED</MenuItem>
-                    <MenuItem value="SHIPPED">SHIPPED</MenuItem>
-                    <MenuItem value="DELIVERED">DELIVERED</MenuItem>
-                  </Select>
-                </FormControl>
+                <Select
+                  fullWidth
+                  value={editStatus}
+                  onChange={(e: SelectChangeEvent<OrderB2BStatus>) =>
+                    setEditStatus(e.target.value as OrderB2BStatus)
+                  }
+                  sx={{ mb: 2 }}
+                >
+                  <MenuItem value="CREATED">CREATED</MenuItem>
+                  <MenuItem value="SHIPPED">SHIPPED</MenuItem>
+                  <MenuItem value="DELIVERED">DELIVERED</MenuItem>
+                </Select>
 
                 <Button
                   variant="contained"
@@ -656,8 +706,8 @@ const ClientOrderHistory: React.FC = () => {
                     />
                   }
                   label="Document received"
-                  sx={{ mb: 2 }}
                   disabled={!editWithholdingEnabled}
+                  sx={{ mb: 2 }}
                 />
 
                 <TextField
@@ -667,8 +717,8 @@ const ClientOrderHistory: React.FC = () => {
                   InputLabelProps={{ shrink: true }}
                   value={editWithholdingDate}
                   onChange={(e) => setEditWithholdingDate(e.target.value)}
-                  sx={{ mb: 2 }}
                   disabled={!editWithholdingEnabled}
+                  sx={{ mb: 2 }}
                 />
 
                 <Button variant="contained" onClick={handleSaveWithholding}>
@@ -691,6 +741,7 @@ const ClientOrderHistory: React.FC = () => {
                       borderRadius: 2,
                       border: "1px solid #eee",
                       background: "white",
+                      boxShadow: "0px 2px 5px rgba(0,0,0,0.03)",
                     }}
                   >
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
