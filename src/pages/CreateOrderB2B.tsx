@@ -433,6 +433,11 @@ const CreateOrderB2B: React.FC = () => {
         />
 
         {products
+          .sort((a, b) => {
+            if (a.inventory > 0 && b.inventory === 0) return -1;
+            if (a.inventory === 0 && b.inventory > 0) return 1;
+            return b.inventory - a.inventory;
+          })
           .filter((p) =>
             p.name.toLowerCase().includes(searchProduct.toLowerCase())
           )
