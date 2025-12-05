@@ -99,7 +99,9 @@ const CreateOrderB2B: React.FC = () => {
   const [searchProduct, setSearchProduct] = useState<string>("");
 
   const [selectedClient, setSelectedClient] = useState<ClientB2B | null>(null);
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
+    []
+  );
 
   const [invoiceDate, setInvoiceDate] = useState<string>("");
 
@@ -110,31 +112,50 @@ const CreateOrderB2B: React.FC = () => {
 
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [notifyMessage, setNotifyMessage] = useState<string>("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
+  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">(
+    "success"
+  );
 
   /* ------------------------------------------
-     LOAD DATA
+     LOAD DATA  (MODIFIÉ POUR STOCK SHOPIFY)
   ------------------------------------------ */
 
   const loadData = async (): Promise<void> => {
     try {
       setLoading(true);
 
+      // 1️⃣ Clients
       const resClients = await axios.get<ClientB2B[]>(
         `${import.meta.env.VITE_API_URL}client-b2b`
       );
 
+      // 2️⃣ Produits B2B
       const resProducts = await axios.get<ProductB2B[]>(
         `${import.meta.env.VITE_API_URL}product-b2b`
       );
 
-      const withStock = resProducts.data.map<ProductB2BWithStock>((p) => ({
-        ...p,
-        inventory: 999,
-      }));
+      // 3️⃣ Stock Shopify variants
+      const resInventory = await axios.get<
+        { variant_id: number; inventory_quantity: number }[]
+      >(`${import.meta.env.VITE_API_URL}shopify/activeVariantsInventoryLevel`);
+
+      const inventoryMap = new Map(
+        resInventory.data.map((i) => [
+          String(i.variant_id),
+          i.inventory_quantity,
+        ])
+      );
+
+      // 4️⃣ Merge stock
+      const productsWithStock: ProductB2BWithStock[] = resProducts.data.map(
+        (p) => ({
+          ...p,
+          inventory: inventoryMap.get(String(p.variant_id)) ?? 0,
+        })
+      );
 
       setClients(resClients.data);
-      setProducts(withStock);
+      setProducts(productsWithStock);
     } catch {
       setNotifyMessage("Failed to load data.");
       setNotifyStatus("error");
@@ -152,7 +173,9 @@ const CreateOrderB2B: React.FC = () => {
      GET NEXT INVOICE NUMBER
   ------------------------------------------ */
 
-  const getNextInvoiceNumber = async (effectiveDate: string): Promise<string> => {
+  const getNextInvoiceNumber = async (
+    effectiveDate: string
+  ): Promise<string> => {
     const res = await axios.get<InvoiceNumberResponse>(
       `${import.meta.env.VITE_API_URL}invoices/next-number`,
       { params: { effectiveDate } }
@@ -170,9 +193,7 @@ const CreateOrderB2B: React.FC = () => {
     if (existing) {
       setSelectedProducts((prev) =>
         prev.map((p) =>
-          p.product.id === product.id
-            ? { ...p, quantity: p.quantity + 1 }
-            : p
+          p.product.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
         )
       );
       return;
@@ -240,11 +261,12 @@ const CreateOrderB2B: React.FC = () => {
 
       if (!selectedClient) throw new Error("Please select a client.");
       if (!invoiceDate) throw new Error("Please select an invoice date.");
-      if (selectedProducts.length === 0) throw new Error("Please add products.");
+      if (selectedProducts.length === 0)
+        throw new Error("Please add products.");
 
       const { pdfBlob, invoiceNumber } = await generateInvoicePdfBlob();
 
-      // Upload to Drive
+      // Upload PDF to Drive
       const formData = new FormData();
       formData.append(
         "file",
@@ -421,6 +443,8 @@ const CreateOrderB2B: React.FC = () => {
                 mb: 2,
                 borderRadius: 2,
                 border: "1px solid #eee",
+                opacity: p.inventory === 0 ? 0.5 : 1, // 🔥 grise si stock 0
+                pointerEvents: p.inventory === 0 ? "none" : "auto", // 🔥 empêche clic global
                 transition: "0.2s",
                 "&:hover": {
                   borderColor: "#ccc",
@@ -436,14 +460,19 @@ const CreateOrderB2B: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   Price: <strong>{p.price_ht} DT</strong>
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Stock: {p.inventory}
+
+                <Typography
+                  variant="body2"
+                  color={p.inventory === 0 ? "error" : "text.secondary"}
+                >
+                  {p.inventory === 0 ? "Out of stock" : `Stock: ${p.inventory}`}
                 </Typography>
 
                 <Button
                   variant="contained"
                   size="small"
                   sx={{ mt: 1 }}
+                  disabled={p.inventory === 0} // 🔥 empêchera d’ajouter
                   onClick={() => handleAddProduct(p)}
                 >
                   Add

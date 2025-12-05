@@ -62,6 +62,7 @@ interface OrderB2B {
   total_ht: string;
   total_ttc: string;
   created_at: string;
+  shopify_order_id?: string | null;
 
   status: OrderB2BStatus;
   invoice_number?: string | null;
@@ -523,7 +524,10 @@ const ClientOrderHistory: React.FC = () => {
                     <strong>Invoice #:</strong>{" "}
                     {selectedOrder.invoice_number || "N/A"}
                   </Typography>
-
+                   <Typography>
+                    <strong>Shopify Order ID #:</strong>{" "}
+                    {selectedOrder.shopify_order_id || "N/A"}
+                  </Typography>
                   <Typography>
                     <strong>Invoice Date:</strong>{" "}
                     {selectedOrder.invoice_date
