@@ -68,6 +68,7 @@ interface CreateOrderPayload {
   is_paid: boolean;
   withholding_enabled: boolean;
   items: CreateOrderItemPayload[];
+  comment?: string; // 🔥 optionnel
 }
 
 interface InvoiceNumberResponse {
@@ -99,13 +100,12 @@ const CreateOrderB2B: React.FC = () => {
   const [searchProduct, setSearchProduct] = useState<string>("");
 
   const [selectedClient, setSelectedClient] = useState<ClientB2B | null>(null);
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
-    []
-  );
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
 
   const [invoiceDate, setInvoiceDate] = useState<string>("");
-
   const [withholdingEnabled, setWithholdingEnabled] = useState<boolean>(false);
+
+  const [comment, setComment] = useState<string>(""); // 🔥 commentaire
 
   const [loading, setLoading] = useState<boolean>(true);
   const [creating, setCreating] = useState<boolean>(false);
@@ -283,7 +283,7 @@ const CreateOrderB2B: React.FC = () => {
 
       const { url } = depositRes.data;
 
-      const payload: CreateOrderPayload = {
+      const basePayload: CreateOrderPayload = {
         client_id: selectedClient.id,
         status: "CREATED",
         invoice_number: invoiceNumber,
@@ -299,6 +299,13 @@ const CreateOrderB2B: React.FC = () => {
         })),
       };
 
+      const trimmedComment = comment.trim();
+
+      // 🔥 Ajouter comment UNIQUEMENT si non vide
+      const payload: CreateOrderPayload = trimmedComment
+        ? { ...basePayload, comment: trimmedComment }
+        : basePayload;
+
       await axios.post(`${import.meta.env.VITE_API_URL}order-b2b`, payload);
 
       setNotifyMessage("Order created successfully!");
@@ -309,6 +316,7 @@ const CreateOrderB2B: React.FC = () => {
       setSelectedClient(null);
       setInvoiceDate("");
       setWithholdingEnabled(false);
+      setComment(""); // reset commentaire
     } catch (err: unknown) {
       let errorMessage = "Failed to create order.";
 
@@ -448,8 +456,8 @@ const CreateOrderB2B: React.FC = () => {
                 mb: 2,
                 borderRadius: 2,
                 border: "1px solid #eee",
-                opacity: p.inventory === 0 ? 0.5 : 1, // 🔥 grise si stock 0
-                pointerEvents: p.inventory === 0 ? "none" : "auto", // 🔥 empêche clic global
+                opacity: p.inventory === 0 ? 0.5 : 1,
+                pointerEvents: p.inventory === 0 ? "none" : "auto",
                 transition: "0.2s",
                 "&:hover": {
                   borderColor: "#ccc",
@@ -477,7 +485,7 @@ const CreateOrderB2B: React.FC = () => {
                   variant="contained"
                   size="small"
                   sx={{ mt: 1 }}
-                  disabled={p.inventory === 0} // 🔥 empêchera d’ajouter
+                  disabled={p.inventory === 0}
                   onClick={() => handleAddProduct(p)}
                 >
                   Add
@@ -561,6 +569,17 @@ const CreateOrderB2B: React.FC = () => {
             {withholdingEnabled ? "Withholding Enabled" : "Enable Withholding"}
           </Button>
         </Box>
+
+        {/* COMMENT */}
+        <TextField
+          fullWidth
+          label="Comment (optional)"
+          multiline
+          rows={3}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          sx={{ mb: 3 }}
+        />
 
         <Divider sx={{ my: 2 }} />
 
