@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// CreateOrderB2B.tsx
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
   Box,
@@ -13,6 +14,10 @@ import {
   Snackbar,
   SnackbarContent,
   IconButton,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -68,7 +73,10 @@ interface CreateOrderPayload {
   is_paid: boolean;
   withholding_enabled: boolean;
   items: CreateOrderItemPayload[];
-  comment?: string; // 🔥 optionnel
+  comment?: string;
+
+  // ✅ total promo (somme TTC de toutes les promos + pallier)
+  promotion_amount?: number;
 }
 
 interface InvoiceNumberResponse {
@@ -83,6 +91,17 @@ interface InvoicePdfResult {
   pdfBlob: Blob;
   invoiceNumber: string;
 }
+
+type PromoLine = { title: string; amount: string }; // amount string for TextField
+
+/* ------------------------------------------
+   UTILS
+------------------------------------------ */
+
+const round2 = (n: number) =>
+  Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+const clamp0 = (n: number) => (Number.isFinite(n) ? Math.max(0, n) : 0);
 
 /* ------------------------------------------
    COMPONENT
@@ -100,12 +119,23 @@ const CreateOrderB2B: React.FC = () => {
   const [searchProduct, setSearchProduct] = useState<string>("");
 
   const [selectedClient, setSelectedClient] = useState<ClientB2B | null>(null);
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
+    []
+  );
 
   const [invoiceDate, setInvoiceDate] = useState<string>("");
-  const [withholdingEnabled, setWithholdingEnabled] = useState<boolean>(false);
+  const [withholdingEnabled, setWithholdingEnabled] =
+    useState<boolean>(false);
 
-  const [comment, setComment] = useState<string>(""); // 🔥 commentaire
+  const [comment, setComment] = useState<string>("");
+
+  // ✅ NEW : plusieurs promos fixes (affichage facture only, PAS envoyé au back en détail)
+  const [promoLines, setPromoLines] = useState<PromoLine[]>([
+    { title: "", amount: "" },
+  ]);
+
+  // ✅ Promo 2 : pallier (0 | 3% | 4% | 6%)
+  const [tierPromoRate, setTierPromoRate] = useState<0 | 0.03 | 0.04 | 0.06>(0);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [creating, setCreating] = useState<boolean>(false);
@@ -117,24 +147,21 @@ const CreateOrderB2B: React.FC = () => {
   );
 
   /* ------------------------------------------
-     LOAD DATA  (MODIFIÉ POUR STOCK SHOPIFY)
+     LOAD DATA
   ------------------------------------------ */
 
   const loadData = async (): Promise<void> => {
     try {
       setLoading(true);
 
-      // 1️⃣ Clients
       const resClients = await axios.get<ClientB2B[]>(
         `${import.meta.env.VITE_API_URL}client-b2b`
       );
 
-      // 2️⃣ Produits B2B
       const resProducts = await axios.get<ProductB2B[]>(
         `${import.meta.env.VITE_API_URL}product-b2b`
       );
 
-      // 3️⃣ Stock Shopify variants
       const resInventory = await axios.get<
         { variant_id: number; inventory_quantity: number }[]
       >(`${import.meta.env.VITE_API_URL}shopify/activeVariantsInventoryLevel`);
@@ -146,7 +173,6 @@ const CreateOrderB2B: React.FC = () => {
         ])
       );
 
-      // 4️⃣ Merge stock
       const productsWithStock: ProductB2BWithStock[] = resProducts.data.map(
         (p) => ({
           ...p,
@@ -182,6 +208,77 @@ const CreateOrderB2B: React.FC = () => {
     );
     return res.data.invoiceNumber;
   };
+
+  /* ------------------------------------------
+     PROMO LINES (UI helpers)
+  ------------------------------------------ */
+
+  const updatePromoLine = (index: number, patch: Partial<PromoLine>) => {
+    setPromoLines((prev) =>
+      prev.map((l, i) => (i === index ? { ...l, ...patch } : l))
+    );
+  };
+
+  const addPromoLine = () => {
+    setPromoLines((prev) => [...prev, { title: "", amount: "" }]);
+  };
+
+  const removePromoLine = (index: number) => {
+    setPromoLines((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /* ------------------------------------------
+     CART TOTALS (TVA FIXE 19%)
+     ✅ pallier appliqué APRES promos fixes
+  ------------------------------------------ */
+
+  const totals = useMemo(() => {
+    const totalHT = selectedProducts.reduce(
+      (acc, item) =>
+        acc +
+        (Number(item.product.price_ht) || 0) * (item.quantity || 0),
+      0
+    );
+
+    const tva = totalHT * 0.19;
+    const totalTTC = totalHT + tva;
+
+    // ✅ somme des promos fixes (TTC)
+    const promoFixed = round2(
+      promoLines.reduce((sum, l) => sum + clamp0(Number(l.amount || 0)), 0)
+    );
+
+    const totalAfterFixed = clamp0(totalTTC - promoFixed);
+
+    // ✅ promo pallier sur le TTC APRES promos fixes
+    const promoTier = round2(totalAfterFixed * (tierPromoRate || 0));
+
+    const totalPromo = round2(promoFixed + promoTier);
+    const totalAfterPromo = clamp0(totalTTC - totalPromo);
+
+    // ✅ détails propres pour la facture (on garde celles qui ont un montant > 0)
+    const fixedPromosForInvoice = promoLines
+      .map((l) => ({
+        title: (l.title || "").trim(),
+        amount: round2(clamp0(Number(l.amount || 0))),
+      }))
+      .filter((l) => l.amount > 0);
+
+    return {
+      totalHT: round2(totalHT),
+      tva: round2(tva),
+      totalTTC: round2(totalTTC),
+
+      promoFixed: promoFixed,
+      fixedPromosForInvoice,
+
+      tierRate: tierPromoRate,
+      promoTier: round2(promoTier),
+
+      totalPromo: round2(totalPromo),
+      totalAfterPromo: round2(totalAfterPromo),
+    };
+  }, [selectedProducts, promoLines, tierPromoRate]);
 
   /* ------------------------------------------
      ADD / UPDATE / REMOVE PRODUCT
@@ -220,6 +317,36 @@ const CreateOrderB2B: React.FC = () => {
   const clearCart = (): void => setSelectedProducts([]);
 
   /* ------------------------------------------
+     PROMO HELPERS (SAFE)
+     ✅ retourne totalPromoAmount (somme TTC)
+     ✅ si pas de promo => null
+  ------------------------------------------ */
+
+  const getPromotionTotalAmount = (): number | null => {
+    const allowedRates = new Set([0, 0.03, 0.04, 0.06]);
+    if (!allowedRates.has(tierPromoRate)) {
+      throw new Error("Invalid tier promo rate.");
+    }
+
+    if (totals.promoFixed > totals.totalTTC) {
+      throw new Error(
+        `Promotion amount must be <= invoice total (${totals.totalTTC.toFixed(
+          2
+        )} DT).`
+      );
+    }
+
+    const totalPromo = round2(totals.totalPromo);
+
+    if (totalPromo <= 0) return null;
+    if (totalPromo > totals.totalTTC) {
+      throw new Error("Total promotion must be <= invoice total.");
+    }
+
+    return totalPromo;
+  };
+
+  /* ------------------------------------------
      GENERATE PDF
   ------------------------------------------ */
 
@@ -230,6 +357,7 @@ const CreateOrderB2B: React.FC = () => {
       throw new Error("Please add at least one product.");
 
     const invoiceNumber = await getNextInvoiceNumber(invoiceDate);
+    const totalPromoAmount = getPromotionTotalAmount();
 
     const productsForInvoice = selectedProducts.map((item) => ({
       name: item.product.name,
@@ -243,11 +371,20 @@ const CreateOrderB2B: React.FC = () => {
       selectedClient,
       productsForInvoice,
       invoiceNumber,
-      invoiceDate
+      invoiceDate,
+      {
+        totalPromoAmount: totalPromoAmount ?? 0,
+
+        // ✅ détails pour la facture
+        promoFixedAmount: totals.promoFixed,
+        fixedPromotions: totals.fixedPromosForInvoice,
+
+        tierRate: totals.tierRate,
+        promoTierAmount: totals.promoTier,
+      }
     );
 
     const pdfBlob = (await html2pdf().from(html).outputPdf("blob")) as Blob;
-
     return { pdfBlob, invoiceNumber };
   };
 
@@ -264,6 +401,7 @@ const CreateOrderB2B: React.FC = () => {
       if (selectedProducts.length === 0)
         throw new Error("Please add products.");
 
+      const totalPromoAmount = getPromotionTotalAmount();
       const { pdfBlob, invoiceNumber } = await generateInvoicePdfBlob();
 
       // Upload PDF to Drive
@@ -301,10 +439,17 @@ const CreateOrderB2B: React.FC = () => {
 
       const trimmedComment = comment.trim();
 
-      // 🔥 Ajouter comment UNIQUEMENT si non vide
-      const payload: CreateOrderPayload = trimmedComment
+      let payload: CreateOrderPayload = trimmedComment
         ? { ...basePayload, comment: trimmedComment }
         : basePayload;
+
+      // ✅ back = juste le total TTC des promos
+      if (totalPromoAmount) {
+        payload = {
+          ...payload,
+          promotion_amount: totalPromoAmount,
+        };
+      }
 
       await axios.post(`${import.meta.env.VITE_API_URL}order-b2b`, payload);
 
@@ -316,7 +461,11 @@ const CreateOrderB2B: React.FC = () => {
       setSelectedClient(null);
       setInvoiceDate("");
       setWithholdingEnabled(false);
-      setComment(""); // reset commentaire
+      setComment("");
+
+      // ✅ reset promos
+      setPromoLines([{ title: "", amount: "" }]);
+      setTierPromoRate(0);
     } catch (err: unknown) {
       let errorMessage = "Failed to create order.";
 
@@ -346,6 +495,8 @@ const CreateOrderB2B: React.FC = () => {
       </Box>
     );
   }
+
+  const promoFixedTooHigh = totals.promoFixed > totals.totalTTC;
 
   return (
     <Box sx={{ display: "flex", gap: 3, p: 2 }}>
@@ -570,6 +721,88 @@ const CreateOrderB2B: React.FC = () => {
           </Button>
         </Box>
 
+        {/* ✅ PROMOTIONS (MULTI) */}
+        <Box
+          sx={{
+            background: "#ffffff",
+            borderRadius: 2,
+            border: "1px solid #eee",
+            p: 2,
+            mb: 3,
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+            Promotions (fixed)
+          </Typography>
+
+          {promoLines.map((line, index) => (
+            <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
+              <TextField
+                fullWidth
+                label="Title"
+                value={line.title}
+                onChange={(e) => updatePromoLine(index, { title: e.target.value })}
+                placeholder="Ex: geste commercial"
+              />
+              <TextField
+                label="Amount (DT)"
+                type="number"
+                value={line.amount}
+                onChange={(e) => updatePromoLine(index, { amount: e.target.value })}
+                inputProps={{ min: 0, step: "0.01" }}
+                sx={{ width: 160 }}
+              />
+              <IconButton
+                color="error"
+                onClick={() => removePromoLine(index)}
+                disabled={promoLines.length === 1}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          ))}
+
+          <Button variant="outlined" onClick={addPromoLine} sx={{ mt: 1 }}>
+            + Add promotion
+          </Button>
+
+          {promoFixedTooHigh && (
+            <Typography sx={{ mt: 1, color: "error.main" }}>
+              Total fixed promos must be &lt;= total TTC ({totals.totalTTC.toFixed(2)} DT)
+            </Typography>
+          )}
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Promo pallier */}
+          <FormControl fullWidth>
+            <InputLabel id="tier-promo-label">
+              Promo pallier (après promos fixes)
+            </InputLabel>
+            <Select
+              labelId="tier-promo-label"
+              label="Promo pallier (après promos fixes)"
+              value={tierPromoRate}
+              onChange={(e) =>
+                setTierPromoRate(e.target.value as 0 | 0.03 | 0.04 | 0.06)
+              }
+            >
+              <MenuItem value={0}>Aucune</MenuItem>
+              <MenuItem value={0.03}>3%</MenuItem>
+              <MenuItem value={0.04}>4%</MenuItem>
+              <MenuItem value={0.06}>6%</MenuItem>
+            </Select>
+          </FormControl>
+
+          {totals.totalPromo > 0 && !promoFixedTooHigh && (
+            <Typography sx={{ mt: 1, color: "text.secondary" }}>
+              Promo totale: <strong>-{totals.totalPromo.toFixed(2)} DT</strong>
+              {totals.promoFixed > 0 && <> (fixes: -{totals.promoFixed.toFixed(2)} DT)</>}
+              {totals.promoTier > 0 && <> (pallier: -{totals.promoTier.toFixed(2)} DT)</>}
+            </Typography>
+          )}
+        </Box>
+
         {/* COMMENT */}
         <TextField
           fullWidth
@@ -622,6 +855,38 @@ const CreateOrderB2B: React.FC = () => {
             </CardContent>
           </Card>
         ))}
+
+        {/* QUICK TOTAL PREVIEW */}
+        <Box
+          sx={{
+            mt: 2,
+            mb: 1,
+            p: 1.5,
+            background: "#fff",
+            border: "1px solid #eee",
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2">
+            Total HT: <strong>{totals.totalHT.toFixed(2)} DT</strong>
+          </Typography>
+          <Typography variant="body2">
+            TVA 19%: <strong>{totals.tva.toFixed(2)} DT</strong>
+          </Typography>
+          <Typography variant="body2">
+            Total TTC: <strong>{totals.totalTTC.toFixed(2)} DT</strong>
+          </Typography>
+
+          {totals.totalPromo > 0 && !promoFixedTooHigh && (
+            <Typography variant="body2">
+              Promo totale: <strong>-{totals.totalPromo.toFixed(2)} DT</strong>
+            </Typography>
+          )}
+
+          <Typography variant="body2" sx={{ mt: 0.5 }}>
+            Total à payer: <strong>{totals.totalAfterPromo.toFixed(2)} DT</strong>
+          </Typography>
+        </Box>
 
         {/* CREATE ORDER BTN */}
         <Button
