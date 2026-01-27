@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
@@ -551,8 +552,6 @@ const B2BOrdersStats: React.FC = () => {
   }, [withholding, search]);
 
   const kpiUnpaidCount = filteredUnpaid.length;
-  const kpiWithholdingCount = filteredWithholding.length;
-
   const monthlyMaxTTC = useMemo(() => {
     if (!monthly.length) return 0;
     return Math.max(...monthly.map((m) => m.totalTTC));
