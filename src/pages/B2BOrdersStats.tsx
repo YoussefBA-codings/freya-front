@@ -133,13 +133,14 @@ type AgingRow = {
 
 const apiBase = `${import.meta.env.VITE_API_URL}order-b2b`;
 
+// ✅ Currency = Tunisian Dinar (TND)
 const fmtMoney = (n: number) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
+  new Intl.NumberFormat("fr-TN", { style: "currency", currency: "TND" }).format(
     Number.isFinite(n) ? n : 0
   );
 
 const fmtInt = (n: number) =>
-  new Intl.NumberFormat("fr-FR").format(Number.isFinite(n) ? n : 0);
+  new Intl.NumberFormat("fr-TN").format(Number.isFinite(n) ? n : 0);
 
 const fmtMonthLabel = (month: string) => {
   const [y, m] = month.split("-").map((x) => Number(x));
@@ -180,7 +181,6 @@ const getInitials = (name?: string | null) => {
 };
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
-
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const getMonthToTodayRange = () => {
@@ -374,7 +374,7 @@ const PillBar: React.FC<{
                 />
               </Box>
 
-              <Box sx={{ minWidth: 110, textAlign: "right" }}>
+              <Box sx={{ minWidth: 120, textAlign: "right" }}>
                 <Typography variant="body2" sx={{ fontWeight: 800 }}>
                   {formatValue ? formatValue(it.value) : fmtInt(it.value)}
                 </Typography>
@@ -482,11 +482,12 @@ const B2BOrdersStats: React.FC = () => {
         axios.get<MonthlyRow[]>(`${apiBase}/stats/monthly`, {
           params: { ...paramsBase, paidOnly: String(paidOnly) },
         }),
-        axios.get<UnpaidRow[]>(`${apiBase}/stats/unpaid`, { params: paramsBase }),
-        axios.get<WithholdingRow[]>(
-          `${apiBase}/stats/withholding-pending`,
-          { params: paramsBase }
-        ),
+        axios.get<UnpaidRow[]>(`${apiBase}/stats/unpaid`, {
+          params: paramsBase,
+        }),
+        axios.get<WithholdingRow[]>(`${apiBase}/stats/withholding-pending`, {
+          params: paramsBase,
+        }),
         axios.get<TopItemRow[]>(`${apiBase}/stats/top-items`, {
           params: { ...paramsBase, limit: String(limit) },
         }),
@@ -524,7 +525,6 @@ const B2BOrdersStats: React.FC = () => {
   };
 
   useEffect(() => {
-    // default already = this month => load
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -552,6 +552,7 @@ const B2BOrdersStats: React.FC = () => {
   }, [withholding, search]);
 
   const kpiUnpaidCount = filteredUnpaid.length;
+
   const monthlyMaxTTC = useMemo(() => {
     if (!monthly.length) return 0;
     return Math.max(...monthly.map((m) => m.totalTTC));
@@ -715,9 +716,7 @@ const B2BOrdersStats: React.FC = () => {
               <FormControl fullWidth size="small">
                 <Select
                   value={quickRange}
-                  onChange={(e) =>
-                    applyQuickRange(e.target.value as any)
-                  }
+                  onChange={(e) => applyQuickRange(e.target.value as any)}
                   displayEmpty
                 >
                   <MenuItem value="thisMonth">This month (default)</MenuItem>
@@ -830,7 +829,7 @@ const B2BOrdersStats: React.FC = () => {
                       />
                     </Box>
 
-                    <Box sx={{ minWidth: 120, textAlign: "right" }}>
+                    <Box sx={{ minWidth: 140, textAlign: "right" }}>
                       <Typography variant="body2" sx={{ fontWeight: 900 }}>
                         {fmtMoney(m.totalTTC)}
                       </Typography>
@@ -854,7 +853,11 @@ const B2BOrdersStats: React.FC = () => {
             title="Monthly trend (details)"
             subtitle="Table complète mensuelle"
             right={
-              <Chip size="small" variant="outlined" label={`${monthly.length} rows`} />
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`${monthly.length} rows`}
+              />
             }
           >
             <DenseTable
@@ -874,7 +877,9 @@ const B2BOrdersStats: React.FC = () => {
                   <TableCell align="right" sx={{ fontWeight: 800 }}>
                     {fmtMoney(r.totalTTC)}
                   </TableCell>
-                  <TableCell align="right">{fmtMoney(r.totalPromoTTC)}</TableCell>
+                  <TableCell align="right">
+                    {fmtMoney(r.totalPromoTTC)}
+                  </TableCell>
                 </TableRow>
               ))}
             </DenseTable>
@@ -1023,7 +1028,13 @@ const B2BOrdersStats: React.FC = () => {
               {topClients.map((r) => (
                 <TableRow key={r.client_id}>
                   <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.2,
+                      }}
+                    >
                       <Avatar
                         sx={{
                           width: 34,
@@ -1067,7 +1078,11 @@ const B2BOrdersStats: React.FC = () => {
             title="Unpaid orders"
             subtitle="À relancer (impayés)"
             right={
-              <Chip color="warning" variant="outlined" label={`${filteredUnpaid.length}`} />
+              <Chip
+                color="warning"
+                variant="outlined"
+                label={`${filteredUnpaid.length}`}
+              />
             }
           >
             <DenseTable
@@ -1096,7 +1111,9 @@ const B2BOrdersStats: React.FC = () => {
                       {o.client.name}
                     </Typography>
                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                      {o.client.responsable_phone || o.client.responsable_email || ""}
+                      {o.client.responsable_phone ||
+                        o.client.responsable_email ||
+                        ""}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ fontWeight: 900 }}>
@@ -1156,7 +1173,9 @@ const B2BOrdersStats: React.FC = () => {
                       {o.client.name}
                     </Typography>
                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                      {o.client.responsable_phone || o.client.responsable_email || ""}
+                      {o.client.responsable_phone ||
+                        o.client.responsable_email ||
+                        ""}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ fontWeight: 900 }}>

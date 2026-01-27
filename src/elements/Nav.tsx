@@ -59,11 +59,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
       </ListSubheader>
 
       {/* Invoice Management */}
-      <ListItem
-        component={Link}
-        to="/all-invoices"
-        onClick={handleDrawerToggle}
-      >
+      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle}>
         <Tooltip title="Invoice Management" placement="right" arrow>
           <ListItemIcon>
             <InvoiceIcon color="action" />
@@ -97,11 +93,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
       </ListItem>
 
       {/* Stock Status */}
-      <ListItem
-        component={Link}
-        to="/stock/status"
-        onClick={handleDrawerToggle}
-      >
+      <ListItem component={Link} to="/stock/status" onClick={handleDrawerToggle}>
         <Tooltip
           title="Freya Out-of-Stock Monitoring Dashboard"
           placement="right"
@@ -128,7 +120,6 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         B2B
       </ListSubheader>
 
-      {/* Create Customer B2B */}
       {/* Deposit B2B Invoice */}
       <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle}>
         <Tooltip title="Deposit B2B Invoice" placement="right" arrow>
@@ -139,6 +130,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         <ListItemText primary="Deposit Invoice" />
       </ListItem>
 
+      {/* Create Customer */}
       <ListItem
         component={Link}
         to="/b2b/customers/create"
@@ -151,11 +143,9 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Tooltip>
         <ListItemText primary="Create Customer" />
       </ListItem>
-      <ListItem
-        component={Link}
-        to="/b2b/products"
-        onClick={handleDrawerToggle}
-      >
+
+      {/* Manage Products */}
+      <ListItem component={Link} to="/b2b/products" onClick={handleDrawerToggle}>
         <Tooltip title="Manage Products" placement="right" arrow>
           <ListItemIcon>
             <InventoryIcon color="action" />
@@ -163,6 +153,8 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Tooltip>
         <ListItemText primary="Manage Products" />
       </ListItem>
+
+      {/* Create Order */}
       <ListItem
         component={Link}
         to="/b2b/orders/create"
@@ -175,6 +167,8 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Tooltip>
         <ListItemText primary="Create Order" />
       </ListItem>
+
+      {/* Orders History */}
       <ListItem
         component={Link}
         to="/b2b/orders/history"
@@ -187,15 +181,26 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Tooltip>
         <ListItemText primary="Orders History" />
       </ListItem>
+
+      {/* ✅ B2B Stats (NEW) */}
+      <ListItem
+        component={Link}
+        to="/b2b/orders/stats"
+        onClick={handleDrawerToggle}
+      >
+        <Tooltip title="B2B Orders Statistics" placement="right" arrow>
+          <ListItemIcon>
+            <BarChartIcon color="action" />
+          </ListItemIcon>
+        </Tooltip>
+        <ListItemText primary="B2B Stats" />
+      </ListItem>
     </List>
   );
 
   return (
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      <AppBar
-        position="fixed"
-        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-      >
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           {isMobile && (
             <IconButton
@@ -212,11 +217,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
             variant="h6"
             component={Link}
             to="/"
-            sx={{
-              textDecoration: "none",
-              color: "inherit",
-              flexGrow: 1,
-            }}
+            sx={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}
           >
             Freya Hub
           </Typography>
@@ -233,10 +234,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         onClose={handleDrawerToggle}
         sx={{
           display: { xs: isMobile ? "block" : "none", md: "block" },
-          "& .MuiDrawer-paper": {
-            width: 240,
-            boxSizing: "border-box",
-          },
+          "& .MuiDrawer-paper": { width: 240, boxSizing: "border-box" },
         }}
       >
         <Toolbar />
