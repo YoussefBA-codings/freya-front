@@ -24,6 +24,7 @@ import B2BOrderHistorySelectClient from "./pages/B2BOrderHistorySelectClient";
 // 👉 IMPORT MUI X Date Pickers (OBLIGATOIRE)
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import B2BOrdersStats from "./pages/B2BOrdersStats";
 
 const queryClient = new QueryClient();
 
@@ -167,6 +168,16 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <PrivateRoute>
                   <Navbar>
                     <B2BOrderHistorySelectClient />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+             <Route
+              path="/b2b/orders/stats"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <B2BOrdersStats />
                   </Navbar>
                 </PrivateRoute>
               }
