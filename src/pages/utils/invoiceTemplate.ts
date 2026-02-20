@@ -67,7 +67,12 @@ export function generateInvoiceHTML(
   // ✅ total promo (somme) + cap
   const promoTotalRaw = clamp0(Number(promotion?.totalPromoAmount ?? 0));
   const appliedPromo = Math.min(promoTotalRaw, totalTTCBeforePromo);
-  const totalTTC = Math.max(0, totalTTCBeforePromo - appliedPromo);
+  const totalTTCBeforeStamp = Math.max(0, totalTTCBeforePromo - appliedPromo);
+
+  // ✅ Timbre fiscal (fixe 1 DT / facture)
+  const TIMBRE_FISCAL = 1;
+  const timbreFiscal = round2(clamp0(TIMBRE_FISCAL));
+  const totalTTC = round2(totalTTCBeforeStamp + timbreFiscal);
 
   // ✅ détails optionnels (affichage)
   const promoFixed = clamp0(Number(promotion?.promoFixedAmount ?? 0));
@@ -255,6 +260,12 @@ export function generateInvoiceHTML(
 
       ${promoRow}
 
+      <!-- ✅ Timbre fiscal -->
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #EEE;">
+        <span>Timbre fiscal</span>
+        <strong>${timbreFiscal.toFixed(2)}</strong>
+      </div>
+
       <div style="
         display:flex;
         justify-content:space-between;
@@ -265,8 +276,8 @@ export function generateInvoiceHTML(
         font-weight:700;
         font-size:16px;
       ">
-        <span>Total TTC</span>
-        <span>${round2(totalTTC).toFixed(2)}</span>
+        <span>Total TTC à payer</span>
+        <span>${totalTTC.toFixed(2)}</span>
       </div>
     </div>
   </div>
@@ -288,4 +299,3 @@ export function generateInvoiceHTML(
 
 </div>`;
 }
-
