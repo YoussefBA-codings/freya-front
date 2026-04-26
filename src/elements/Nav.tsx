@@ -81,17 +81,6 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Tooltip>
         <ListItemText primary="Droppex Invoices" />
       </ListItem>
-
-      {/* Price Comparison */}
-      <ListItem component={Link} to="/statistics" onClick={handleDrawerToggle}>
-        <Tooltip title="Compare Freya vs TunisiaMarka" placement="right" arrow>
-          <ListItemIcon>
-            <BarChartIcon color="action" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Price Comparison" />
-      </ListItem>
-
       {/* Stock Status */}
       <ListItem component={Link} to="/stock/status" onClick={handleDrawerToggle}>
         <Tooltip

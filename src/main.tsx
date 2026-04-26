@@ -13,8 +13,6 @@ import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DroppexInvoices } from "./epic/invoices/DroppexInvoices";
 import { B2BInvoiceDeposit } from "./epic/invoices/B2BInvoiceUploader";
-import CompareStats from "./pages/CompareStats";
-import FreyaOutOfStockDashboard from "./pages/FreyaOutOfStockDashboard";
 import CreateCustomerB2B from "./pages/CreateCustomerB2B";
 import ProductB2B from "./pages/ProductB2B";
 import CreateOrderB2B from "./pages/CreateOrderB2B";
@@ -25,6 +23,7 @@ import B2BOrderHistorySelectClient from "./pages/B2BOrderHistorySelectClient";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import B2BOrdersStats from "./pages/B2BOrdersStats";
+import FreyaSalesDashboard from "./pages/FreyaSalesDashboard";
 
 const queryClient = new QueryClient();
 
@@ -68,23 +67,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               element={
                 <PrivateRoute>
                   <Navbar>
-                    <FreyaOutOfStockDashboard />
+                    <FreyaSalesDashboard />
                   </Navbar>
                 </PrivateRoute>
               }
             />
-
-            <Route
-              path="/statistics"
-              element={
-                <PrivateRoute>
-                  <Navbar>
-                    <CompareStats />
-                  </Navbar>
-                </PrivateRoute>
-              }
-            />
-
             <Route
               path="/all-invoices"
               element={
