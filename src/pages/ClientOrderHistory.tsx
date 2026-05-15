@@ -92,23 +92,21 @@ const ClientOrderHistory: React.FC = () => {
   const [client, setClient] = useState<ClientB2B | null>(null);
   const [orders, setOrders] = useState<OrderB2B[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   const [selectedOrder, setSelectedOrder] = useState<OrderB2B | null>(null);
 
-  // Filters
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
-  // Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyStatus, setNotifyStatus] = useState<"success" | "error">(
-    "success"
+    "success",
   );
 
-  // Editable fields
   const [editStatus, setEditStatus] = useState<OrderB2BStatus>("CREATED");
 
   const [editIsPaid, setEditIsPaid] = useState<boolean>(false);
@@ -122,20 +120,16 @@ const ClientOrderHistory: React.FC = () => {
     useState<boolean>(false);
   const [editWithholdingDate, setEditWithholdingDate] = useState<string>("");
 
-  /* ======================================================
-     🔵 LOAD DATA
-  ====================================================== */
-
   const loadData = async () => {
     try {
       setLoading(true);
 
       const clientRes = await axios.get<ClientB2B>(
-        `${import.meta.env.VITE_API_URL}client-b2b/${numericId}`
+        `${import.meta.env.VITE_API_URL}client-b2b/${numericId}`,
       );
 
       const ordersRes = await axios.get<OrderB2B[]>(
-        `${import.meta.env.VITE_API_URL}order-b2b/client/${numericId}`
+        `${import.meta.env.VITE_API_URL}order-b2b/client/${numericId}`,
       );
 
       setClient(clientRes.data);
@@ -154,10 +148,6 @@ const ClientOrderHistory: React.FC = () => {
     loadData();
   }, [numericId]);
 
-  /* ======================================================
-     🔵 STATUS COLORS
-  ====================================================== */
-
   const getStatusColor = (status: OrderB2BStatus) => {
     switch (status) {
       case "CREATED":
@@ -171,23 +161,20 @@ const ClientOrderHistory: React.FC = () => {
     }
   };
 
-  /* ======================================================
-     🔵 FILTERED DATA
-  ====================================================== */
-
   const filteredOrders = useMemo(() => {
     let result = [...orders];
 
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((o) =>
-        o.items.some((item) => item.product.name.toLowerCase().includes(q))
+        o.items.some((item) => item.product.name.toLowerCase().includes(q)),
       );
     }
 
     if (startDate) {
       result = result.filter((o) => new Date(o.created_at) >= startDate);
     }
+
     if (endDate) {
       result = result.filter((o) => new Date(o.created_at) <= endDate);
     }
@@ -195,12 +182,12 @@ const ClientOrderHistory: React.FC = () => {
     if (sortBy === "newest") {
       result.sort(
         (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
     } else if (sortBy === "oldest") {
       result.sort(
         (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       );
     } else if (sortBy === "amount") {
       result.sort((a, b) => Number(b.total_ht) - Number(a.total_ht));
@@ -208,10 +195,6 @@ const ClientOrderHistory: React.FC = () => {
 
     return result;
   }, [orders, search, sortBy, startDate, endDate]);
-
-  /* ======================================================
-     🔵 HANDLERS
-  ====================================================== */
 
   const openOrderDrawer = (order: OrderB2B) => {
     setSelectedOrder(order);
@@ -236,13 +219,45 @@ const ClientOrderHistory: React.FC = () => {
     setSelectedOrder(updated);
   };
 
-  /* --- Save Status --- */
+  const handleDeleteOrder = async () => {
+    if (!selectedOrder) return;
+
+    const confirmed = window.confirm(
+      `Confirmer l’annulation de la commande #${selectedOrder.id} ?\n\nLe stock sera restauré automatiquement sur Shopify.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}order-b2b/${selectedOrder.id}/cancel`,
+      );
+
+      setOrders((prev) => prev.filter((o) => o.id !== selectedOrder.id));
+      setSelectedOrder(null);
+
+      setNotifyMessage("Commande annulée et stock restauré.");
+      setNotifyStatus("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Failed to cancel order:", error);
+      setNotifyMessage("Erreur lors de l’annulation de la commande.");
+      setNotifyStatus("error");
+      setSnackbarOpen(true);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleSaveStatus = async () => {
     if (!selectedOrder) return;
+
     try {
       const res = await axios.patch<OrderB2B>(
         `${import.meta.env.VITE_API_URL}order-b2b/${selectedOrder.id}/status`,
-        { status: editStatus }
+        { status: editStatus },
       );
 
       updateLocalOrder(res.data);
@@ -256,9 +271,9 @@ const ClientOrderHistory: React.FC = () => {
     }
   };
 
-  /* --- Save Payment --- */
   const handleSavePayment = async () => {
     if (!selectedOrder) return;
+
     try {
       const res = await axios.patch<OrderB2B>(
         `${import.meta.env.VITE_API_URL}order-b2b/${selectedOrder.id}/pay`,
@@ -266,7 +281,7 @@ const ClientOrderHistory: React.FC = () => {
           payment_method: editPaymentMethod || null,
           payment_reference: editPaymentReference || null,
           payment_date: editPaymentDate || null,
-        }
+        },
       );
 
       updateLocalOrder(res.data);
@@ -281,7 +296,6 @@ const ClientOrderHistory: React.FC = () => {
     }
   };
 
-  /* --- Save Withholding --- */
   const handleSaveWithholding = async () => {
     if (!selectedOrder) return;
 
@@ -294,7 +308,7 @@ const ClientOrderHistory: React.FC = () => {
           withholding_enabled: editWithholdingEnabled,
           withholding_received: editWithholdingReceived,
           withholding_date: editWithholdingDate || null,
-        }
+        },
       );
 
       updateLocalOrder(res.data);
@@ -307,10 +321,6 @@ const ClientOrderHistory: React.FC = () => {
       setSnackbarOpen(true);
     }
   };
-
-  /* ======================================================
-     🔵 RENDER
-  ====================================================== */
 
   if (loading) {
     return (
@@ -330,15 +340,14 @@ const ClientOrderHistory: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* HEADER */}
       <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
         B2B Orders History
       </Typography>
+
       <Typography variant="subtitle1" sx={{ mb: 4 }}>
         Client: <strong>{client.name}</strong>
       </Typography>
 
-      {/* FILTER BAR */}
       <Box
         sx={{
           display: "flex",
@@ -385,7 +394,6 @@ const ClientOrderHistory: React.FC = () => {
         </FormControl>
       </Box>
 
-      {/* ORDERS TABLE */}
       <TableContainer
         component={Paper}
         sx={{
@@ -426,18 +434,15 @@ const ClientOrderHistory: React.FC = () => {
                 onClick={() => openOrderDrawer(order)}
               >
                 <TableCell>{order.invoice_number}</TableCell>
-
                 <TableCell>
                   {new Date(order.created_at).toLocaleDateString()}
                 </TableCell>
-
                 <TableCell>
                   <Chip
                     label={order.status}
                     color={getStatusColor(order.status)}
                   />
                 </TableCell>
-
                 <TableCell>{Number(order.total_ttc).toFixed(2)} DT</TableCell>
                 <TableCell>{order.is_paid ? "Yes" : "No"}</TableCell>
               </TableRow>
@@ -446,7 +451,6 @@ const ClientOrderHistory: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* DETAILS DRAWER */}
       <Drawer
         anchor="right"
         open={!!selectedOrder}
@@ -469,7 +473,6 @@ const ClientOrderHistory: React.FC = () => {
             gap: 3,
           }}
         >
-          {/* HEADER */}
           <Box
             sx={{
               position: "sticky",
@@ -487,21 +490,13 @@ const ClientOrderHistory: React.FC = () => {
               Order #{selectedOrder?.id}
             </Typography>
 
-            <IconButton
-              onClick={closeDrawer}
-              sx={{
-                color: "grey.600",
-                "&:hover": { backgroundColor: "grey.100", color: "black" },
-              }}
-            >
+            <IconButton onClick={closeDrawer}>
               <CloseIcon />
             </IconButton>
           </Box>
 
-          {/* ORDER SUMMARY */}
           {selectedOrder && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {/* SUMMARY */}
               <Box
                 sx={{
                   background: "#fafafa",
@@ -524,20 +519,21 @@ const ClientOrderHistory: React.FC = () => {
                     <strong>Invoice #:</strong>{" "}
                     {selectedOrder.invoice_number || "N/A"}
                   </Typography>
-                   <Typography>
+
+                  <Typography>
                     <strong>Shopify Order ID #:</strong>{" "}
                     {selectedOrder.shopify_order_id || "N/A"}
                   </Typography>
+
                   <Typography>
                     <strong>Invoice Date:</strong>{" "}
                     {selectedOrder.invoice_date
                       ? new Date(
-                          selectedOrder.invoice_date
+                          selectedOrder.invoice_date,
                         ).toLocaleDateString()
                       : "N/A"}
                   </Typography>
 
-                  {/* 🔵 NEW — Download Invoice */}
                   {selectedOrder.invoice_pdf_url && (
                     <Box sx={{ mt: 2 }}>
                       <Button
@@ -552,10 +548,6 @@ const ClientOrderHistory: React.FC = () => {
                           borderRadius: 2,
                           py: 1,
                           px: 2,
-                          boxShadow: "0px 3px 10px rgba(0,0,0,0.1)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
                         }}
                       >
                         📄 Télécharger la facture
@@ -576,7 +568,40 @@ const ClientOrderHistory: React.FC = () => {
                 </Box>
               </Box>
 
-              {/* STATUS */}
+              <Box
+                sx={{
+                  background: "#fff5f5",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid #ffd6d6",
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 600, mb: 1, color: "error.main" }}
+                >
+                  Annuler la commande
+                </Typography>
+
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 2, color: "text.secondary" }}
+                >
+                  Cette action annulera la commande Shopify sans envoyer d’email
+                  au client et restaurera automatiquement le stock des produits.
+                </Typography>
+
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={handleDeleteOrder}
+                  disabled={deleting}
+                  fullWidth
+                >
+                  {deleting ? "Annulation en cours..." : "Annuler la commande"}
+                </Button>
+              </Box>
+
               <Box
                 sx={{
                   background: "#fafafa",
@@ -611,7 +636,6 @@ const ClientOrderHistory: React.FC = () => {
                 </Button>
               </Box>
 
-              {/* PAYMENT */}
               <Box
                 sx={{
                   background: "#fafafa",
@@ -674,7 +698,6 @@ const ClientOrderHistory: React.FC = () => {
                 </Button>
               </Box>
 
-              {/* WITHHOLDING */}
               <Box
                 sx={{
                   background: "#fafafa",
@@ -730,7 +753,6 @@ const ClientOrderHistory: React.FC = () => {
                 </Button>
               </Box>
 
-              {/* ITEMS */}
               <Box>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                   Items
@@ -766,7 +788,6 @@ const ClientOrderHistory: React.FC = () => {
         </Box>
       </Drawer>
 
-      {/* SNACKBAR */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
