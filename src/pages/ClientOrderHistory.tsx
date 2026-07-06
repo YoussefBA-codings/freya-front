@@ -136,7 +136,7 @@ const ClientOrderHistory: React.FC = () => {
       setOrders(ordersRes.data);
     } catch (error) {
       console.error("Failed to load:", error);
-      setNotifyMessage("Failed to load data.");
+      setNotifyMessage("Échec du chargement des données.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -158,6 +158,19 @@ const ClientOrderHistory: React.FC = () => {
         return "success";
       default:
         return "default";
+    }
+  };
+
+  const getStatusLabel = (status: OrderB2BStatus) => {
+    switch (status) {
+      case "CREATED":
+        return "Créée";
+      case "SHIPPED":
+        return "Expédiée";
+      case "DELIVERED":
+        return "Livrée";
+      default:
+        return status;
     }
   };
 
@@ -261,11 +274,11 @@ const ClientOrderHistory: React.FC = () => {
       );
 
       updateLocalOrder(res.data);
-      setNotifyMessage("Status updated.");
+      setNotifyMessage("Statut mis à jour.");
       setNotifyStatus("success");
       setSnackbarOpen(true);
     } catch {
-      setNotifyMessage("Failed to update status.");
+      setNotifyMessage("Échec de la mise à jour du statut.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     }
@@ -286,11 +299,11 @@ const ClientOrderHistory: React.FC = () => {
 
       updateLocalOrder(res.data);
       setEditIsPaid(true);
-      setNotifyMessage("Payment updated.");
+      setNotifyMessage("Paiement mis à jour.");
       setNotifyStatus("success");
       setSnackbarOpen(true);
     } catch {
-      setNotifyMessage("Failed to update payment.");
+      setNotifyMessage("Échec de la mise à jour du paiement.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     }
@@ -312,11 +325,11 @@ const ClientOrderHistory: React.FC = () => {
       );
 
       updateLocalOrder(res.data);
-      setNotifyMessage("Withholding updated.");
+      setNotifyMessage("Retenue à la source mise à jour.");
       setNotifyStatus("success");
       setSnackbarOpen(true);
     } catch {
-      setNotifyMessage("Failed to update withholding.");
+      setNotifyMessage("Échec de la mise à jour de la retenue à la source.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     }
@@ -333,7 +346,7 @@ const ClientOrderHistory: React.FC = () => {
   if (!client) {
     return (
       <Typography variant="h5" color="error">
-        Client not found.
+        Client introuvable.
       </Typography>
     );
   }
@@ -341,7 +354,7 @@ const ClientOrderHistory: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
-        B2B Orders History
+        Historique des commandes B2B
       </Typography>
 
       <Typography variant="subtitle1" sx={{ mb: 4 }}>
@@ -362,34 +375,34 @@ const ClientOrderHistory: React.FC = () => {
         }}
       >
         <TextField
-          label="Search product"
+          label="Rechercher un produit"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ minWidth: 250 }}
         />
 
         <DatePicker
-          label="Start date"
+          label="Date de début"
           value={startDate}
           onChange={(v) => setStartDate(v)}
         />
 
         <DatePicker
-          label="End date"
+          label="Date de fin"
           value={endDate}
           onChange={(v) => setEndDate(v)}
         />
 
         <FormControl sx={{ minWidth: 160 }}>
-          <InputLabel>Sort by</InputLabel>
+          <InputLabel>Trier par</InputLabel>
           <Select
-            label="Sort by"
+            label="Trier par"
             value={sortBy}
             onChange={(e: SelectChangeEvent) => setSortBy(e.target.value)}
           >
-            <MenuItem value="newest">Newest first</MenuItem>
-            <MenuItem value="oldest">Oldest first</MenuItem>
-            <MenuItem value="amount">Highest amount</MenuItem>
+            <MenuItem value="newest">Plus récent</MenuItem>
+            <MenuItem value="oldest">Plus ancien</MenuItem>
+            <MenuItem value="amount">Montant le plus élevé</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -405,19 +418,19 @@ const ClientOrderHistory: React.FC = () => {
           <TableHead>
             <TableRow sx={{ background: "#f6f8fa" }}>
               <TableCell>
-                <strong>Invoice #</strong>
+                <strong>N° facture</strong>
               </TableCell>
               <TableCell>
                 <strong>Date</strong>
               </TableCell>
               <TableCell>
-                <strong>Status</strong>
+                <strong>Statut</strong>
               </TableCell>
               <TableCell>
                 <strong>Total TTC</strong>
               </TableCell>
               <TableCell>
-                <strong>Paid</strong>
+                <strong>Payé</strong>
               </TableCell>
             </TableRow>
           </TableHead>
@@ -439,12 +452,12 @@ const ClientOrderHistory: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <Chip
-                    label={order.status}
+                    label={getStatusLabel(order.status)}
                     color={getStatusColor(order.status)}
                   />
                 </TableCell>
                 <TableCell>{Number(order.total_ttc).toFixed(2)} DT</TableCell>
-                <TableCell>{order.is_paid ? "Yes" : "No"}</TableCell>
+                <TableCell>{order.is_paid ? "Oui" : "Non"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -487,7 +500,7 @@ const ClientOrderHistory: React.FC = () => {
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Order #{selectedOrder?.id}
+              Commande #{selectedOrder?.id}
             </Typography>
 
             <IconButton onClick={closeDrawer}>
@@ -506,27 +519,27 @@ const ClientOrderHistory: React.FC = () => {
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Summary
+                  Résumé
                 </Typography>
 
                 <Box sx={{ lineHeight: 1.8 }}>
                   <Typography>
-                    <strong>Date:</strong>{" "}
+                    <strong>Date :</strong>{" "}
                     {new Date(selectedOrder.created_at).toLocaleDateString()}
                   </Typography>
 
                   <Typography>
-                    <strong>Invoice #:</strong>{" "}
+                    <strong>N° facture :</strong>{" "}
                     {selectedOrder.invoice_number || "N/A"}
                   </Typography>
 
                   <Typography>
-                    <strong>Shopify Order ID #:</strong>{" "}
+                    <strong>N° commande Shopify :</strong>{" "}
                     {selectedOrder.shopify_order_id || "N/A"}
                   </Typography>
 
                   <Typography>
-                    <strong>Invoice Date:</strong>{" "}
+                    <strong>Date de facture :</strong>{" "}
                     {selectedOrder.invoice_date
                       ? new Date(
                           selectedOrder.invoice_date,
@@ -557,11 +570,11 @@ const ClientOrderHistory: React.FC = () => {
 
                   <Box sx={{ mt: 2 }}>
                     <Typography>
-                      <strong>Total HT:</strong>{" "}
+                      <strong>Total HT :</strong>{" "}
                       {Number(selectedOrder.total_ht).toFixed(2)} DT
                     </Typography>
                     <Typography>
-                      <strong>Total TTC:</strong>{" "}
+                      <strong>Total TTC :</strong>{" "}
                       {Number(selectedOrder.total_ttc).toFixed(2)} DT
                     </Typography>
                   </Box>
@@ -611,7 +624,7 @@ const ClientOrderHistory: React.FC = () => {
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Status
+                  Statut
                 </Typography>
 
                 <Select
@@ -622,9 +635,9 @@ const ClientOrderHistory: React.FC = () => {
                   }
                   sx={{ mb: 2 }}
                 >
-                  <MenuItem value="CREATED">CREATED</MenuItem>
-                  <MenuItem value="SHIPPED">SHIPPED</MenuItem>
-                  <MenuItem value="DELIVERED">DELIVERED</MenuItem>
+                  <MenuItem value="CREATED">Créée</MenuItem>
+                  <MenuItem value="SHIPPED">Expédiée</MenuItem>
+                  <MenuItem value="DELIVERED">Livrée</MenuItem>
                 </Select>
 
                 <Button
@@ -632,7 +645,7 @@ const ClientOrderHistory: React.FC = () => {
                   size="small"
                   onClick={handleSaveStatus}
                 >
-                  Save status
+                  Enregistrer le statut
                 </Button>
               </Box>
 
@@ -645,35 +658,35 @@ const ClientOrderHistory: React.FC = () => {
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Payment
+                  Paiement
                 </Typography>
 
                 <Typography sx={{ mb: 1 }}>
-                  Current status:{" "}
-                  <strong>{selectedOrder.is_paid ? "Paid" : "Not paid"}</strong>
+                  Statut actuel :{" "}
+                  <strong>{selectedOrder.is_paid ? "Payé" : "Non payé"}</strong>
                 </Typography>
 
                 <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Payment Method</InputLabel>
+                  <InputLabel>Méthode de paiement</InputLabel>
                   <Select
-                    label="Payment Method"
+                    label="Méthode de paiement"
                     value={editPaymentMethod}
                     onChange={(e: SelectChangeEvent<PaymentMethod>) =>
                       setEditPaymentMethod(e.target.value as PaymentMethod)
                     }
                   >
                     <MenuItem value="">
-                      <em>None</em>
+                      <em>Aucune</em>
                     </MenuItem>
-                    <MenuItem value="BANK_TRANSFER">Bank transfer</MenuItem>
-                    <MenuItem value="CASH">Cash</MenuItem>
-                    <MenuItem value="CHEQUE">Cheque</MenuItem>
+                    <MenuItem value="BANK_TRANSFER">Virement bancaire</MenuItem>
+                    <MenuItem value="CASH">Espèces</MenuItem>
+                    <MenuItem value="CHEQUE">Chèque</MenuItem>
                   </Select>
                 </FormControl>
 
                 <TextField
                   fullWidth
-                  label="Payment Reference"
+                  label="Référence de paiement"
                   value={editPaymentReference}
                   onChange={(e) => setEditPaymentReference(e.target.value)}
                   sx={{ mb: 2 }}
@@ -681,7 +694,7 @@ const ClientOrderHistory: React.FC = () => {
 
                 <TextField
                   fullWidth
-                  label="Payment Date"
+                  label="Date de paiement"
                   type="date"
                   InputLabelProps={{ shrink: true }}
                   value={editPaymentDate}
@@ -694,7 +707,7 @@ const ClientOrderHistory: React.FC = () => {
                   color={editIsPaid ? "success" : "primary"}
                   onClick={handleSavePayment}
                 >
-                  {selectedOrder.is_paid ? "Update payment" : "Mark as paid"}
+                  {selectedOrder.is_paid ? "Mettre à jour le paiement" : "Marquer comme payé"}
                 </Button>
               </Box>
 
@@ -707,7 +720,7 @@ const ClientOrderHistory: React.FC = () => {
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Withholding Tax
+                  Retenue à la source
                 </Typography>
 
                 <FormControlLabel
@@ -719,9 +732,15 @@ const ClientOrderHistory: React.FC = () => {
                       }
                     />
                   }
-                  label="Withholding enabled"
+                  label="Retenue à la source activée"
                   sx={{ mb: 1 }}
                 />
+
+                <Typography variant="caption" sx={{ display: "block", mb: 2, opacity: 0.7 }}>
+                  Non exigée par l'administration fiscale pour les commandes
+                  inférieures à 1000 DT (total de cette commande :{" "}
+                  {Number(selectedOrder.total_ttc).toFixed(2)} DT).
+                </Typography>
 
                 <FormControlLabel
                   control={
@@ -732,14 +751,14 @@ const ClientOrderHistory: React.FC = () => {
                       }
                     />
                   }
-                  label="Document received"
+                  label="Document reçu"
                   disabled={!editWithholdingEnabled}
                   sx={{ mb: 2 }}
                 />
 
                 <TextField
                   fullWidth
-                  label="Withholding Date"
+                  label="Date de retenue"
                   type="date"
                   InputLabelProps={{ shrink: true }}
                   value={editWithholdingDate}
@@ -749,13 +768,13 @@ const ClientOrderHistory: React.FC = () => {
                 />
 
                 <Button variant="contained" onClick={handleSaveWithholding}>
-                  Save withholding
+                  Enregistrer la retenue
                 </Button>
               </Box>
 
               <Box>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Items
+                  Articles
                 </Typography>
 
                 {selectedOrder.items.map((item) => (
@@ -773,12 +792,12 @@ const ClientOrderHistory: React.FC = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                       {item.product.name}
                     </Typography>
-                    <Typography>Qty: {item.quantity}</Typography>
+                    <Typography>Qté : {item.quantity}</Typography>
                     <Typography>
-                      Line HT: {Number(item.total_line_ht).toFixed(2)} DT
+                      Total ligne HT : {Number(item.total_line_ht).toFixed(2)} DT
                     </Typography>
                     <Typography>
-                      Line TTC: {Number(item.total_line_ttc).toFixed(2)} DT
+                      Total ligne TTC : {Number(item.total_line_ttc).toFixed(2)} DT
                     </Typography>
                   </Box>
                 ))}

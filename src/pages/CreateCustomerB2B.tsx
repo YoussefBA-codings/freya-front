@@ -53,7 +53,7 @@ const CreateCustomerB2B: React.FC = () => {
   const [taxNumber, setTaxNumber] = useState("");
   const [address, setAddress] = useState("");
   const [zip, setZip] = useState("");
-  const [country, setCountry] = useState("Tunisia");
+  const [country, setCountry] = useState("Tunisie");
   const [responsableName, setResponsableName] = useState("");
   const [responsablePhone, setResponsablePhone] = useState("");
   const [responsableEmail, setResponsableEmail] = useState("");
@@ -82,7 +82,7 @@ const CreateCustomerB2B: React.FC = () => {
       setFilteredCustomers(res.data);
     } catch (error) {
       console.error("Failed to load customers:", error);
-      setNotifyMessage("Failed to load customers.");
+      setNotifyMessage("Échec du chargement des clients.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -111,7 +111,7 @@ const CreateCustomerB2B: React.FC = () => {
   // ---- Create customer ----
   const handleCreate = async () => {
     if (!name.trim()) {
-      setNotifyMessage("Name is required.");
+      setNotifyMessage("Le nom est obligatoire.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
       return;
@@ -136,7 +136,7 @@ const CreateCustomerB2B: React.FC = () => {
         }
       );
 
-      setNotifyMessage("Customer created successfully!");
+      setNotifyMessage("Client créé avec succès !");
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
@@ -145,7 +145,7 @@ const CreateCustomerB2B: React.FC = () => {
       setTaxNumber("");
       setAddress("");
       setZip("");
-      setCountry("Tunisia");
+      setCountry("Tunisie");
       setResponsableName("");
       setResponsablePhone("");
       setResponsableEmail("");
@@ -153,7 +153,7 @@ const CreateCustomerB2B: React.FC = () => {
       await loadCustomers();
     } catch (error) {
       console.error("Failed to create customer:", error);
-      setNotifyMessage("Failed to create customer.");
+      setNotifyMessage("Échec de la création du client.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -173,7 +173,7 @@ const CreateCustomerB2B: React.FC = () => {
     setEditTaxNumber(customer.tax_identification_number || "");
     setEditAddress(customer.address || "");
     setEditZip(customer.zip || "");
-    setEditCountry(customer.country || "Tunisia");
+    setEditCountry(customer.country || "Tunisie");
     setEditResponsableName(customer.responsable_name || "");
     setEditResponsablePhone(customer.responsable_phone || "");
     setEditResponsableEmail(customer.responsable_email || "");
@@ -204,7 +204,7 @@ const CreateCustomerB2B: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setNotifyMessage("Customer updated successfully!");
+      setNotifyMessage("Client mis à jour avec succès !");
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
@@ -228,7 +228,7 @@ const CreateCustomerB2B: React.FC = () => {
       );
     } catch (error) {
       console.error("Failed to update customer:", error);
-      setNotifyMessage("Failed to update customer.");
+      setNotifyMessage("Échec de la mise à jour du client.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -250,13 +250,13 @@ const CreateCustomerB2B: React.FC = () => {
         }}
       >
         <Typography variant="h5" gutterBottom>
-          B2B Customers List
+          Liste des clients B2B
         </Typography>
 
         <TextField
           fullWidth
           variant="outlined"
-          label="Search customers"
+          label="Rechercher un client"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ marginBottom: 2 }}
@@ -278,8 +278,8 @@ const CreateCustomerB2B: React.FC = () => {
                       primary={client.name}
                       secondary={
                         client.responsable_name
-                          ? `Responsible: ${client.responsable_name}`
-                          : "No responsible assigned"
+                          ? `Responsable : ${client.responsable_name}`
+                          : "Aucun responsable assigné"
                       }
                     />
                   </ListItemButton>
@@ -301,12 +301,12 @@ const CreateCustomerB2B: React.FC = () => {
         }}
       >
         <Typography variant="h5" gutterBottom>
-          Create B2B Customer
+          Créer un client B2B
         </Typography>
 
         <TextField
           fullWidth
-          label="Customer Name *"
+          label="Nom du client *"
           value={name}
           onChange={(e) => setName(e.target.value)}
           sx={{ mb: 2 }}
@@ -314,7 +314,7 @@ const CreateCustomerB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Tax Identification Number"
+          label="Matricule fiscal"
           value={taxNumber}
           onChange={(e) => setTaxNumber(e.target.value)}
           sx={{ mb: 2 }}
@@ -322,7 +322,7 @@ const CreateCustomerB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Address"
+          label="Adresse"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           sx={{ mb: 2 }}
@@ -330,7 +330,7 @@ const CreateCustomerB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="ZIP"
+          label="Code postal"
           value={zip}
           onChange={(e) => setZip(e.target.value)}
           sx={{ mb: 2 }}
@@ -338,7 +338,7 @@ const CreateCustomerB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Country"
+          label="Pays"
           value={country}
           onChange={(e) => setCountry(e.target.value)}
           sx={{ mb: 2 }}
@@ -346,7 +346,7 @@ const CreateCustomerB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Responsible Name"
+          label="Nom du responsable"
           value={responsableName}
           onChange={(e) => setResponsableName(e.target.value)}
           sx={{ mb: 2 }}
@@ -354,7 +354,7 @@ const CreateCustomerB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Responsible Phone"
+          label="Téléphone du responsable"
           value={responsablePhone}
           onChange={(e) => setResponsablePhone(e.target.value)}
           sx={{ mb: 2 }}
@@ -362,7 +362,7 @@ const CreateCustomerB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Responsible Email"
+          label="Email du responsable"
           value={responsableEmail}
           onChange={(e) => setResponsableEmail(e.target.value)}
           sx={{ mb: 2 }}
@@ -375,7 +375,7 @@ const CreateCustomerB2B: React.FC = () => {
           disabled={loadingCreate}
           sx={{ mt: 1 }}
         >
-          {loadingCreate ? <CircularProgress size={24} /> : "Create Customer"}
+          {loadingCreate ? <CircularProgress size={24} /> : "Créer le client"}
         </Button>
       </Box>
 
@@ -387,7 +387,7 @@ const CreateCustomerB2B: React.FC = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ m: 0, p: 2 }}>
-          {selectedCustomer ? `Customer Details — ${selectedCustomer.name}` : "Customer Details"}
+          {selectedCustomer ? `Détails du client — ${selectedCustomer.name}` : "Détails du client"}
           <IconButton
             aria-label="close"
             onClick={handleCloseDialog}
@@ -410,7 +410,7 @@ const CreateCustomerB2B: React.FC = () => {
             <>
               <TextField
                 fullWidth
-                label="Customer Name"
+                label="Nom du client"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 sx={{ mb: 2 }}
@@ -418,7 +418,7 @@ const CreateCustomerB2B: React.FC = () => {
 
               <TextField
                 fullWidth
-                label="Tax Number"
+                label="Matricule fiscal"
                 value={editTaxNumber}
                 onChange={(e) => setEditTaxNumber(e.target.value)}
                 sx={{ mb: 2 }}
@@ -426,7 +426,7 @@ const CreateCustomerB2B: React.FC = () => {
 
               <TextField
                 fullWidth
-                label="Address"
+                label="Adresse"
                 value={editAddress}
                 onChange={(e) => setEditAddress(e.target.value)}
                 sx={{ mb: 2 }}
@@ -434,7 +434,7 @@ const CreateCustomerB2B: React.FC = () => {
 
               <TextField
                 fullWidth
-                label="ZIP"
+                label="Code postal"
                 value={editZip}
                 onChange={(e) => setEditZip(e.target.value)}
                 sx={{ mb: 2 }}
@@ -442,7 +442,7 @@ const CreateCustomerB2B: React.FC = () => {
 
               <TextField
                 fullWidth
-                label="Country"
+                label="Pays"
                 value={editCountry}
                 onChange={(e) => setEditCountry(e.target.value)}
                 sx={{ mb: 2 }}
@@ -450,7 +450,7 @@ const CreateCustomerB2B: React.FC = () => {
 
               <TextField
                 fullWidth
-                label="Responsible Name"
+                label="Nom du responsable"
                 value={editResponsableName}
                 onChange={(e) => setEditResponsableName(e.target.value)}
                 sx={{ mb: 2 }}
@@ -458,7 +458,7 @@ const CreateCustomerB2B: React.FC = () => {
 
               <TextField
                 fullWidth
-                label="Responsible Phone"
+                label="Téléphone du responsable"
                 value={editResponsablePhone}
                 onChange={(e) => setEditResponsablePhone(e.target.value)}
                 sx={{ mb: 2 }}
@@ -466,7 +466,7 @@ const CreateCustomerB2B: React.FC = () => {
 
               <TextField
                 fullWidth
-                label="Responsible Email"
+                label="Email du responsable"
                 value={editResponsableEmail}
                 onChange={(e) => setEditResponsableEmail(e.target.value)}
                 sx={{ mb: 2 }}
@@ -476,14 +476,14 @@ const CreateCustomerB2B: React.FC = () => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>Annuler</Button>
           <Button
             variant="contained"
             color="primary"
             onClick={handleSaveSelected}
             disabled={loadingSelected}
           >
-            {loadingSelected ? <CircularProgress size={20} /> : "Save changes"}
+            {loadingSelected ? <CircularProgress size={20} /> : "Enregistrer les modifications"}
           </Button>
         </DialogActions>
       </Dialog>

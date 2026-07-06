@@ -110,6 +110,10 @@ const round2 = (n: number) =>
 
 const clamp0 = (n: number) => (Number.isFinite(n) ? Math.max(0, n) : 0);
 
+// La retenue à la source n'est pas exigée par l'administration fiscale
+// tunisienne pour les commandes dont le montant TTC (après promo) est < 1000 DT.
+const WITHHOLDING_THRESHOLD_TTC = 1000;
+
 type BrandKey = "ALL" | "COSRX" | "SKIN1004" | "DR ALTHEA" | "OTHER";
 
 const getBrandFromName = (name: string): Exclude<BrandKey, "ALL"> => {
@@ -155,6 +159,7 @@ const CreateOrderB2B: React.FC = () => {
 
   const [invoiceDate, setInvoiceDate] = useState<string>("");
   const [withholdingEnabled, setWithholdingEnabled] = useState<boolean>(false);
+  const [withholdingManuallySet, setWithholdingManuallySet] = useState<boolean>(false);
   const [comment, setComment] = useState<string>("");
 
   const [promoLines, setPromoLines] = useState<PromoLine[]>([{ title: "", amount: "" }]);
@@ -213,7 +218,7 @@ const CreateOrderB2B: React.FC = () => {
       setClients(resClients.data);
       setProducts(productsWithStock);
     } catch {
-      setNotifyMessage("Failed to load data.");
+      setNotifyMessage("Échec du chargement des données.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -302,6 +307,13 @@ const CreateOrderB2B: React.FC = () => {
 
   const promoFixedTooHigh = totals.promoFixed > totals.totalTTC;
 
+  // Suggestion automatique de la retenue à la source selon le seuil légal (1000 DT TTC),
+  // tant que l'utilisateur n'a pas explicitement forcé la valeur lui-même.
+  useEffect(() => {
+    if (withholdingManuallySet) return;
+    setWithholdingEnabled(totals.totalAfterPromo >= WITHHOLDING_THRESHOLD_TTC);
+  }, [totals.totalAfterPromo, withholdingManuallySet]);
+
   /* ------------------------------------------
      CART HELPERS
   ------------------------------------------ */
@@ -383,12 +395,12 @@ const CreateOrderB2B: React.FC = () => {
   const getPromotionTotalAmount = (): number | null => {
     const allowedRates = new Set([0, 0.03, 0.04, 0.06]);
     if (!allowedRates.has(tierPromoRate)) {
-      throw new Error("Invalid tier promo rate.");
+      throw new Error("Taux de promo palier invalide.");
     }
 
     if (totals.promoFixed > totals.totalTTC) {
       throw new Error(
-        `Promotion amount must be <= invoice total (${totals.totalTTC.toFixed(2)} DT).`
+        `Le montant de la promotion doit être <= au total de la facture (${totals.totalTTC.toFixed(2)} DT).`
       );
     }
 
@@ -396,7 +408,7 @@ const CreateOrderB2B: React.FC = () => {
 
     if (totalPromo <= 0) return null;
     if (totalPromo > totals.totalTTC) {
-      throw new Error("Total promotion must be <= invoice total.");
+      throw new Error("Le total de la promotion doit être <= au total de la facture.");
     }
 
     return totalPromo;
@@ -407,9 +419,9 @@ const CreateOrderB2B: React.FC = () => {
   ------------------------------------------ */
 
   const generateInvoicePdfBlob = async (): Promise<InvoicePdfResult> => {
-    if (!selectedClient) throw new Error("Please select a client.");
-    if (!invoiceDate) throw new Error("Please select an invoice date.");
-    if (selectedProducts.length === 0) throw new Error("Please add at least one product.");
+    if (!selectedClient) throw new Error("Veuillez sélectionner un client.");
+    if (!invoiceDate) throw new Error("Veuillez sélectionner une date de facture.");
+    if (selectedProducts.length === 0) throw new Error("Veuillez ajouter au moins un produit.");
 
     const invoiceNumber = await getNextInvoiceNumber(invoiceDate);
     const totalPromoAmount = getPromotionTotalAmount();
@@ -448,9 +460,9 @@ const CreateOrderB2B: React.FC = () => {
     try {
       setCreating(true);
 
-      if (!selectedClient) throw new Error("Please select a client.");
-      if (!invoiceDate) throw new Error("Please select an invoice date.");
-      if (selectedProducts.length === 0) throw new Error("Please add products.");
+      if (!selectedClient) throw new Error("Veuillez sélectionner un client.");
+      if (!invoiceDate) throw new Error("Veuillez sélectionner une date de facture.");
+      if (selectedProducts.length === 0) throw new Error("Veuillez ajouter des produits.");
 
       const totalPromoAmount = getPromotionTotalAmount();
       const { pdfBlob, invoiceNumber } = await generateInvoicePdfBlob();
@@ -496,7 +508,7 @@ const CreateOrderB2B: React.FC = () => {
 
       await axios.post(`${import.meta.env.VITE_API_URL}order-b2b`, payload);
 
-      setNotifyMessage("Order created successfully!");
+      setNotifyMessage("Commande créée avec succès !");
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
@@ -504,15 +516,16 @@ const CreateOrderB2B: React.FC = () => {
       setSelectedClient(null);
       setInvoiceDate("");
       setWithholdingEnabled(false);
+      setWithholdingManuallySet(false);
       setComment("");
       setPromoLines([{ title: "", amount: "" }]);
       setTierPromoRate(0);
       setDraftQty({});
     } catch (err: unknown) {
-      let errorMessage = "Failed to create order.";
+      let errorMessage = "Échec de la création de la commande.";
 
       if (axios.isAxiosError(err)) {
-        errorMessage = err.response?.data?.message || err.message || "Request error.";
+        errorMessage = err.response?.data?.message || err.message || "Erreur de requête.";
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
@@ -652,20 +665,20 @@ const CreateOrderB2B: React.FC = () => {
             }}
           >
             <Typography variant="h5" sx={{ mb: 2, fontWeight: 900 }}>
-              Products (Excel)
+              Produits (Excel)
             </Typography>
 
             <TextField
               fullWidth
-              label="Search products"
+              label="Rechercher des produits"
               value={searchProduct}
               onChange={(e) => setSearchProduct(e.target.value)}
               sx={{ mb: 2 }}
             />
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Tu saisis les Qty dans la feuille, puis <strong>Ajouter au panier</strong>.
-              (Qty vide ou 0 = pas ajouté)
+              Tu saisis les Qté dans la feuille, puis <strong>Ajouter au panier</strong>.
+              (Qté vide ou 0 = pas ajouté)
             </Typography>
 
             {(["COSRX", "SKIN1004", "DR ALTHEA", "OTHER"] as const).map((brand) => {
@@ -719,7 +732,7 @@ const CreateOrderB2B: React.FC = () => {
                               Prix (HT)
                             </TableCell>
                             <TableCell sx={{ fontWeight: 900, width: 140 }}>
-                              Qty
+                              Qté
                             </TableCell>
                           </TableRow>
                         </TableHead>
@@ -743,7 +756,7 @@ const CreateOrderB2B: React.FC = () => {
                                     {p.name}
                                   </Typography>
                                   <Typography variant="body2" color="text.secondary">
-                                    Variant: {p.variant_id}
+                                    Variante : {p.variant_id}
                                   </Typography>
                                 </TableCell>
 
@@ -806,13 +819,13 @@ const CreateOrderB2B: React.FC = () => {
             }}
           >
             <Typography variant="h5" sx={{ mb: 2, fontWeight: 900 }}>
-              Order Summary
+              Résumé de la commande
             </Typography>
 
             {/* INVOICE DATE */}
             <TextField
               fullWidth
-              label="Invoice Date"
+              label="Date de facture"
               type="date"
               InputLabelProps={{ shrink: true }}
               value={invoiceDate}
@@ -831,18 +844,43 @@ const CreateOrderB2B: React.FC = () => {
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
-                Withholding Tax
+                Retenue à la source
               </Typography>
 
               <Button
                 variant={withholdingEnabled ? "contained" : "outlined"}
                 color={withholdingEnabled ? "warning" : "primary"}
                 fullWidth
-                onClick={() => setWithholdingEnabled(!withholdingEnabled)}
+                onClick={() => {
+                  setWithholdingManuallySet(true);
+                  setWithholdingEnabled(!withholdingEnabled);
+                }}
                 sx={{ fontWeight: 800 }}
               >
-                {withholdingEnabled ? "Withholding Enabled" : "Enable Withholding"}
+                {withholdingEnabled ? "Retenue activée" : "Activer la retenue"}
               </Button>
+
+              <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.7 }}>
+                La retenue à la source n'est pas exigée par l'administration
+                fiscale pour les commandes inférieures à {WITHHOLDING_THRESHOLD_TTC} DT
+                (total actuel : {totals.totalAfterPromo.toFixed(2)} DT).
+                {withholdingManuallySet && (
+                  <>
+                    {" "}
+                    <Box
+                      component="span"
+                      onClick={() => setWithholdingManuallySet(false)}
+                      sx={{
+                        cursor: "pointer",
+                        color: "primary.main",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Revenir à la suggestion automatique
+                    </Box>
+                  </>
+                )}
+              </Typography>
             </Box>
 
             {/* PROMOTIONS */}
@@ -856,20 +894,20 @@ const CreateOrderB2B: React.FC = () => {
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
-                Promotions (fixed)
+                Promotions (fixes)
               </Typography>
 
               {promoLines.map((line, index) => (
                 <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
                   <TextField
                     fullWidth
-                    label="Title"
+                    label="Titre"
                     value={line.title}
                     onChange={(e) => updatePromoLine(index, { title: e.target.value })}
                     placeholder="Ex: geste commercial"
                   />
                   <TextField
-                    label="Amount (DT)"
+                    label="Montant (DT)"
                     type="number"
                     value={line.amount}
                     onChange={(e) => updatePromoLine(index, { amount: e.target.value })}
@@ -887,12 +925,12 @@ const CreateOrderB2B: React.FC = () => {
               ))}
 
               <Button variant="outlined" onClick={addPromoLine} sx={{ mt: 1 }}>
-                + Add promotion
+                + Ajouter une promotion
               </Button>
 
               {promoFixedTooHigh && (
                 <Typography sx={{ mt: 1, color: "error.main" }}>
-                  Total fixed promos must be &lt;= total TTC ({totals.totalTTC.toFixed(2)} DT)
+                  Le total des promos fixes doit être &lt;= au total TTC ({totals.totalTTC.toFixed(2)} DT)
                 </Typography>
               )}
 
@@ -929,7 +967,7 @@ const CreateOrderB2B: React.FC = () => {
             {/* COMMENT */}
             <TextField
               fullWidth
-              label="Comment (optional)"
+              label="Commentaire (optionnel)"
               multiline
               rows={3}
               value={comment}
@@ -966,12 +1004,12 @@ const CreateOrderB2B: React.FC = () => {
                     </Typography>
 
                     <Typography variant="body2" color="text.secondary">
-                      Price: {round2(item.product.price_ht).toFixed(2)} DT
+                      Prix : {round2(item.product.price_ht).toFixed(2)} DT
                     </Typography>
 
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
                       <TextField
-                        label="Qty"
+                        label="Qté"
                         type="number"
                         value={item.quantity}
                         onChange={(e) =>
@@ -1032,7 +1070,7 @@ const CreateOrderB2B: React.FC = () => {
               onClick={handleCreateOrder}
               disabled={creating}
             >
-              {creating ? <CircularProgress size={22} /> : "Create Order"}
+              {creating ? <CircularProgress size={22} /> : "Créer la commande"}
             </Button>
           </Box>
         </Box>
@@ -1053,7 +1091,7 @@ const CreateOrderB2B: React.FC = () => {
 
           <TextField
             fullWidth
-            label="Search clients"
+            label="Rechercher des clients"
             value={searchClient}
             onChange={(e) => setSearchClient(e.target.value)}
             sx={{ mb: 2 }}

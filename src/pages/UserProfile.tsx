@@ -34,7 +34,7 @@ const UserProfile = () => {
             <Box display="flex" alignItems="center">
               <EmailIcon color="action" sx={{ mr: 1 }} />
               <Typography variant="body1">
-                <strong>Email:</strong> {userData.email}
+                <strong>E-mail :</strong> {userData.email}
               </Typography>
             </Box>
           </Grid>
@@ -44,7 +44,7 @@ const UserProfile = () => {
             <Box display="flex" alignItems="center">
               <AdminPanelSettingsIcon color="action" sx={{ mr: 1 }} />
               <Typography variant="body1">
-                <strong>Role:</strong> {userData.role}
+                <strong>Rôle :</strong> {userData.role}
               </Typography>
             </Box>
           </Grid>
@@ -54,7 +54,7 @@ const UserProfile = () => {
             <Box display="flex" alignItems="center">
               <GroupIcon color="action" sx={{ mr: 1 }} />
               <Typography variant="body1">
-                <strong>Team:</strong> {userData.team}
+                <strong>Équipe :</strong> {userData.team}
               </Typography>
             </Box>
           </Grid>

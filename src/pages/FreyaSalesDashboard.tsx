@@ -98,15 +98,15 @@ const FreyaSalesDashboard: React.FC = () => {
     if (!filteredProducts.length) return;
 
     const headers = [
-      "Vendor",
-      "Product",
-      "Variant",
+      "Fournisseur",
+      "Produit",
+      "Variante",
       "SKU",
-      "B2C Quantity Sold",
-      "B2B Quantity Sold",
-      "Total Quantity Sold",
-      "Product ID",
-      "Variant ID",
+      "Quantité vendue B2C",
+      "Quantité vendue B2B",
+      "Quantité totale vendue",
+      "ID Produit",
+      "ID Variante",
     ];
 
     const rows = filteredProducts.map((p) => [
@@ -145,7 +145,7 @@ const FreyaSalesDashboard: React.FC = () => {
     <Fade in>
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Freya — Sales Dashboard
+          Freya — Tableau de bord des ventes
         </Typography>
 
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>

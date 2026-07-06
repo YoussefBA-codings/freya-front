@@ -59,6 +59,18 @@ const normalizeBrand = (brand: string): string =>
 const capitalize = (s: string): string =>
   s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 
+// Display labels for raw status values coming from the API (values kept as-is for filtering).
+const statusLabels: Record<string, string> = {
+  "Freya cheaper": "Freya moins cher",
+  "TM cheaper": "TM moins cher",
+  Same: "Même prix",
+  "Only on Freya": "Uniquement sur Freya",
+  "Only on TM": "Uniquement sur TM",
+};
+
+const translateStatus = (status: string): string =>
+  statusLabels[status] || status;
+
 const CompareStats: React.FC = () => {
   const [data, setData] = useState<CompareResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,10 +132,10 @@ const CompareStats: React.FC = () => {
         >
           <CircularProgress size={70} thickness={4} />
           <Typography variant="h5" fontWeight="bold">
-            Comparing data...
+            Comparaison des données...
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            This may take up to a minute.
+            Cela peut prendre jusqu'à une minute.
           </Typography>
           <Box sx={{ width: "50%", mt: 2 }}>
             <LinearProgress
@@ -132,7 +144,7 @@ const CompareStats: React.FC = () => {
               sx={{ height: 10, borderRadius: 5 }}
             />
             <Typography variant="caption" color="text.secondary">
-              {progress}% completed
+              {progress}% terminé
             </Typography>
           </Box>
         </Box>
@@ -143,7 +155,7 @@ const CompareStats: React.FC = () => {
   if (!data) {
     return (
       <Typography color="error" sx={{ textAlign: "center", mt: 5 }}>
-        Could not load comparison data.
+        Impossible de charger les données de comparaison.
       </Typography>
     );
   }
@@ -227,29 +239,29 @@ const CompareStats: React.FC = () => {
 
   const kpis = [
     {
-      label: "Average Freya Price",
+      label: "Prix moyen Freya",
       value: `${avgFreyaPrice.toFixed(2)} DT`,
-      tooltip: "Average selling price of products listed on Freya.",
+      tooltip: "Prix de vente moyen des produits listés sur Freya.",
     },
     {
-      label: "Average TM Price",
+      label: "Prix moyen TM",
       value: `${avgTMPrice.toFixed(2)} DT`,
-      tooltip: "Average selling price of the same products on TunisiaMarka.",
+      tooltip: "Prix de vente moyen des mêmes produits sur TunisiaMarka.",
     },
     {
-      label: "Average Price Difference",
+      label: "Différence de prix moyenne",
       value: `${avgDiff.toFixed(2)} %`,
-      tooltip: "Average percentage difference between Freya and TM prices.",
+      tooltip: "Différence moyenne en pourcentage entre les prix Freya et TM.",
     },
     {
-      label: "Global Price Gap",
+      label: "Écart de prix global",
       value: `${totalDiffDT.toFixed(2)} DT`,
-      tooltip: "Total cumulative price difference across comparable items.",
+      tooltip: "Différence de prix cumulée totale sur les articles comparables.",
     },
     {
-      label: "Freya Advantage Ratio",
+      label: "Taux d'avantage Freya",
       value: `${(ratioFreyaCheaper * 100).toFixed(1)} %`,
-      tooltip: "Percentage of products where Freya is cheaper than TM.",
+      tooltip: "Pourcentage de produits pour lesquels Freya est moins cher que TM.",
     },
   ];
 
@@ -258,23 +270,23 @@ const CompareStats: React.FC = () => {
     <Fade in={!loading}>
       <Box sx={{ padding: 3 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Freya vs TunisiaMarka — Price Comparison Dashboard
+          Freya vs TunisiaMarka — Tableau de comparaison des prix
         </Typography>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Last updated: {new Date(data.date).toLocaleString()}
+          Dernière mise à jour : {new Date(data.date).toLocaleString()}
         </Typography>
 
         {/* Filters */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Brand</InputLabel>
+              <InputLabel>Marque</InputLabel>
               <Select
                 value={selectedBrand}
-                label="Brand"
+                label="Marque"
                 onChange={(e) => setSelectedBrand(e.target.value)}
               >
-                <MenuItem value="all">All Brands</MenuItem>
+                <MenuItem value="all">Toutes les marques</MenuItem>
                 {brands.map((b) => (
                   <MenuItem key={b} value={b}>
                     {b}
@@ -286,33 +298,33 @@ const CompareStats: React.FC = () => {
 
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Availability</InputLabel>
+              <InputLabel>Disponibilité</InputLabel>
               <Select
                 value={selectedAvailability}
-                label="Availability"
+                label="Disponibilité"
                 onChange={(e) => setSelectedAvailability(e.target.value)}
               >
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="in_stock">In Stock</MenuItem>
-                <MenuItem value="out_of_stock">Out of Stock</MenuItem>
+                <MenuItem value="all">Toutes</MenuItem>
+                <MenuItem value="in_stock">En stock</MenuItem>
+                <MenuItem value="out_of_stock">Rupture de stock</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
           <Grid item xs={12} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
+              <InputLabel>Statut</InputLabel>
               <Select
                 value={selectedStatus}
-                label="Status"
+                label="Statut"
                 onChange={(e) => setSelectedStatus(e.target.value)}
               >
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="Freya cheaper">Freya cheaper</MenuItem>
-                <MenuItem value="TM cheaper">TM cheaper</MenuItem>
-                <MenuItem value="Same">Same Price</MenuItem>
-                <MenuItem value="Only on Freya">Only on Freya</MenuItem>
-                <MenuItem value="Only on TM">Only on TM</MenuItem>
+                <MenuItem value="all">Tous</MenuItem>
+                <MenuItem value="Freya cheaper">Freya moins cher</MenuItem>
+                <MenuItem value="TM cheaper">TM moins cher</MenuItem>
+                <MenuItem value="Same">Même prix</MenuItem>
+                <MenuItem value="Only on Freya">Uniquement sur Freya</MenuItem>
+                <MenuItem value="Only on TM">Uniquement sur TM</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -320,7 +332,7 @@ const CompareStats: React.FC = () => {
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
-              label="Search product"
+              label="Rechercher un produit"
               variant="outlined"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -381,12 +393,12 @@ const CompareStats: React.FC = () => {
         {/* Summary */}
         <Box sx={{ display: "flex", gap: 1.5, mb: 3, flexWrap: "wrap" }}>
           {[
-            { label: `Freya cheaper: ${stats.freyaCheaper}`, color: "success" },
-            { label: `TM cheaper: ${stats.tmCheaper}`, color: "error" },
-            { label: `Same: ${stats.same}`, color: "default" },
-            { label: `Only Freya: ${stats.onlyFreya}`, color: "info" },
-            { label: `Only TM: ${stats.onlyTM}`, color: "warning" },
-            { label: `Total: ${filteredResults.length}`, color: "primary" },
+            { label: `Freya moins cher : ${stats.freyaCheaper}`, color: "success" },
+            { label: `TM moins cher : ${stats.tmCheaper}`, color: "error" },
+            { label: `Même prix : ${stats.same}`, color: "default" },
+            { label: `Uniquement Freya : ${stats.onlyFreya}`, color: "info" },
+            { label: `Uniquement TM : ${stats.onlyTM}`, color: "warning" },
+            { label: `Total : ${filteredResults.length}`, color: "primary" },
           ].map((chip, i) => (
             <Chip
               key={i}
@@ -406,14 +418,14 @@ const CompareStats: React.FC = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Brand</TableCell>
-                <TableCell>Product</TableCell>
-                <TableCell align="center">TM Price</TableCell>
-                <TableCell align="center">Freya Price</TableCell>
-                <TableCell align="center">Diff (%)</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="center">TM Stock</TableCell>
-                <TableCell align="center">Freya Stock</TableCell>
+                <TableCell>Marque</TableCell>
+                <TableCell>Produit</TableCell>
+                <TableCell align="center">Prix TM</TableCell>
+                <TableCell align="center">Prix Freya</TableCell>
+                <TableCell align="center">Écart (%)</TableCell>
+                <TableCell align="center">Statut</TableCell>
+                <TableCell align="center">Stock TM</TableCell>
+                <TableCell align="center">Stock Freya</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -426,7 +438,7 @@ const CompareStats: React.FC = () => {
                   <TableCell align="center">{r.diff_percent ?? "-"}</TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={r.status}
+                      label={translateStatus(r.status)}
                       color={
                         r.status === "Freya cheaper"
                           ? "success"
@@ -443,14 +455,14 @@ const CompareStats: React.FC = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={r.available_tm ? "In Stock" : "Out"}
+                      label={r.available_tm ? "En stock" : "Rupture"}
                       color={r.available_tm ? "success" : "default"}
                       size="small"
                     />
                   </TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={r.available ? "In Stock" : "Out"}
+                      label={r.available ? "En stock" : "Rupture"}
                       color={r.available ? "success" : "default"}
                       size="small"
                     />

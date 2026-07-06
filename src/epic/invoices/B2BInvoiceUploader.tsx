@@ -32,7 +32,7 @@ export const B2BInvoiceDeposit = () => {
 
   const handleUpload = async () => {
     if (!invoiceName.trim() || !effectiveDate || !file) {
-      setError("All fields are required.");
+      setError("Tous les champs sont obligatoires.");
       return;
     }
     setError(null);
@@ -57,7 +57,7 @@ export const B2BInvoiceDeposit = () => {
       setUploadedUrl(response.data.url);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.response?.data || "Error while uploading.");
+      setError(err.response?.data || "Erreur lors du dépôt.");
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export const B2BInvoiceDeposit = () => {
   return (
     <Box padding="2rem" sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Typography variant="h5" mb={3}>
-        B2B Invoice Deposit
+        Dépôt de facture B2B
       </Typography>
 
       {/* Champ invoiceName avec préfixe/suffixe */}
@@ -82,7 +82,7 @@ export const B2BInvoiceDeposit = () => {
       </Box>
 
       <TextField
-        label="Effective Date"
+        label="Date effective"
         type="date"
         value={effectiveDate}
         onChange={(e) => setEffectiveDate(e.target.value)}
@@ -118,7 +118,7 @@ export const B2BInvoiceDeposit = () => {
           <Typography>{file.name}</Typography>
         ) : (
           <Typography color="textSecondary">
-            Drag and drop the PDF here or click to select
+            Glissez-déposez le PDF ici ou cliquez pour sélectionner
           </Typography>
         )}
       </Paper>
@@ -136,9 +136,9 @@ export const B2BInvoiceDeposit = () => {
 
       {uploadedUrl && (
         <Typography color="success.main">
-          Invoice successfully uploaded:{" "}
+          Facture déposée avec succès :{" "}
           <a href={uploadedUrl} target="_blank" rel="noopener noreferrer">
-            View file
+            Voir le fichier
           </a>
         </Typography>
       )}

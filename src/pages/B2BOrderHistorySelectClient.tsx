@@ -53,12 +53,12 @@ const B2BOrderHistorySelectClient: React.FC = () => {
   return (
     <Box sx={{ p: 3, maxWidth: 600, margin: "0 auto" }}>
       <Typography variant="h4" sx={{ mb: 3 }}>
-        Select a Client
+        Sélectionner un client
       </Typography>
 
       <TextField
         fullWidth
-        label="Search clients"
+        label="Rechercher des clients"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         sx={{ mb: 3 }}

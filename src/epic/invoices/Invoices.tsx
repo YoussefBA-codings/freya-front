@@ -189,39 +189,51 @@ export const Invoices = () => {
   }, [isSyncInvoiceFetching, syncInvoiceId, refetchInvoices]);
 
   const columns: GridColDef<Invoice>[] = [
-    { field: "orderNumber", headerName: "Order Number", flex: 1 },
-    { field: "invoiceNumber", headerName: "Invoice Number", flex: 1 },
-    { field: "isCancelled", headerName: "Cancelled", flex: 1 },
+    { field: "orderNumber", headerName: "Numéro de commande", flex: 1 },
+    { field: "invoiceNumber", headerName: "Numéro de facture", flex: 1 },
+    {
+      field: "isCancelled",
+      headerName: "Annulée",
+      flex: 1,
+      renderCell: (params: GridRenderCellParams<Invoice>) =>
+        params.value ? "Oui" : "Non",
+    },
     {
       field: "invoiceDate",
-      headerName: "Invoice Date",
+      headerName: "Date de facture",
       flex: 1,
       renderCell: (params: GridRenderCellParams<Invoice>) => {
         const date = new Date(params.value);
         return !isNaN(date.getTime()) ? format(date, "dd-MM-yyyy") : "";
       },
     },
-    { field: "customerName", headerName: "Customer Name", flex: 1 },
-    { field: "isInvoiceCreated", headerName: "Invoice Created", flex: 1 },
+    { field: "customerName", headerName: "Nom du client", flex: 1 },
+    {
+      field: "isInvoiceCreated",
+      headerName: "Facture créée",
+      flex: 1,
+      renderCell: (params: GridRenderCellParams<Invoice>) =>
+        params.value ? "Oui" : "Non",
+    },
     {
       field: "invoiceUrl",
-      headerName: "Invoice URL",
+      headerName: "URL de la facture",
       flex: 1,
       renderCell: (params: GridRenderCellParams<Invoice>) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
-            View Invoice
+            Voir la facture
           </a>
         ) : null,
     },
     {
       field: "creditUrl",
-      headerName: "Credit URL",
+      headerName: "URL de l'avoir",
       flex: 1,
       renderCell: (params: GridRenderCellParams<Invoice>) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
-            View Credit
+            Voir l'avoir
           </a>
         ) : null,
     },
@@ -279,7 +291,7 @@ export const Invoices = () => {
             onClick={handleFilterChange}
             sx={{ minWidth: "100px", width: { xs: "100%", sm: "auto" } }}
           >
-            Filter
+            Filtrer
           </Button>
         </Box>
         <Button
@@ -292,12 +304,12 @@ export const Invoices = () => {
             height: { xs: "auto", sm: "100%" },
           }}
         >
-          CREATE INVOICE
+          CRÉER UNE FACTURE
         </Button>
       </Box>
 
       <TextField
-        label="Search by Order Number"
+        label="Rechercher par numéro de commande"
         variant="outlined"
         value={searchTerm}
         onChange={handleSearch}
@@ -312,14 +324,14 @@ export const Invoices = () => {
           disabled={!syncInvoiceId || isSyncLoading}
           sx={{ maxWidth: "120px" }}
         >
-          {isSyncLoading ? <CircularProgress size={24} /> : "Sync"}
+          {isSyncLoading ? <CircularProgress size={24} /> : "Synchroniser"}
         </Button>
         <Button
           variant="contained"
           onClick={handleExport}
           sx={{ maxWidth: "120px" }}
         >
-          Export
+          Exporter
         </Button>
       </Box>
 

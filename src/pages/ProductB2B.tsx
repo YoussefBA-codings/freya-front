@@ -69,7 +69,7 @@ const ProductB2B: React.FC = () => {
       setFilteredProducts(res.data);
     } catch (error) {
       console.error("Failed to load products:", error);
-      setNotifyMessage("Failed to load products.");
+      setNotifyMessage("Échec du chargement des produits.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -96,7 +96,7 @@ const ProductB2B: React.FC = () => {
   // Create product
   const handleCreate = async () => {
     if (!name.trim() || !variantId.trim() || !priceHT.trim()) {
-      setNotifyMessage("Please fill all required fields.");
+      setNotifyMessage("Veuillez remplir tous les champs obligatoires.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
       return;
@@ -115,7 +115,7 @@ const ProductB2B: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setNotifyMessage("Product created!");
+      setNotifyMessage("Produit créé !");
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
@@ -127,7 +127,7 @@ const ProductB2B: React.FC = () => {
       loadProducts();
     } catch (error) {
       console.error("Failed to create product:", error);
-      setNotifyMessage("Failed to create product.");
+      setNotifyMessage("Échec de la création du produit.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -165,14 +165,14 @@ const ProductB2B: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setNotifyMessage("Product updated!");
+      setNotifyMessage("Produit mis à jour !");
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
       loadProducts();
     } catch (error) {
       console.error("Failed to update product:", error);
-      setNotifyMessage("Failed to update product.");
+      setNotifyMessage("Échec de la mise à jour du produit.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
     } finally {
@@ -194,12 +194,12 @@ const ProductB2B: React.FC = () => {
         }}
       >
         <Typography variant="h5" gutterBottom>
-          B2B Products List
+          Liste des produits B2B
         </Typography>
 
         <TextField
           fullWidth
-          label="Search products"
+          label="Rechercher des produits"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ mb: 2 }}
@@ -219,7 +219,7 @@ const ProductB2B: React.FC = () => {
                   >
                     <ListItemText
                       primary={p.name}
-                      secondary={`Price: ${p.price_ht} DT — Variant ID: ${p.variant_id}`}
+                      secondary={`Prix : ${p.price_ht} DT — ID Variante : ${p.variant_id}`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -240,12 +240,12 @@ const ProductB2B: React.FC = () => {
         }}
       >
         <Typography variant="h5" gutterBottom>
-          Create B2B Product
+          Créer un produit B2B
         </Typography>
 
         <TextField
           fullWidth
-          label="Product Name *"
+          label="Nom du produit *"
           value={name}
           onChange={(e) => setName(e.target.value)}
           sx={{ mb: 2 }}
@@ -253,7 +253,7 @@ const ProductB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Variant ID *"
+          label="ID Variante *"
           value={variantId}
           onChange={(e) => setVariantId(e.target.value)}
           sx={{ mb: 2 }}
@@ -261,7 +261,7 @@ const ProductB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Price HT *"
+          label="Prix HT *"
           value={priceHT}
           onChange={(e) => setPriceHT(e.target.value)}
           sx={{ mb: 2 }}
@@ -270,7 +270,7 @@ const ProductB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="TVA Rate"
+          label="Taux TVA"
           value={tvaRate}
           onChange={(e) => setTvaRate(e.target.value)}
           sx={{ mb: 2 }}
@@ -282,7 +282,7 @@ const ProductB2B: React.FC = () => {
           onClick={handleCreate}
           disabled={loadingCreate}
         >
-          {loadingCreate ? <CircularProgress size={24} /> : "Create Product"}
+          {loadingCreate ? <CircularProgress size={24} /> : "Créer le produit"}
         </Button>
       </Box>
 
@@ -294,7 +294,7 @@ const ProductB2B: React.FC = () => {
         maxWidth="sm"
       >
         <DialogTitle>
-          {selectedProduct ? `Edit Product — ${selectedProduct.name}` : ""}
+          {selectedProduct ? `Modifier le produit — ${selectedProduct.name}` : ""}
           <IconButton
             onClick={handleCloseDialog}
             sx={{ position: "absolute", right: 8, top: 8 }}
@@ -306,7 +306,7 @@ const ProductB2B: React.FC = () => {
         <DialogContent dividers>
           <TextField
             fullWidth
-            label="Product Name"
+            label="Nom du produit"
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             sx={{ mb: 2 }}
@@ -314,7 +314,7 @@ const ProductB2B: React.FC = () => {
 
           <TextField
             fullWidth
-            label="Variant ID"
+            label="ID Variante"
             value={editVariantId}
             onChange={(e) => setEditVariantId(e.target.value)}
             sx={{ mb: 2 }}
@@ -322,7 +322,7 @@ const ProductB2B: React.FC = () => {
 
           <TextField
             fullWidth
-            label="Price HT"
+            label="Prix HT"
             value={editPriceHT}
             onChange={(e) => setEditPriceHT(e.target.value)}
             sx={{ mb: 2 }}
@@ -331,7 +331,7 @@ const ProductB2B: React.FC = () => {
 
           <TextField
             fullWidth
-            label="TVA Rate"
+            label="Taux TVA"
             value={editTvaRate}
             onChange={(e) => setEditTvaRate(e.target.value)}
             sx={{ mb: 2 }}
@@ -340,13 +340,13 @@ const ProductB2B: React.FC = () => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>Annuler</Button>
           <Button
             variant="contained"
             onClick={handleSaveSelected}
             disabled={loadingSelected}
           >
-            {loadingSelected ? <CircularProgress size={20} /> : "Save changes"}
+            {loadingSelected ? <CircularProgress size={20} /> : "Enregistrer les modifications"}
           </Button>
         </DialogActions>
       </Dialog>

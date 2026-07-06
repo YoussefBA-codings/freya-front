@@ -42,22 +42,22 @@ const InvoiceFilter: React.FC<InvoiceFilterProps> = ({ onFilterChange }) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
       <Typography variant="h6" sx={{ mr: 2 }}>
-        Filter By:
+        Filtrer par :
       </Typography>
       <FormControl variant="outlined" sx={{ minWidth: 120 }}>
-        <InputLabel id="view-select-label">Filter</InputLabel>
+        <InputLabel id="view-select-label">Filtre</InputLabel>
         <CustomSelect
           labelId="view-select-label"
           id="view-select"
           value={view}
           onChange={handleChange}
-          label="Filter"
+          label="Filtre"
           renderValue={(selected) => (
-            <Chip label={selected === 'invoices' ? 'Invoices' : 'Credits'} color="primary" />
+            <Chip label={selected === 'invoices' ? 'Factures' : 'Avoirs'} color="primary" />
           )}
         >
-          <MenuItem value="invoices">Invoices</MenuItem>
-          <MenuItem value="credits">Credits</MenuItem>
+          <MenuItem value="invoices">Factures</MenuItem>
+          <MenuItem value="credits">Avoirs</MenuItem>
         </CustomSelect>
       </FormControl>
     </Box>

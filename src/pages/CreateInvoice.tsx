@@ -50,11 +50,11 @@ const SyncInvoice: React.FC = () => {
         }
       );
 
-      setNotifyMessage("Invoice synced successfully!");
+      setNotifyMessage("Facture synchronisée avec succès !");
       setNotifyStatus("success");
     } catch (error) {
       console.error("Failed to create invoice:", error);
-      setNotifyMessage("Failed to create invoice.");
+      setNotifyMessage("Échec de la création de la facture.");
       setNotifyStatus("error");
     } finally {
       setLoading(false);
@@ -65,12 +65,12 @@ const SyncInvoice: React.FC = () => {
   return (
     <Box sx={{ padding: 3, borderRadius: 2, boxShadow: 3, textAlign: "center" }}>
       <Typography variant="h4" gutterBottom>
-        Create Invoice
+        Créer une facture
       </Typography>
       <TextField
         fullWidth
         variant="outlined"
-        label="Invoice Shopify ID"
+        label="ID Shopify de la facture"
         name="invoiceShopifyId"
         value={invoiceShopifyId}
         onChange={handleInputChange}
@@ -80,7 +80,7 @@ const SyncInvoice: React.FC = () => {
       <TextField
         fullWidth
         variant="outlined"
-        label="Invoice Forced Name (Optional)"
+        label="Nom forcé de la facture (facultatif)"
         name="invoiceForcedName"
         value={invoiceForcedName}
         onChange={(e) => setInvoiceForcedName(e.target.value)}
@@ -89,7 +89,7 @@ const SyncInvoice: React.FC = () => {
       <TextField
         fullWidth
         variant="outlined"
-        label="Forced Date (Optional)"
+        label="Date forcée (facultatif)"
         name="forcedDate"
         type="date"
         InputLabelProps={{ shrink: true }}
@@ -107,10 +107,10 @@ const SyncInvoice: React.FC = () => {
         {loading ? (
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <CircularProgress size={24} sx={{ marginRight: 2 }} />
-            {`${progress}% Retrieving from Shopify`}
+            {`${progress}% Récupération depuis Shopify`}
           </Box>
         ) : (
-          "Create"
+          "Créer"
         )}
       </Button>
 

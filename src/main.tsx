@@ -22,17 +22,28 @@ import B2BOrderHistorySelectClient from "./pages/B2BOrderHistorySelectClient";
 // 👉 IMPORT MUI X Date Pickers (OBLIGATOIRE)
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { fr } from "date-fns/locale";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { frFR as coreFrFR } from "@mui/material/locale";
+import { frFR as dataGridFrFR } from "@mui/x-data-grid/locales";
+import { frFR as pickersFrFR } from "@mui/x-date-pickers/locales";
 import B2BOrdersStats from "./pages/B2BOrdersStats";
+import B2BOrdersList from "./pages/B2BOrdersList";
 import FreyaSalesDashboard from "./pages/FreyaSalesDashboard";
+import PurchaseInvoices from "./pages/PurchaseInvoices";
 
 const queryClient = new QueryClient();
+
+// 👉 THEME GLOBAL EN FRANÇAIS (MUI core + DataGrid + DatePickers)
+const theme = createTheme(coreFrFR, dataGridFrFR, pickersFrFR);
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
+    <ThemeProvider theme={theme}>
     {/* 👉 GLOBAL DATE PICKER CONTEXT */}
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
       <QueryClientProvider client={queryClient}>
         <Router>
           <Routes>
@@ -171,11 +182,33 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             />
 
             <Route
+              path="/b2b/orders/all"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <B2BOrdersList />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
               path="/b2b/orders/history/:clientId"
               element={
                 <PrivateRoute>
                   <Navbar>
                     <ClientOrderHistory />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/achats/factures"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <PurchaseInvoices />
                   </Navbar>
                 </PrivateRoute>
               }
@@ -187,5 +220,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         </Router>
       </QueryClientProvider>
     </LocalizationProvider>
+    </ThemeProvider>
   </React.StrictMode>
 )

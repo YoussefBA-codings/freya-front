@@ -133,27 +133,27 @@ export const DroppexInvoices = () => {
   
 
   const columns: GridColDef<DroppexInvoice>[] = [
-    { field: "inputRef", headerName: "Searched Ref", flex: 1 },
-    { field: "orderNumber", headerName: "Order Number", flex: 1 },
-    { field: "orderShopifyID", headerName: "Shopify ID", flex: 1 },
+    { field: "inputRef", headerName: "Réf. recherchée", flex: 1 },
+    { field: "orderNumber", headerName: "N° de commande", flex: 1 },
+    { field: "orderShopifyID", headerName: "ID Shopify", flex: 1 },
     {
       field: "gbDroppexRef",
-      headerName: "GB Ref",
+      headerName: "Réf. GB",
       flex: 1,
       renderCell: (params) =>
         params.value?.startsWith("default") ? "" : params.value,
     },
     {
       field: "blkDroppexRef",
-      headerName: "BLK Ref",
+      headerName: "Réf. BLK",
       flex: 1,
       renderCell: (params) =>
         params.value?.startsWith("default") ? "" : params.value,
     },
-    { field: "invoiceNumber", headerName: "Invoice No", flex: 1 },
+    { field: "invoiceNumber", headerName: "N° Facture", flex: 1 },
     {
       field: "invoiceDate",
-      headerName: "Invoice Date",
+      headerName: "Date facture",
       flex: 1,
       renderCell: (params) => {
         const date = new Date(params.value);
@@ -163,19 +163,19 @@ export const DroppexInvoices = () => {
           .padStart(2, "0")}-${date.getFullYear()}`;
       },
     },
-    { field: "customerName", headerName: "Customer", flex: 1 },
+    { field: "customerName", headerName: "Client", flex: 1 },
     { field: "totalAmountExcludingTax", headerName: "HT", flex: 1 },
     { field: "TVA", headerName: "TVA", flex: 1 },
-    { field: "fiscalStamp", headerName: "Fiscal Stamp", flex: 1 },
+    { field: "fiscalStamp", headerName: "Timbre fiscal", flex: 1 },
     { field: "totalAmountIncludingTax", headerName: "TTC", flex: 1 },
     {
       field: "invoiceUrl",
-      headerName: "Invoice",
+      headerName: "Facture",
       flex: 1,
       renderCell: (params) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
-            View
+            Voir
           </a>
         ) : (
           "-"
@@ -183,12 +183,12 @@ export const DroppexInvoices = () => {
     },
     {
       field: "creditUrl",
-      headerName: "Credit",
+      headerName: "Avoir",
       flex: 1,
       renderCell: (params) =>
         params.value ? (
           <a href={params.value} target="_blank" rel="noopener noreferrer">
-            View
+            Voir
           </a>
         ) : (
           "-"
@@ -198,11 +198,11 @@ export const DroppexInvoices = () => {
   return (
     <Box padding="2rem" sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Typography variant="h5" mb={2}>
-        Droppex Invoices
+        Factures Droppex
       </Typography>
 
       <TextField
-        label="Droppex References (comma-separated)"
+        label="Références Droppex (séparées par des virgules)"
         variant="outlined"
         value={refs}
         onChange={(e) => setRefs(e.target.value)}
@@ -217,7 +217,7 @@ export const DroppexInvoices = () => {
           onClick={handleFetch}
           disabled={loading || !refs.trim()}
         >
-          {loading ? <CircularProgress size={24} /> : "Search"}
+          {loading ? <CircularProgress size={24} /> : "Rechercher"}
         </Button>
         <Button
           variant="contained"
@@ -225,7 +225,7 @@ export const DroppexInvoices = () => {
           onClick={handleExportCSV}
           disabled={data.length === 0}
         >
-          Export CSV
+          Exporter en CSV
         </Button>
         {selection.length > 0 && (
           <Button
@@ -233,7 +233,7 @@ export const DroppexInvoices = () => {
             color="success"
             onClick={handleOpenDialog}
           >
-            Mark as Paid
+            Marquer comme payé
           </Button>
         )}
       </Box>
@@ -253,11 +253,11 @@ export const DroppexInvoices = () => {
 
       {/* Dialog to enter Payment Reference */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Mark Orders as Paid</DialogTitle>
+        <DialogTitle>Marquer les commandes comme payées</DialogTitle>
         <DialogContent>
           <FormControl fullWidth error={paymentReferenceError}>
             <TextField
-              label="Payment Reference"
+              label="Référence de paiement"
               variant="outlined"
               value={paymentReference}
               onChange={(e) => {
@@ -267,16 +267,16 @@ export const DroppexInvoices = () => {
               fullWidth
             />
             {paymentReferenceError && (
-              <FormHelperText>This field is required</FormHelperText>
+              <FormHelperText>Ce champ est requis</FormHelperText>
             )}
           </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="primary">
-            Cancel
+            Annuler
           </Button>
           <Button onClick={handleMarkAsPaid} color="primary">
-            Submit
+            Valider
           </Button>
         </DialogActions>
       </Dialog>

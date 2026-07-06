@@ -183,6 +183,22 @@ const getInitials = (name?: string | null) => {
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+const STATUS_LABELS: Record<string, string> = {
+  CREATED: "Créée",
+  SHIPPED: "Expédiée",
+  DELIVERED: "Livrée",
+};
+const getStatusLabel = (status?: string | null) =>
+  status ? STATUS_LABELS[status] ?? status : "?";
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  BANK_TRANSFER: "Virement bancaire",
+  CASH: "Espèces",
+  CHEQUE: "Chèque",
+};
+const getPaymentMethodLabel = (method?: string | null) =>
+  method ? PAYMENT_METHOD_LABELS[method] ?? method : "Inconnu";
+
 const getMonthToTodayRange = () => {
   const now = new Date();
   const yyyy = now.getFullYear();
@@ -568,9 +584,9 @@ const B2BOrdersStats: React.FC = () => {
   const paymentBarItems = useMemo(
     () =>
       paymentMethods.map((r) => ({
-        label: r.payment_method ?? "UNKNOWN",
+        label: getPaymentMethodLabel(r.payment_method),
         value: r.totalTTC,
-        hint: `${r.orders} orders`,
+        hint: `${r.orders} commandes`,
       })),
     [paymentMethods]
   );
@@ -578,9 +594,9 @@ const B2BOrdersStats: React.FC = () => {
   const statusBarItems = useMemo(
     () =>
       statusBreakdown.map((r) => ({
-        label: r.status ?? "?",
+        label: getStatusLabel(r.status),
         value: r.totalTTC,
-        hint: `${r.orders} orders`,
+        hint: `${r.orders} commandes`,
       })),
     [statusBreakdown]
   );
@@ -609,7 +625,7 @@ const B2BOrdersStats: React.FC = () => {
             variant="h4"
             sx={{ mb: 0.5, fontWeight: 900, letterSpacing: -0.7 }}
           >
-            B2B Orders — Dashboard
+            Commandes B2B — Tableau de bord
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.75 }}>
             Par défaut: mois en cours. KPIs, tendances, risques, top ventes.
@@ -619,11 +635,11 @@ const B2BOrdersStats: React.FC = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <Chip
             size="small"
-            label={paidOnly ? "Paid only" : "All orders"}
+            label={paidOnly ? "Payées uniquement" : "Toutes les commandes"}
             icon={<PaidRoundedIcon />}
             variant="outlined"
           />
-          <Tooltip title="Refresh">
+          <Tooltip title="Actualiser">
             <IconButton onClick={() => loadAll(true)} disabled={refreshing}>
               <RefreshRoundedIcon />
             </IconButton>
@@ -647,7 +663,7 @@ const B2BOrdersStats: React.FC = () => {
             <TextField
               fullWidth
               type="date"
-              label="From"
+              label="Du"
               InputLabelProps={{ shrink: true }}
               value={from}
               onChange={(e) => {
@@ -661,7 +677,7 @@ const B2BOrdersStats: React.FC = () => {
             <TextField
               fullWidth
               type="date"
-              label="To"
+              label="Au"
               InputLabelProps={{ shrink: true }}
               value={to}
               onChange={(e) => {
@@ -679,8 +695,8 @@ const B2BOrdersStats: React.FC = () => {
               onChange={(_, v) => v && setPaidMode(v)}
               size="small"
             >
-              <ToggleButton value="all">All</ToggleButton>
-              <ToggleButton value="paidOnly">Paid only</ToggleButton>
+              <ToggleButton value="all">Toutes</ToggleButton>
+              <ToggleButton value="paidOnly">Payées uniquement</ToggleButton>
             </ToggleButtonGroup>
           </Grid>
 
@@ -688,7 +704,7 @@ const B2BOrdersStats: React.FC = () => {
             <TextField
               fullWidth
               type="number"
-              label="Top limit"
+              label="Limite du Top"
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value) || 20)}
               inputProps={{ min: 5, max: 200 }}
@@ -698,7 +714,7 @@ const B2BOrdersStats: React.FC = () => {
           <Grid item xs={12} md={8}>
             <TextField
               fullWidth
-              label="Search (client / invoice / order id)"
+              label="Recherche (client / facture / n° commande)"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
@@ -719,11 +735,11 @@ const B2BOrdersStats: React.FC = () => {
                   onChange={(e) => applyQuickRange(e.target.value as any)}
                   displayEmpty
                 >
-                  <MenuItem value="thisMonth">This month (default)</MenuItem>
-                  <MenuItem value="30d">Last 30 days</MenuItem>
-                  <MenuItem value="90d">Last 90 days</MenuItem>
-                  <MenuItem value="ytd">Year to date</MenuItem>
-                  <MenuItem value="none">Custom</MenuItem>
+                  <MenuItem value="thisMonth">Ce mois-ci (par défaut)</MenuItem>
+                  <MenuItem value="30d">30 derniers jours</MenuItem>
+                  <MenuItem value="90d">90 derniers jours</MenuItem>
+                  <MenuItem value="ytd">Depuis le début de l'année</MenuItem>
+                  <MenuItem value="none">Personnalisé</MenuItem>
                 </Select>
               </FormControl>
 
@@ -733,7 +749,7 @@ const B2BOrdersStats: React.FC = () => {
                 disabled={refreshing}
                 sx={{ minWidth: 120 }}
               >
-                Refresh
+                Actualiser
               </Button>
             </Stack>
           </Grid>
@@ -781,11 +797,11 @@ const B2BOrdersStats: React.FC = () => {
 
         <Grid item xs={12} md={3}>
           <MetricCard
-            title="Orders"
+            title="Commandes"
             value={fmtInt(summary?.ordersCount ?? 0)}
             subtitle={`Panier moyen: ${fmtMoney(summary?.avgBasketTTC ?? 0)}`}
             icon={<TrendingUpRoundedIcon />}
-            rightChip={`${kpiUnpaidCount} unpaid`}
+            rightChip={`${kpiUnpaidCount} impayées`}
           />
         </Grid>
       </Grid>
@@ -794,13 +810,13 @@ const B2BOrdersStats: React.FC = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={5}>
           <SectionCard
-            title="Trend (last months)"
+            title="Tendance (derniers mois)"
             subtitle="Intensité = TTC relatif (sur les 8 derniers mois affichés)"
             right={
               <Chip
                 size="small"
                 variant="outlined"
-                label="Visual"
+                label="Visuel"
                 icon={<TrendingUpRoundedIcon />}
               />
             }
@@ -817,7 +833,7 @@ const B2BOrdersStats: React.FC = () => {
                         {fmtMonthLabel(m.month)}
                       </Typography>
                       <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                        {m.orders} orders
+                        {m.orders} commandes
                       </Typography>
                     </Box>
 
@@ -842,7 +858,7 @@ const B2BOrdersStats: React.FC = () => {
               </Stack>
             ) : (
               <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                No data for this period.
+                Aucune donnée pour cette période.
               </Typography>
             )}
           </SectionCard>
@@ -850,20 +866,20 @@ const B2BOrdersStats: React.FC = () => {
 
         <Grid item xs={12} md={7}>
           <SectionCard
-            title="Monthly trend (details)"
+            title="Tendance mensuelle (détails)"
             subtitle="Table complète mensuelle"
             right={
               <Chip
                 size="small"
                 variant="outlined"
-                label={`${monthly.length} rows`}
+                label={`${monthly.length} lignes`}
               />
             }
           >
             <DenseTable
               head={[
-                { label: "Month" },
-                { label: "Orders", align: "right" },
+                { label: "Mois" },
+                { label: "Commandes", align: "right" },
                 { label: "Total TTC", align: "right" },
                 { label: "Promo TTC", align: "right" },
               ]}
@@ -891,7 +907,7 @@ const B2BOrdersStats: React.FC = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={4}>
           <SectionCard
-            title="Payment methods"
+            title="Méthodes de paiement"
             subtitle="Répartition TTC (barres)"
             right={
               <Chip
@@ -906,7 +922,7 @@ const B2BOrdersStats: React.FC = () => {
               <PillBar items={paymentBarItems} formatValue={fmtMoney} />
             ) : (
               <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                No data.
+                Aucune donnée.
               </Typography>
             )}
           </SectionCard>
@@ -914,14 +930,14 @@ const B2BOrdersStats: React.FC = () => {
 
         <Grid item xs={12} md={4}>
           <SectionCard
-            title="Status breakdown"
+            title="Répartition par statut"
             subtitle="Répartition TTC par status"
             right={
               <Chip
                 size="small"
                 variant="outlined"
                 icon={<LocalShippingRoundedIcon />}
-                label="Ops"
+                label="Opérations"
               />
             }
           >
@@ -929,7 +945,7 @@ const B2BOrdersStats: React.FC = () => {
               <PillBar items={statusBarItems} formatValue={fmtMoney} />
             ) : (
               <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                No data.
+                Aucune donnée.
               </Typography>
             )}
           </SectionCard>
@@ -937,14 +953,14 @@ const B2BOrdersStats: React.FC = () => {
 
         <Grid item xs={12} md={4}>
           <SectionCard
-            title="AR aging"
+            title="Ancienneté des créances"
             subtitle="Impayés par tranche"
             right={
               <Chip
                 size="small"
                 variant="outlined"
                 icon={<WarningAmberRoundedIcon />}
-                label="Risk"
+                label="Risque"
               />
             }
           >
@@ -952,7 +968,7 @@ const B2BOrdersStats: React.FC = () => {
               {aging.map((r) => (
                 <Chip
                   key={r.bucket}
-                  label={`${r.bucket} days • ${r.orders} • ${fmtMoney(r.totalTTC)}`}
+                  label={`${r.bucket} jours • ${r.orders} • ${fmtMoney(r.totalTTC)}`}
                   variant="outlined"
                 />
               ))}
@@ -965,7 +981,7 @@ const B2BOrdersStats: React.FC = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
           <SectionCard
-            title="Top items sold"
+            title="Meilleures ventes"
             subtitle="Produits les plus vendus sur la période"
             right={
               <Chip
@@ -978,8 +994,8 @@ const B2BOrdersStats: React.FC = () => {
           >
             <DenseTable
               head={[
-                { label: "Product" },
-                { label: "Qty", align: "right" },
+                { label: "Produit" },
+                { label: "Qté", align: "right" },
                 { label: "Total TTC", align: "right" },
               ]}
             >
@@ -987,10 +1003,10 @@ const B2BOrdersStats: React.FC = () => {
                 <TableRow key={r.product_id}>
                   <TableCell>
                     <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                      {r.product?.name ?? `Product #${r.product_id}`}
+                      {r.product?.name ?? `Produit #${r.product_id}`}
                     </Typography>
                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                      Variant: {r.product?.variant_id ?? "-"}
+                      Variante : {r.product?.variant_id ?? "-"}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ fontWeight: 800 }}>
@@ -1021,7 +1037,7 @@ const B2BOrdersStats: React.FC = () => {
             <DenseTable
               head={[
                 { label: "Client" },
-                { label: "Orders", align: "right" },
+                { label: "Commandes", align: "right" },
                 { label: "Total TTC", align: "right" },
               ]}
             >
@@ -1075,7 +1091,7 @@ const B2BOrdersStats: React.FC = () => {
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <SectionCard
-            title="Unpaid orders"
+            title="Commandes impayées"
             subtitle="À relancer (impayés)"
             right={
               <Chip
@@ -1087,7 +1103,7 @@ const B2BOrdersStats: React.FC = () => {
           >
             <DenseTable
               head={[
-                { label: "Order" },
+                { label: "Commande" },
                 { label: "Client" },
                 { label: "Total TTC", align: "right" },
               ]}
@@ -1103,7 +1119,7 @@ const B2BOrdersStats: React.FC = () => {
                       {o.invoice_number ? ` • ${o.invoice_number}` : ""}
                     </Typography>
                     <Box sx={{ mt: 0.7 }}>
-                      <Chip size="small" variant="outlined" label={o.status} />
+                      <Chip size="small" variant="outlined" label={getStatusLabel(o.status)} />
                     </Box>
                   </TableCell>
                   <TableCell>
@@ -1133,7 +1149,7 @@ const B2BOrdersStats: React.FC = () => {
 
         <Grid item xs={12} md={6}>
           <SectionCard
-            title="Withholding pending"
+            title="Retenue à la source en attente"
             subtitle="Attestation / document RS à récupérer"
             right={
               <Chip
@@ -1145,7 +1161,7 @@ const B2BOrdersStats: React.FC = () => {
           >
             <DenseTable
               head={[
-                { label: "Order" },
+                { label: "Commande" },
                 { label: "Client" },
                 { label: "Total TTC", align: "right" },
               ]}
@@ -1164,7 +1180,7 @@ const B2BOrdersStats: React.FC = () => {
                       <Chip
                         size="small"
                         variant="outlined"
-                        label={o.withholding_received ? "Received" : "Pending"}
+                        label={o.withholding_received ? "Reçue" : "En attente"}
                       />
                     </Box>
                   </TableCell>

@@ -18,7 +18,7 @@ const Login: React.FC = () => {
       localStorage.setItem("isAuthenticated", "true"); // Enregistrement de l'état d'authentification
       navigate("/invoices");
     } else {
-      setError("Invalid email or password");
+      setError("E-mail ou mot de passe invalide");
     }
   };
 
@@ -37,7 +37,7 @@ const Login: React.FC = () => {
               Freya Hub Admin
             </Typography>
             <TextField
-              label="Email"
+              label="E-mail"
               variant="outlined"
               fullWidth
               margin="normal"
@@ -45,7 +45,7 @@ const Login: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
             />
             <TextField
-              label="Password"
+              label="Mot de passe"
               type="password"
               variant="outlined"
               fullWidth
@@ -59,7 +59,7 @@ const Login: React.FC = () => {
               </Typography>
             )}
             <Button variant="contained" color="primary" onClick={handleLogin} fullWidth>
-              Login
+              Se connecter
             </Button>
           </Box>
         </Container>
