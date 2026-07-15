@@ -32,6 +32,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 
 import html2pdf from "html2pdf.js";
 import { generateInvoiceHTML } from "./utils/invoiceTemplate";
+import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
 
 /* ------------------------------------------
    TYPES
@@ -109,10 +110,6 @@ const round2 = (n: number) =>
   Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 const clamp0 = (n: number) => (Number.isFinite(n) ? Math.max(0, n) : 0);
-
-// La retenue à la source n'est pas exigée par l'administration fiscale
-// tunisienne pour les commandes dont le montant TTC (après promo) est < 1000 DT.
-const WITHHOLDING_THRESHOLD_TTC = 1000;
 
 type BrandKey = "ALL" | "COSRX" | "SKIN1004" | "DR ALTHEA" | "OTHER";
 
@@ -307,11 +304,19 @@ const CreateOrderB2B: React.FC = () => {
 
   const promoFixedTooHigh = totals.promoFixed > totals.totalTTC;
 
-  // Suggestion automatique de la retenue à la source selon le seuil légal (1000 DT TTC),
-  // tant que l'utilisateur n'a pas explicitement forcé la valeur lui-même.
+  // Sous le seuil légal (1000 DT TTC), la commande est exonérée : impossible
+  // de forcer la retenue, quelle que soit l'action précédente de l'utilisateur.
+  // Au-dessus du seuil, activée par défaut sauf si l'utilisateur l'a désactivée
+  // manuellement.
   useEffect(() => {
-    if (withholdingManuallySet) return;
-    setWithholdingEnabled(totals.totalAfterPromo >= WITHHOLDING_THRESHOLD_TTC);
+    if (isWithholdingExempt(totals.totalAfterPromo)) {
+      setWithholdingEnabled(false);
+      setWithholdingManuallySet(false);
+      return;
+    }
+    if (!withholdingManuallySet) {
+      setWithholdingEnabled(true);
+    }
   }, [totals.totalAfterPromo, withholdingManuallySet]);
 
   /* ------------------------------------------
@@ -847,40 +852,50 @@ const CreateOrderB2B: React.FC = () => {
                 Retenue à la source
               </Typography>
 
-              <Button
-                variant={withholdingEnabled ? "contained" : "outlined"}
-                color={withholdingEnabled ? "warning" : "primary"}
-                fullWidth
-                onClick={() => {
-                  setWithholdingManuallySet(true);
-                  setWithholdingEnabled(!withholdingEnabled);
-                }}
-                sx={{ fontWeight: 800 }}
-              >
-                {withholdingEnabled ? "Retenue activée" : "Activer la retenue"}
-              </Button>
+              {isWithholdingExempt(totals.totalAfterPromo) ? (
+                <Typography variant="caption" sx={{ display: "block", opacity: 0.7 }}>
+                  Commande exonérée : non exigée par l'administration fiscale
+                  pour les commandes inférieures à {WITHHOLDING_THRESHOLD_TTC} DT
+                  (total actuel : {totals.totalAfterPromo.toFixed(2)} DT).
+                </Typography>
+              ) : (
+                <>
+                  <Button
+                    variant={withholdingEnabled ? "contained" : "outlined"}
+                    color={withholdingEnabled ? "warning" : "primary"}
+                    fullWidth
+                    onClick={() => {
+                      setWithholdingManuallySet(true);
+                      setWithholdingEnabled(!withholdingEnabled);
+                    }}
+                    sx={{ fontWeight: 800 }}
+                  >
+                    {withholdingEnabled ? "Retenue activée" : "Activer la retenue"}
+                  </Button>
 
-              <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.7 }}>
-                La retenue à la source n'est pas exigée par l'administration
-                fiscale pour les commandes inférieures à {WITHHOLDING_THRESHOLD_TTC} DT
-                (total actuel : {totals.totalAfterPromo.toFixed(2)} DT).
-                {withholdingManuallySet && (
-                  <>
-                    {" "}
-                    <Box
-                      component="span"
-                      onClick={() => setWithholdingManuallySet(false)}
-                      sx={{
-                        cursor: "pointer",
-                        color: "primary.main",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Revenir à la suggestion automatique
-                    </Box>
-                  </>
-                )}
-              </Typography>
+                  <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.7 }}>
+                    La retenue à la source n'est pas exigée par l'administration
+                    fiscale pour les commandes inférieures à {WITHHOLDING_THRESHOLD_TTC} DT
+                    (total actuel : {totals.totalAfterPromo.toFixed(2)} DT).
+                    {withholdingManuallySet && (
+                      <>
+                        {" "}
+                        <Box
+                          component="span"
+                          onClick={() => setWithholdingManuallySet(false)}
+                          sx={{
+                            cursor: "pointer",
+                            color: "primary.main",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Revenir à la suggestion automatique
+                        </Box>
+                      </>
+                    )}
+                  </Typography>
+                </>
+              )}
             </Box>
 
             {/* PROMOTIONS */}

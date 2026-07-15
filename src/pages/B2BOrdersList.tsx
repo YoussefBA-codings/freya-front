@@ -25,8 +25,10 @@ import {
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useNavigate } from "react-router-dom";
+import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
 
 /* ======================================================
    🔵 TYPES
@@ -58,7 +60,13 @@ interface OrderB2B {
 type StatusFilter = "ALL" | OrderB2BStatus;
 type PaidFilter = "ALL" | "PAID" | "UNPAID";
 type PaymentMethodFilter = "ALL" | "BANK_TRANSFER" | "CASH" | "CHEQUE" | "NONE";
-type WithholdingFilter = "ALL" | "ENABLED" | "DISABLED" | "RECEIVED" | "PENDING";
+type WithholdingFilter =
+  | "ALL"
+  | "ENABLED"
+  | "DISABLED"
+  | "RECEIVED"
+  | "PENDING"
+  | "EXEMPT";
 
 const STATUS_LABELS: Record<OrderB2BStatus, string> = {
   CREATED: "Créée",
@@ -178,6 +186,8 @@ const B2BOrdersList: React.FC = () => {
             return o.withholding_enabled && o.withholding_received;
           case "PENDING":
             return o.withholding_enabled && !o.withholding_received;
+          case "EXEMPT":
+            return isWithholdingExempt(Number(o.total_ttc));
           default:
             return true;
         }
@@ -218,9 +228,18 @@ const B2BOrdersList: React.FC = () => {
   );
 
   const getWithholdingLabel = (o: OrderB2B) => {
-    if (!o.withholding_enabled) return "—";
+    if (!o.withholding_enabled) {
+      return isWithholdingExempt(Number(o.total_ttc))
+        ? `Exonérée (< ${WITHHOLDING_THRESHOLD_TTC} DT)`
+        : "Non activée";
+    }
     return o.withholding_received ? "Reçue" : "En attente";
   };
+
+  // Anomalie : retenue activée manuellement alors que la commande est
+  // légalement exonérée (total TTC sous le seuil). À vérifier au cas par cas.
+  const isWithholdingAnomaly = (o: OrderB2B) =>
+    o.withholding_enabled && isWithholdingExempt(Number(o.total_ttc));
 
   return (
     <Box sx={{ p: 3 }}>
@@ -341,6 +360,9 @@ const B2BOrdersList: React.FC = () => {
             <MenuItem value="DISABLED">Non activée</MenuItem>
             <MenuItem value="RECEIVED">Reçue</MenuItem>
             <MenuItem value="PENDING">En attente de réception</MenuItem>
+            <MenuItem value="EXEMPT">
+              Exonérée (&lt; {WITHHOLDING_THRESHOLD_TTC} DT)
+            </MenuItem>
           </Select>
         </FormControl>
 
@@ -429,7 +451,16 @@ const B2BOrdersList: React.FC = () => {
                         ? PAYMENT_METHOD_LABELS[order.payment_method]
                         : "—"}
                     </TableCell>
-                    <TableCell>{getWithholdingLabel(order)}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        {getWithholdingLabel(order)}
+                        {isWithholdingAnomaly(order) && (
+                          <Tooltip title="Retenue activée alors que la commande est sous le seuil légal de 1000 DT — à vérifier">
+                            <WarningAmberIcon fontSize="small" color="warning" />
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
                     <TableCell align="right">
                       <Tooltip title="Voir l'historique du client">
                         <IconButton

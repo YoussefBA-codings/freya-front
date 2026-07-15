@@ -29,6 +29,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useParams } from "react-router-dom";
+import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
 
 /* ======================================================
    🔵 TYPES
@@ -218,9 +219,10 @@ const ClientOrderHistory: React.FC = () => {
     setEditPaymentReference(order.payment_reference || "");
     setEditPaymentDate(order.payment_date?.slice(0, 10) || "");
 
-    setEditWithholdingEnabled(order.withholding_enabled);
-    setEditWithholdingReceived(order.withholding_received);
-    setEditWithholdingDate(order.withholding_date?.slice(0, 10) || "");
+    const exempt = isWithholdingExempt(Number(order.total_ttc));
+    setEditWithholdingEnabled(exempt ? false : order.withholding_enabled);
+    setEditWithholdingReceived(exempt ? false : order.withholding_received);
+    setEditWithholdingDate(exempt ? "" : order.withholding_date?.slice(0, 10) || "");
   };
 
   const closeDrawer = () => {
@@ -723,53 +725,64 @@ const ClientOrderHistory: React.FC = () => {
                   Retenue à la source
                 </Typography>
 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={editWithholdingEnabled}
-                      onChange={(e) =>
-                        setEditWithholdingEnabled(e.target.checked)
+                {isWithholdingExempt(Number(selectedOrder.total_ttc)) ? (
+                  <Typography variant="caption" sx={{ display: "block", opacity: 0.7 }}>
+                    Commande exonérée : non exigée par l'administration fiscale
+                    pour les commandes inférieures à {WITHHOLDING_THRESHOLD_TTC}{" "}
+                    DT (total de cette commande :{" "}
+                    {Number(selectedOrder.total_ttc).toFixed(2)} DT).
+                  </Typography>
+                ) : (
+                  <>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={editWithholdingEnabled}
+                          onChange={(e) =>
+                            setEditWithholdingEnabled(e.target.checked)
+                          }
+                        />
                       }
+                      label="Retenue à la source activée"
+                      sx={{ mb: 1 }}
                     />
-                  }
-                  label="Retenue à la source activée"
-                  sx={{ mb: 1 }}
-                />
 
-                <Typography variant="caption" sx={{ display: "block", mb: 2, opacity: 0.7 }}>
-                  Non exigée par l'administration fiscale pour les commandes
-                  inférieures à 1000 DT (total de cette commande :{" "}
-                  {Number(selectedOrder.total_ttc).toFixed(2)} DT).
-                </Typography>
+                    <Typography variant="caption" sx={{ display: "block", mb: 2, opacity: 0.7 }}>
+                      Non exigée par l'administration fiscale pour les commandes
+                      inférieures à {WITHHOLDING_THRESHOLD_TTC} DT (total de cette
+                      commande : {Number(selectedOrder.total_ttc).toFixed(2)} DT).
+                    </Typography>
 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={editWithholdingReceived}
-                      onChange={(e) =>
-                        setEditWithholdingReceived(e.target.checked)
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={editWithholdingReceived}
+                          onChange={(e) =>
+                            setEditWithholdingReceived(e.target.checked)
+                          }
+                        />
                       }
+                      label="Document reçu"
+                      disabled={!editWithholdingEnabled}
+                      sx={{ mb: 2 }}
                     />
-                  }
-                  label="Document reçu"
-                  disabled={!editWithholdingEnabled}
-                  sx={{ mb: 2 }}
-                />
 
-                <TextField
-                  fullWidth
-                  label="Date de retenue"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={editWithholdingDate}
-                  onChange={(e) => setEditWithholdingDate(e.target.value)}
-                  disabled={!editWithholdingEnabled}
-                  sx={{ mb: 2 }}
-                />
+                    <TextField
+                      fullWidth
+                      label="Date de retenue"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={editWithholdingDate}
+                      onChange={(e) => setEditWithholdingDate(e.target.value)}
+                      disabled={!editWithholdingEnabled}
+                      sx={{ mb: 2 }}
+                    />
 
-                <Button variant="contained" onClick={handleSaveWithholding}>
-                  Enregistrer la retenue
-                </Button>
+                    <Button variant="contained" onClick={handleSaveWithholding}>
+                      Enregistrer la retenue
+                    </Button>
+                  </>
+                )}
               </Box>
 
               <Box>
