@@ -44,27 +44,29 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
+  const subheaderSx = {
+    fontWeight: "bold",
+    color: "primary.main",
+    fontSize: "0.8rem",
+    lineHeight: "28px",
+    mt: 0.5,
+  };
+
+  const itemSx = { py: 0.25 };
+  const iconSx = { minWidth: 36 };
+
   const drawerContent = (
-    <List>
+    <List dense disablePadding sx={{ py: 1 }}>
       {/* ========================= */}
       {/*          B2C SECTION      */}
       {/* ========================= */}
-      <ListSubheader
-        sx={{
-          fontWeight: "bold",
-          color: "primary.main",
-          fontSize: "0.9rem",
-          mt: 1,
-        }}
-      >
-        B2C
-      </ListSubheader>
+      <ListSubheader sx={subheaderSx}>B2C</ListSubheader>
 
       {/* Invoice Management */}
-      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle}>
+      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle} sx={itemSx}>
         <Tooltip title="Gestion des factures" placement="right" arrow>
-          <ListItemIcon>
-            <InvoiceIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <InvoiceIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Gestion des factures" />
@@ -75,23 +77,24 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         component={Link}
         to="/droppex-invoices"
         onClick={handleDrawerToggle}
+        sx={itemSx}
       >
         <Tooltip title="Factures Droppex" placement="right" arrow>
-          <ListItemIcon>
-            <CheckIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <CheckIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Factures Droppex" />
       </ListItem>
       {/* Stock Status */}
-      <ListItem component={Link} to="/stock/status" onClick={handleDrawerToggle}>
+      <ListItem component={Link} to="/stock/status" onClick={handleDrawerToggle} sx={itemSx}>
         <Tooltip
           title="Tableau de bord de surveillance des ruptures de stock Freya"
           placement="right"
           arrow
         >
-          <ListItemIcon>
-            <InventoryIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <InventoryIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="État du stock" />
@@ -100,22 +103,13 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
       {/* ========================= */}
       {/*           B2B SECTION     */}
       {/* ========================= */}
-      <ListSubheader
-        sx={{
-          fontWeight: "bold",
-          color: "primary.main",
-          fontSize: "0.9rem",
-          mt: 3,
-        }}
-      >
-        B2B
-      </ListSubheader>
+      <ListSubheader sx={subheaderSx}>B2B</ListSubheader>
 
       {/* Deposit B2B Invoice */}
-      <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle}>
+      <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle} sx={itemSx}>
         <Tooltip title="Déposer une facture B2B" placement="right" arrow>
-          <ListItemIcon>
-            <UploadFileIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <UploadFileIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Déposer une facture" />
@@ -126,20 +120,21 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         component={Link}
         to="/b2b/customers/create"
         onClick={handleDrawerToggle}
+        sx={itemSx}
       >
         <Tooltip title="Créer un client" placement="right" arrow>
-          <ListItemIcon>
-            <GroupAddIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <GroupAddIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Créer un client" />
       </ListItem>
 
       {/* Manage Products */}
-      <ListItem component={Link} to="/b2b/products" onClick={handleDrawerToggle}>
+      <ListItem component={Link} to="/b2b/products" onClick={handleDrawerToggle} sx={itemSx}>
         <Tooltip title="Gérer les produits" placement="right" arrow>
-          <ListItemIcon>
-            <InventoryIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <InventoryIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Gérer les produits" />
@@ -150,10 +145,11 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         component={Link}
         to="/b2b/orders/create"
         onClick={handleDrawerToggle}
+        sx={itemSx}
       >
         <Tooltip title="Créer une commande" placement="right" arrow>
-          <ListItemIcon>
-            <ReceiptLongIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <ReceiptLongIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Créer une commande" />
@@ -164,10 +160,11 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         component={Link}
         to="/b2b/orders/history"
         onClick={handleDrawerToggle}
+        sx={itemSx}
       >
         <Tooltip title="Historique des commandes" placement="right" arrow>
-          <ListItemIcon>
-            <HistoryIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <HistoryIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Historique des commandes" />
@@ -178,24 +175,26 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         component={Link}
         to="/b2b/orders/all"
         onClick={handleDrawerToggle}
+        sx={itemSx}
       >
         <Tooltip title="Toutes les commandes B2B" placement="right" arrow>
-          <ListItemIcon>
-            <FormatListBulletedIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <FormatListBulletedIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Toutes les commandes" />
       </ListItem>
 
-      {/* ✅ B2B Stats (NEW) */}
+      {/* B2B Stats */}
       <ListItem
         component={Link}
         to="/b2b/orders/stats"
         onClick={handleDrawerToggle}
+        sx={itemSx}
       >
         <Tooltip title="Statistiques des commandes B2B" placement="right" arrow>
-          <ListItemIcon>
-            <BarChartIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <BarChartIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Statistiques B2B" />
@@ -204,25 +203,17 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
       {/* ========================= */}
       {/*      COMPTABILITÉ        */}
       {/* ========================= */}
-      <ListSubheader
-        sx={{
-          fontWeight: "bold",
-          color: "primary.main",
-          fontSize: "0.9rem",
-          mt: 3,
-        }}
-      >
-        Comptabilité
-      </ListSubheader>
+      <ListSubheader sx={subheaderSx}>Comptabilité</ListSubheader>
 
       <ListItem
         component={Link}
         to="/achats/factures"
         onClick={handleDrawerToggle}
+        sx={itemSx}
       >
         <Tooltip title="Factures d'achat" placement="right" arrow>
-          <ListItemIcon>
-            <RequestQuoteIcon color="action" />
+          <ListItemIcon sx={iconSx}>
+            <RequestQuoteIcon color="action" fontSize="small" />
           </ListItemIcon>
         </Tooltip>
         <ListItemText primary="Factures d'achat" />
