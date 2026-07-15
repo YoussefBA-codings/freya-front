@@ -118,6 +118,13 @@ type PaymentOrder = {
   payments: OrderB2BPayment[];
 };
 
+// is_paid fait foi : une commande peut être marquée payée sans que chaque
+// versement ait été détaillé (héritage de l'ancien flux "marquer payé").
+export const getRemainingBalance = (order: PaymentOrder) =>
+  order.is_paid
+    ? 0
+    : Math.max(0, Number(order.total_ttc) - getAmountPaid(order));
+
 export const getPaymentProgressLabel = (order: PaymentOrder) => {
   if (order.is_paid) return "Payé";
   const amountPaid = getAmountPaid(order);
@@ -252,9 +259,7 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
 
     setEditPaymentDueDate(order.payment_due_date?.slice(0, 10) || "");
 
-    const remaining = order.is_paid
-      ? 0
-      : Math.max(0, Number(order.total_ttc) - getAmountPaid(order));
+    const remaining = getRemainingBalance(order);
     setNewPaymentAmount(remaining > 0 ? remaining.toFixed(2) : "");
     setNewPaymentMethod("");
     setNewPaymentReference("");
@@ -401,9 +406,7 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
   // is_paid fait foi : une commande peut être marquée payée sans que chaque
   // versement ait été détaillé (héritage de l'ancien flux "marquer payé").
   const amountPaid = order ? getAmountPaid(order) : 0;
-  const remaining = order && !order.is_paid
-    ? Math.max(0, Number(order.total_ttc) - amountPaid)
-    : 0;
+  const remaining = order ? getRemainingBalance(order) : 0;
   const paidPercent = !order
     ? 0
     : order.is_paid

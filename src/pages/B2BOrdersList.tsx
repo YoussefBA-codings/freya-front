@@ -36,6 +36,7 @@ import OrderB2BDetailDrawer, {
   getOrderStatusLabel,
   getPaymentProgressColor,
   getPaymentProgressLabel,
+  getRemainingBalance,
   isOrderOverdue,
 } from "../elements/OrderB2BDetailDrawer";
 
@@ -227,6 +228,13 @@ const B2BOrdersList: React.FC = () => {
 
   const totalTTC = filteredOrders.reduce(
     (sum, o) => sum + Number(o.total_ttc),
+    0,
+  );
+
+  // Reste dû réel : déduit les versements partiels déjà reçus, contrairement
+  // à totalTTC qui est la valeur brute des commandes.
+  const totalRemaining = filteredOrders.reduce(
+    (sum, o) => sum + getRemainingBalance(o),
     0,
   );
 
@@ -511,6 +519,15 @@ const B2BOrdersList: React.FC = () => {
                     <TableCell colSpan={4}><strong>Total</strong></TableCell>
                     <TableCell align="right">
                       <strong>{totalTTC.toFixed(2)} DT</strong>
+                      {totalRemaining > 0 && (
+                        <Typography
+                          variant="caption"
+                          color="error.main"
+                          sx={{ display: "block", fontWeight: 700 }}
+                        >
+                          dont {totalRemaining.toFixed(2)} DT restant dû
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell colSpan={3} />
                   </TableRow>
