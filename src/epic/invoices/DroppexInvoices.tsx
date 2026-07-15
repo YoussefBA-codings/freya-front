@@ -196,7 +196,7 @@ export const DroppexInvoices = () => {
     },
   ];
   return (
-    <Box padding="2rem" sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box padding="2rem" sx={{ backgroundColor: "background.default", minHeight: "100vh" }}>
       <Typography variant="h5" mb={2}>
         Factures Droppex
       </Typography>

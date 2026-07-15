@@ -378,7 +378,7 @@ const CompareStats: React.FC = () => {
                   <Typography
                     variant="h6"
                     fontWeight="bold"
-                    sx={{ color: "#1A1A1A", mt: 1 }}
+                    sx={{ color: "text.primary", mt: 1 }}
                   >
                     {item.value}
                   </Typography>

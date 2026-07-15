@@ -225,7 +225,7 @@ const InvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({ open, onClo
             <Box>
               {invoice.items.length > 0 ? (
                 invoice.items.map((item, index) => (
-                  <Box key={index} display="flex" justifyContent="space-between" paddingY={1} borderBottom="1px solid #e0e0e0">
+                  <Box key={index} display="flex" justifyContent="space-between" paddingY={1} borderBottom="1px solid" borderColor="divider">
                     <Box>
                       <Typography variant="body1">{item.name}</Typography>
                       <Typography variant="caption" color="textSecondary">SKU: {item.sku}</Typography>

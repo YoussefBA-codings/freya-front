@@ -600,18 +600,25 @@ const CreateOrderB2B: React.FC = () => {
       {/* ==============================
           MAIN LAYOUT: Products (wide) + Summary (fixed)
          ============================== */}
-      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: 2,
+          alignItems: "flex-start",
+        }}
+      >
         {/* LEFT: Products + top bar */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
           {/* Top bar: client + excel actions */}
           <Box
             sx={{
               mb: 2,
               p: 2,
               borderRadius: 3,
-              backgroundColor: "#fafafa",
-              border: "1px solid #eee",
-              boxShadow: "0px 4px 15px rgba(0,0,0,0.04)",
+              backgroundColor: "grey.50",
+              border: "1px solid",
+              borderColor: "divider",
             }}
           >
             <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
@@ -664,9 +671,9 @@ const CreateOrderB2B: React.FC = () => {
             sx={{
               p: 2,
               borderRadius: 3,
-              backgroundColor: "#fafafa",
-              border: "1px solid #eee",
-              boxShadow: "0px 4px 15px rgba(0,0,0,0.04)",
+              backgroundColor: "grey.50",
+              border: "1px solid",
+              borderColor: "divider",
             }}
           >
             <Typography variant="h5" sx={{ mb: 2, fontWeight: 900 }}>
@@ -802,12 +809,12 @@ const CreateOrderB2B: React.FC = () => {
           </Box>
         </Box>
 
-        {/* RIGHT: Order Summary (fixed width + sticky) */}
+        {/* RIGHT: Order Summary (fixed width + sticky on desktop, full width & static on mobile) */}
         <Box
           sx={{
-            width: rightPanelWidth,
+            width: { xs: "100%", md: rightPanelWidth },
             flex: "0 0 auto",
-            position: "sticky",
+            position: { xs: "static", md: "sticky" },
             top: 16,
             alignSelf: "flex-start",
           }}
@@ -816,9 +823,9 @@ const CreateOrderB2B: React.FC = () => {
             sx={{
               p: 2,
               borderRadius: 3,
-              backgroundColor: "#fafafa",
-              border: "1px solid #eee",
-              boxShadow: "0px 4px 15px rgba(0,0,0,0.04)",
+              backgroundColor: "grey.50",
+              border: "1px solid",
+              borderColor: "divider",
               maxHeight: "85vh",
               overflowY: "auto",
             }}
@@ -841,9 +848,10 @@ const CreateOrderB2B: React.FC = () => {
             {/* WITHHOLDING */}
             <Box
               sx={{
-                background: "#ffffff",
+                background: "background.paper",
                 borderRadius: 2,
-                border: "1px solid #eee",
+                border: "1px solid",
+                borderColor: "divider",
                 p: 2,
                 mb: 2,
               }}
@@ -901,9 +909,10 @@ const CreateOrderB2B: React.FC = () => {
             {/* PROMOTIONS */}
             <Box
               sx={{
-                background: "#ffffff",
+                background: "background.paper",
                 borderRadius: 2,
-                border: "1px solid #eee",
+                border: "1px solid",
+                borderColor: "divider",
                 p: 2,
                 mb: 2,
               }}
@@ -1005,12 +1014,11 @@ const CreateOrderB2B: React.FC = () => {
               selectedProducts.map((item) => (
                 <Card
                   key={item.product.id}
+                  variant="outlined"
                   sx={{
                     mb: 1.5,
                     p: 1,
                     borderRadius: 2,
-                    border: "1px solid #eee",
-                    boxShadow: "0px 2px 5px rgba(0,0,0,0.04)",
                   }}
                 >
                   <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
@@ -1050,8 +1058,9 @@ const CreateOrderB2B: React.FC = () => {
               sx={{
                 mt: 1,
                 p: 1.5,
-                background: "#fff",
-                border: "1px solid #eee",
+                background: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
                 borderRadius: 2,
               }}
             >
@@ -1099,7 +1108,7 @@ const CreateOrderB2B: React.FC = () => {
         open={clientsDrawerOpen}
         onClose={() => setClientsDrawerOpen(false)}
       >
-        <Box sx={{ width: 380, p: 2 }}>
+        <Box sx={{ width: { xs: "100vw", sm: 380 }, p: 2 }}>
           <Typography variant="h5" sx={{ mb: 2, fontWeight: 900 }}>
             Clients
           </Typography>
@@ -1120,14 +1129,14 @@ const CreateOrderB2B: React.FC = () => {
               .map((c) => (
                 <Card
                   key={c.id}
+                  variant="outlined"
                   sx={{
                     mb: 2,
                     borderRadius: 2,
                     transition: "0.2s",
-                    border:
-                      selectedClient?.id === c.id
-                        ? "2px solid #1976d2"
-                        : "1px solid #ddd",
+                    borderWidth: selectedClient?.id === c.id ? 2 : 1,
+                    borderColor:
+                      selectedClient?.id === c.id ? "primary.main" : "divider",
                   }}
                 >
                   <CardActionArea

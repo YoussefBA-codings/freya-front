@@ -236,10 +236,11 @@ const PurchaseInvoices = () => {
           mb: 3,
           flexWrap: "wrap",
           alignItems: "center",
-          background: "#fafafa",
+          background: "grey.50",
           borderRadius: 2,
           p: 2,
-          border: "1px solid #eee",
+          border: "1px solid",
+          borderColor: "divider",
         }}
       >
         <DatePicker
@@ -282,11 +283,12 @@ const PurchaseInvoices = () => {
       ) : (
         <TableContainer
           component={Paper}
-          sx={{ borderRadius: 2, boxShadow: "0 4px 16px rgba(0,0,0,0.05)" }}
+          variant="outlined"
+          sx={{ borderRadius: 2 }}
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ background: "#f6f8fa" }}>
+              <TableRow>
                 <TableCell><strong>Numéro facture</strong></TableCell>
                 <TableCell><strong>Date facture</strong></TableCell>
                 <TableCell><strong>Fournisseur</strong></TableCell>
@@ -342,7 +344,7 @@ const PurchaseInvoices = () => {
 
             {invoices.length > 0 && (
               <TableFooter>
-                <TableRow sx={{ background: "#f6f8fa" }}>
+                <TableRow sx={{ background: "grey.50" }}>
                   <TableCell colSpan={3}><strong>Total</strong></TableCell>
                   <TableCell align="right"><strong>{formatAmount(totals.montant_ht)}</strong></TableCell>
                   <TableCell align="right"><strong>{formatAmount(totals.tva)}</strong></TableCell>

@@ -3,6 +3,10 @@ import { pdfjs } from "react-pdf";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
 import "./index.css";
 import PrivateRoute from "./elements/PrivateRoute";
 import NotFound from "./pages/NotFound";
@@ -23,10 +27,9 @@ import B2BOrderHistorySelectClient from "./pages/B2BOrderHistorySelectClient";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { fr } from "date-fns/locale";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { frFR as coreFrFR } from "@mui/material/locale";
-import { frFR as dataGridFrFR } from "@mui/x-data-grid/locales";
-import { frFR as pickersFrFR } from "@mui/x-date-pickers/locales";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import theme from "./theme";
 import B2BOrdersStats from "./pages/B2BOrdersStats";
 import B2BOrdersList from "./pages/B2BOrdersList";
 import FreyaSalesDashboard from "./pages/FreyaSalesDashboard";
@@ -34,14 +37,12 @@ import PurchaseInvoices from "./pages/PurchaseInvoices";
 
 const queryClient = new QueryClient();
 
-// 👉 THEME GLOBAL EN FRANÇAIS (MUI core + DataGrid + DatePickers)
-const theme = createTheme(coreFrFR, dataGridFrFR, pickersFrFR);
-
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
+    <CssBaseline />
     {/* 👉 GLOBAL DATE PICKER CONTEXT */}
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
       <QueryClientProvider client={queryClient}>

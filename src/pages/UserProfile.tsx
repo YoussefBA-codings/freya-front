@@ -15,9 +15,9 @@ const UserProfile = () => {
 
   return (
     <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ padding: 4, marginTop: 4, borderRadius: 2 }}>
+      <Paper variant="outlined" sx={{ padding: 4, marginTop: 4, borderRadius: 3 }}>
         <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
-          <Avatar sx={{ width: 80, height: 80, backgroundColor: "#3f51b5" }}>
+          <Avatar sx={{ width: 80, height: 80, backgroundColor: "primary.main" }}>
             <AccountCircleIcon sx={{ fontSize: 40 }} />
           </Avatar>
           <Typography variant="h5" component="div" textAlign="center" mt={2}>

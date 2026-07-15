@@ -7,6 +7,7 @@ import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
@@ -29,13 +30,49 @@ import {
   FormatListBulleted as FormatListBulletedIcon,
 } from "@mui/icons-material";
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
 
 interface NavbarProps {
   children: React.ReactNode;
 }
+
+interface NavItemProps {
+  to: string;
+  label: string;
+  icon: React.ReactNode;
+  tooltip?: string;
+  onClick: () => void;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ to, label, icon, tooltip, onClick }) => {
+  const location = useLocation();
+  const selected = location.pathname === to;
+
+  return (
+    <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
+      <Tooltip title={tooltip || label} placement="right" arrow>
+        <ListItemButton
+          component={Link}
+          to={to}
+          onClick={onClick}
+          selected={selected}
+          sx={{ py: 0.75 }}
+        >
+          <ListItemIcon sx={{ minWidth: 36 }}>{icon}</ListItemIcon>
+          <ListItemText
+            primary={label}
+            primaryTypographyProps={{
+              fontSize: "0.875rem",
+              fontWeight: selected ? 600 : 500,
+            }}
+          />
+        </ListItemButton>
+      </Tooltip>
+    </ListItem>
+  );
+};
 
 const Navbar: React.FC<NavbarProps> = ({ children }) => {
   const theme = useTheme();
@@ -45,179 +82,104 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const subheaderSx = {
-    fontWeight: "bold",
-    color: "primary.main",
-    fontSize: "0.8rem",
+    fontWeight: 700,
+    color: "text.secondary",
+    fontSize: "0.7rem",
+    letterSpacing: "0.06em",
     lineHeight: "28px",
     mt: 0.5,
+    px: 2,
   };
 
-  const itemSx = { py: 0.25 };
-  const iconSx = { minWidth: 36 };
-
   const drawerContent = (
-    <List dense disablePadding sx={{ py: 1 }}>
+    <List dense disablePadding sx={{ py: 1.5 }}>
       {/* ========================= */}
       {/*          B2C SECTION      */}
       {/* ========================= */}
       <ListSubheader sx={subheaderSx}>B2C</ListSubheader>
 
-      {/* Invoice Management */}
-      <ListItem component={Link} to="/all-invoices" onClick={handleDrawerToggle} sx={itemSx}>
-        <Tooltip title="Gestion des factures" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <InvoiceIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Gestion des factures" />
-      </ListItem>
-
-      {/* Droppex Invoices */}
-      <ListItem
-        component={Link}
-        to="/droppex-invoices"
+      <NavItem
+        to="/all-invoices"
+        label="Gestion des factures"
+        icon={<InvoiceIcon fontSize="small" />}
         onClick={handleDrawerToggle}
-        sx={itemSx}
-      >
-        <Tooltip title="Factures Droppex" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <CheckIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Factures Droppex" />
-      </ListItem>
-      {/* Stock Status */}
-      <ListItem component={Link} to="/stock/status" onClick={handleDrawerToggle} sx={itemSx}>
-        <Tooltip
-          title="Tableau de bord de surveillance des ruptures de stock Freya"
-          placement="right"
-          arrow
-        >
-          <ListItemIcon sx={iconSx}>
-            <InventoryIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="État du stock" />
-      </ListItem>
+      />
+      <NavItem
+        to="/droppex-invoices"
+        label="Factures Droppex"
+        icon={<CheckIcon fontSize="small" />}
+        onClick={handleDrawerToggle}
+      />
+      <NavItem
+        to="/stock/status"
+        label="État du stock"
+        tooltip="Tableau de bord de surveillance des ruptures de stock Freya"
+        icon={<InventoryIcon fontSize="small" />}
+        onClick={handleDrawerToggle}
+      />
 
       {/* ========================= */}
       {/*           B2B SECTION     */}
       {/* ========================= */}
       <ListSubheader sx={subheaderSx}>B2B</ListSubheader>
 
-      {/* Deposit B2B Invoice */}
-      <ListItem component={Link} to="/deposit-b2b" onClick={handleDrawerToggle} sx={itemSx}>
-        <Tooltip title="Déposer une facture B2B" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <UploadFileIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Déposer une facture" />
-      </ListItem>
-
-      {/* Create Customer */}
-      <ListItem
-        component={Link}
+      <NavItem
+        to="/deposit-b2b"
+        label="Déposer une facture"
+        tooltip="Déposer une facture B2B"
+        icon={<UploadFileIcon fontSize="small" />}
+        onClick={handleDrawerToggle}
+      />
+      <NavItem
         to="/b2b/customers/create"
+        label="Créer un client"
+        icon={<GroupAddIcon fontSize="small" />}
         onClick={handleDrawerToggle}
-        sx={itemSx}
-      >
-        <Tooltip title="Créer un client" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <GroupAddIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Créer un client" />
-      </ListItem>
-
-      {/* Manage Products */}
-      <ListItem component={Link} to="/b2b/products" onClick={handleDrawerToggle} sx={itemSx}>
-        <Tooltip title="Gérer les produits" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <InventoryIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Gérer les produits" />
-      </ListItem>
-
-      {/* Create Order */}
-      <ListItem
-        component={Link}
+      />
+      <NavItem
+        to="/b2b/products"
+        label="Gérer les produits"
+        icon={<InventoryIcon fontSize="small" />}
+        onClick={handleDrawerToggle}
+      />
+      <NavItem
         to="/b2b/orders/create"
+        label="Créer une commande"
+        icon={<ReceiptLongIcon fontSize="small" />}
         onClick={handleDrawerToggle}
-        sx={itemSx}
-      >
-        <Tooltip title="Créer une commande" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <ReceiptLongIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Créer une commande" />
-      </ListItem>
-
-      {/* Orders History */}
-      <ListItem
-        component={Link}
+      />
+      <NavItem
         to="/b2b/orders/history"
+        label="Historique des commandes"
+        icon={<HistoryIcon fontSize="small" />}
         onClick={handleDrawerToggle}
-        sx={itemSx}
-      >
-        <Tooltip title="Historique des commandes" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <HistoryIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Historique des commandes" />
-      </ListItem>
-
-      {/* Toutes les commandes (vue globale) */}
-      <ListItem
-        component={Link}
+      />
+      <NavItem
         to="/b2b/orders/all"
+        label="Toutes les commandes"
+        tooltip="Toutes les commandes B2B"
+        icon={<FormatListBulletedIcon fontSize="small" />}
         onClick={handleDrawerToggle}
-        sx={itemSx}
-      >
-        <Tooltip title="Toutes les commandes B2B" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <FormatListBulletedIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Toutes les commandes" />
-      </ListItem>
-
-      {/* B2B Stats */}
-      <ListItem
-        component={Link}
+      />
+      <NavItem
         to="/b2b/orders/stats"
+        label="Statistiques B2B"
+        tooltip="Statistiques des commandes B2B"
+        icon={<BarChartIcon fontSize="small" />}
         onClick={handleDrawerToggle}
-        sx={itemSx}
-      >
-        <Tooltip title="Statistiques des commandes B2B" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <BarChartIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Statistiques B2B" />
-      </ListItem>
+      />
 
       {/* ========================= */}
       {/*      COMPTABILITÉ        */}
       {/* ========================= */}
       <ListSubheader sx={subheaderSx}>Comptabilité</ListSubheader>
 
-      <ListItem
-        component={Link}
+      <NavItem
         to="/achats/factures"
+        label="Factures d'achat"
+        icon={<RequestQuoteIcon fontSize="small" />}
         onClick={handleDrawerToggle}
-        sx={itemSx}
-      >
-        <Tooltip title="Factures d'achat" placement="right" arrow>
-          <ListItemIcon sx={iconSx}>
-            <RequestQuoteIcon color="action" fontSize="small" />
-          </ListItemIcon>
-        </Tooltip>
-        <ListItemText primary="Factures d'achat" />
-      </ListItem>
+      />
     </List>
   );
 
@@ -227,10 +189,9 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         <Toolbar>
           {isMobile && (
             <IconButton
-              color="inherit"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
+              sx={{ mr: 2, color: "text.secondary" }}
             >
               <MenuIcon />
             </IconButton>
@@ -240,12 +201,12 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
             variant="h6"
             component={Link}
             to="/"
-            sx={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}
+            sx={{ textDecoration: "none", color: "inherit", flexGrow: 1, fontWeight: 700 }}
           >
             Freya Hub
           </Typography>
 
-          <IconButton color="inherit" component={Link} to="/profile">
+          <IconButton component={Link} to="/profile" sx={{ color: "text.secondary" }}>
             <AccountCircleIcon />
           </IconButton>
         </Toolbar>

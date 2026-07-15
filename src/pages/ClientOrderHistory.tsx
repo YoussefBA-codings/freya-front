@@ -27,6 +27,7 @@ import {
   Chip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { alpha } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useParams } from "react-router-dom";
 import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
@@ -370,10 +371,11 @@ const ClientOrderHistory: React.FC = () => {
           mb: 3,
           flexWrap: "wrap",
           alignItems: "center",
-          background: "#fafafa",
+          background: "grey.50",
           borderRadius: 2,
           p: 2,
-          border: "1px solid #eee",
+          border: "1px solid",
+          borderColor: "divider",
         }}
       >
         <TextField
@@ -411,14 +413,12 @@ const ClientOrderHistory: React.FC = () => {
 
       <TableContainer
         component={Paper}
-        sx={{
-          borderRadius: 2,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.05)",
-        }}
+        variant="outlined"
+        sx={{ borderRadius: 2 }}
       >
         <Table>
           <TableHead>
-            <TableRow sx={{ background: "#f6f8fa" }}>
+            <TableRow>
               <TableCell>
                 <strong>N° facture</strong>
               </TableCell>
@@ -444,7 +444,7 @@ const ClientOrderHistory: React.FC = () => {
                 hover
                 sx={{
                   cursor: "pointer",
-                  "&:hover": { backgroundColor: "#fdfdfd" },
+                  "&:hover": { backgroundColor: "grey.50" },
                 }}
                 onClick={() => openOrderDrawer(order)}
               >
@@ -472,9 +472,9 @@ const ClientOrderHistory: React.FC = () => {
         onClose={closeDrawer}
         PaperProps={{
           sx: {
-            width: 480,
-            borderLeft: "1px solid #ddd",
-            boxShadow: "-4px 0 18px rgba(0,0,0,0.08)",
+            width: { xs: "100vw", sm: 480 },
+            borderLeft: "1px solid",
+            borderColor: "divider",
           },
         }}
       >
@@ -492,13 +492,14 @@ const ClientOrderHistory: React.FC = () => {
             sx={{
               position: "sticky",
               top: 0,
-              backgroundColor: "white",
+              backgroundColor: "background.paper",
               zIndex: 10,
               pb: 2,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              borderBottom: "1px solid #eee",
+              borderBottom: "1px solid",
+              borderColor: "divider",
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -514,10 +515,11 @@ const ClientOrderHistory: React.FC = () => {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <Box
                 sx={{
-                  background: "#fafafa",
+                  background: "grey.50",
                   p: 2,
                   borderRadius: 2,
-                  border: "1px solid #eee",
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -585,10 +587,11 @@ const ClientOrderHistory: React.FC = () => {
 
               <Box
                 sx={{
-                  background: "#fff5f5",
+                  background: (theme) => alpha(theme.palette.error.main, 0.06),
                   p: 2,
                   borderRadius: 2,
-                  border: "1px solid #ffd6d6",
+                  border: "1px solid",
+                  borderColor: (theme) => alpha(theme.palette.error.main, 0.24),
                 }}
               >
                 <Typography
@@ -619,10 +622,11 @@ const ClientOrderHistory: React.FC = () => {
 
               <Box
                 sx={{
-                  background: "#fafafa",
+                  background: "grey.50",
                   p: 2,
                   borderRadius: 2,
-                  border: "1px solid #eee",
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -653,10 +657,11 @@ const ClientOrderHistory: React.FC = () => {
 
               <Box
                 sx={{
-                  background: "#fafafa",
+                  background: "grey.50",
                   p: 2,
                   borderRadius: 2,
-                  border: "1px solid #eee",
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -715,10 +720,11 @@ const ClientOrderHistory: React.FC = () => {
 
               <Box
                 sx={{
-                  background: "#fafafa",
+                  background: "grey.50",
                   p: 2,
                   borderRadius: 2,
-                  border: "1px solid #eee",
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -797,9 +803,9 @@ const ClientOrderHistory: React.FC = () => {
                       p: 2,
                       mb: 2,
                       borderRadius: 2,
-                      border: "1px solid #eee",
-                      background: "white",
-                      boxShadow: "0px 2px 5px rgba(0,0,0,0.03)",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      background: "background.paper",
                     }}
                   >
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>

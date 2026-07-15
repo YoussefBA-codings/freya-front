@@ -257,10 +257,11 @@ const B2BOrdersList: React.FC = () => {
           mb: 3,
           flexWrap: "wrap",
           alignItems: "center",
-          background: "#fafafa",
+          background: "grey.50",
           borderRadius: 2,
           p: 2,
-          border: "1px solid #eee",
+          border: "1px solid",
+          borderColor: "divider",
         }}
       >
         <TextField
@@ -402,11 +403,12 @@ const B2BOrdersList: React.FC = () => {
 
           <TableContainer
             component={Paper}
-            sx={{ borderRadius: 2, boxShadow: "0 4px 16px rgba(0,0,0,0.05)" }}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
           >
             <Table>
               <TableHead>
-                <TableRow sx={{ background: "#f6f8fa" }}>
+                <TableRow>
                   <TableCell><strong>Client</strong></TableCell>
                   <TableCell><strong>N° facture</strong></TableCell>
                   <TableCell><strong>Date</strong></TableCell>
@@ -479,7 +481,7 @@ const B2BOrdersList: React.FC = () => {
 
               {filteredOrders.length > 0 && (
                 <TableFooter>
-                  <TableRow sx={{ background: "#f6f8fa" }}>
+                  <TableRow sx={{ background: "grey.50" }}>
                     <TableCell colSpan={4}><strong>Total</strong></TableCell>
                     <TableCell align="right">
                       <strong>{totalTTC.toFixed(2)} DT</strong>

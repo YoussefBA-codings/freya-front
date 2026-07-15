@@ -175,7 +175,8 @@ const PrepareInvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({
                 display="flex"
                 justifyContent="space-between"
                 paddingY={1}
-                borderBottom="1px solid #e0e0e0"
+                borderBottom="1px solid"
+                borderColor="divider"
               >
                 <Typography variant="body1">{item.vendor} - {item.name}</Typography>
                 <Typography variant="body1">
@@ -187,14 +188,14 @@ const PrepareInvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({
               <Typography variant="subtitle1">Frais de livraison :</Typography>
               <Typography
                 variant="body2"
-                sx={{ color: "green", fontWeight: "bold" }}
+                sx={{ color: "success.main", fontWeight: "bold" }}
               >
                 0 TND
               </Typography>
               <Typography variant="subtitle1">Réduction totale :</Typography>
               <Typography
                 variant="body2"
-                sx={{ color: "red", fontWeight: "bold" }}
+                sx={{ color: "error.main", fontWeight: "bold" }}
               >
                 0 TND
               </Typography>
@@ -210,7 +211,7 @@ const PrepareInvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({
             <Typography
               variant="subtitle1"
               gutterBottom
-              sx={{ color: "blue", fontWeight: "bold" }}
+              sx={{ color: "info.main", fontWeight: "bold" }}
             >
               Articles GB Distribution :
             </Typography>
@@ -220,7 +221,8 @@ const PrepareInvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({
                 display="flex"
                 justifyContent="space-between"
                 paddingY={1}
-                borderBottom="1px solid #e0e0e0"
+                borderBottom="1px solid"
+                borderColor="divider"
               >
                 <Typography variant="body1">{item.name}</Typography>
                 <Typography variant="body1">
@@ -232,14 +234,14 @@ const PrepareInvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({
               <Typography variant="subtitle1">Frais de livraison :</Typography>
               <Typography
                 variant="body2"
-                sx={{ color: "green", fontWeight: "bold" }}
+                sx={{ color: "success.main", fontWeight: "bold" }}
               >
                 {invoice.shippingAmount ? invoice.shippingAmount : 0} TND
               </Typography>
               <Typography variant="subtitle1">Réduction totale :</Typography>
               <Typography
                 variant="body2"
-                sx={{ color: "red", fontWeight: "bold" }}
+                sx={{ color: "error.main", fontWeight: "bold" }}
               >
                 {invoice.totalDiscount ? invoice.totalDiscount : 0} TND
               </Typography>

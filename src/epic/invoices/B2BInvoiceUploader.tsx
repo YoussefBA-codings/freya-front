@@ -64,7 +64,7 @@ export const B2BInvoiceDeposit = () => {
   };
 
   return (
-    <Box padding="2rem" sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box padding="2rem" sx={{ backgroundColor: "background.default", minHeight: "100vh" }}>
       <Typography variant="h5" mb={3}>
         Dépôt de facture B2B
       </Typography>
@@ -99,8 +99,9 @@ export const B2BInvoiceDeposit = () => {
           mb: 2,
           p: 3,
           textAlign: "center",
-          border: "2px dashed #aaa",
-          backgroundColor: "#fafafa",
+          border: "2px dashed",
+          borderColor: "divider",
+          backgroundColor: "grey.50",
           cursor: "pointer",
         }}
         onDrop={handleDrop}

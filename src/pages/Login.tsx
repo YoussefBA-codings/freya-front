@@ -28,13 +28,19 @@ const Login: React.FC = () => {
       justifyContent="center"
       alignItems="center"
       height="100vh"
-      bgcolor="white"
+      sx={{ bgcolor: "background.default" }}
     >
-      <Paper elevation={3} style={{ padding: "2rem", borderRadius: "10px" }}>
-        <Container maxWidth="xs">
-          <Box display="flex" flexDirection="column" alignItems="center">
-            <Typography variant="h4" gutterBottom>
-              Freya Hub Admin
+      <Paper
+        variant="outlined"
+        sx={{ p: { xs: 3, sm: 5 }, borderRadius: 3, width: 380, maxWidth: "90vw" }}
+      >
+        <Container disableGutters maxWidth="xs">
+          <Box display="flex" flexDirection="column" alignItems="center" gap={0.5}>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              Freya Hub
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Connectez-vous à votre espace admin
             </Typography>
             <TextField
               label="E-mail"
@@ -43,6 +49,7 @@ const Login: React.FC = () => {
               margin="normal"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              sx={{ mt: 0 }}
             />
             <TextField
               label="Mot de passe"
@@ -54,11 +61,18 @@ const Login: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
             {error && (
-              <Typography color="error" variant="body2">
+              <Typography color="error" variant="body2" sx={{ alignSelf: "flex-start", mt: 0.5 }}>
                 {error}
               </Typography>
             )}
-            <Button variant="contained" color="primary" onClick={handleLogin} fullWidth>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleLogin}
+              fullWidth
+              size="large"
+              sx={{ mt: 3, py: 1.25 }}
+            >
               Se connecter
             </Button>
           </Box>

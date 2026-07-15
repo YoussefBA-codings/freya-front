@@ -243,7 +243,7 @@ export const Invoices = () => {
     <Box
       padding="2rem"
       sx={{
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "background.default",
         minHeight: "100vh",
       }}
     >

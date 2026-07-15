@@ -189,7 +189,7 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box sx={{ width: 420, p: 3 }}>
+      <Box sx={{ width: { xs: "100vw", sm: 420 }, p: 3 }}>
         <Box
           sx={{
             display: "flex",
