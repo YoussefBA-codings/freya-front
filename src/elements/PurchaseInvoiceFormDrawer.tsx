@@ -188,7 +188,12 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
   };
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose}>
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      sx={{ zIndex: (theme) => theme.zIndex.drawer + 2 }}
+    >
       <Box sx={{ width: { xs: "100vw", sm: 420 }, p: 3 }}>
         <Box
           sx={{

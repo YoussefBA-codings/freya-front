@@ -1107,6 +1107,7 @@ const CreateOrderB2B: React.FC = () => {
         anchor="left"
         open={clientsDrawerOpen}
         onClose={() => setClientsDrawerOpen(false)}
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 2 }}
       >
         <Box sx={{ width: { xs: "100vw", sm: 380 }, p: 2 }}>
           <Typography variant="h5" sx={{ mb: 2, fontWeight: 900 }}>
