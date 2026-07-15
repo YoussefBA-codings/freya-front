@@ -26,6 +26,7 @@ import {
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { alpha } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
 import OrderB2BDetailDrawer, {
@@ -33,6 +34,9 @@ import OrderB2BDetailDrawer, {
   OrderB2BStatus,
   getOrderStatusColor,
   getOrderStatusLabel,
+  getPaymentProgressColor,
+  getPaymentProgressLabel,
+  isOrderOverdue,
 } from "../elements/OrderB2BDetailDrawer";
 
 /* ======================================================
@@ -40,7 +44,7 @@ import OrderB2BDetailDrawer, {
 ====================================================== */
 
 type StatusFilter = "ALL" | OrderB2BStatus;
-type PaidFilter = "ALL" | "PAID" | "UNPAID";
+type PaidFilter = "ALL" | "PAID" | "UNPAID" | "OVERDUE";
 type PaymentMethodFilter = "ALL" | "BANK_TRANSFER" | "CASH" | "CHEQUE" | "NONE";
 type WithholdingFilter =
   | "ALL"
@@ -153,9 +157,17 @@ const B2BOrdersList: React.FC = () => {
     }
 
     if (paidFilter !== "ALL") {
-      result = result.filter((o) =>
-        paidFilter === "PAID" ? o.is_paid : !o.is_paid,
-      );
+      result = result.filter((o) => {
+        switch (paidFilter) {
+          case "PAID":
+            return o.is_paid;
+          case "OVERDUE":
+            return isOrderOverdue(o);
+          case "UNPAID":
+          default:
+            return !o.is_paid;
+        }
+      });
     }
 
     if (paymentMethodFilter !== "ALL") {
@@ -318,6 +330,7 @@ const B2BOrdersList: React.FC = () => {
             <MenuItem value="ALL">Tous</MenuItem>
             <MenuItem value="PAID">Payées</MenuItem>
             <MenuItem value="UNPAID">Impayées</MenuItem>
+            <MenuItem value="OVERDUE">En retard</MenuItem>
           </Select>
         </FormControl>
 
@@ -420,13 +433,26 @@ const B2BOrdersList: React.FC = () => {
                   </TableRow>
                 )}
 
-                {filteredOrders.map((order) => (
+                {filteredOrders.map((order) => {
+                  const overdue = isOrderOverdue(order);
+                  return (
                   <TableRow
                     key={order.id}
                     hover
                     sx={{
                       cursor: "pointer",
-                      "&:hover": { backgroundColor: "grey.50" },
+                      backgroundColor: overdue
+                        ? (theme) => alpha(theme.palette.error.main, 0.07)
+                        : !order.is_paid
+                        ? (theme) => alpha(theme.palette.warning.main, 0.07)
+                        : undefined,
+                      "&:hover": {
+                        backgroundColor: overdue
+                          ? (theme) => alpha(theme.palette.error.main, 0.12)
+                          : !order.is_paid
+                          ? (theme) => alpha(theme.palette.warning.main, 0.12)
+                          : "grey.50",
+                      },
                     }}
                     onClick={() => setSelectedOrder(order)}
                   >
@@ -445,7 +471,20 @@ const B2BOrdersList: React.FC = () => {
                     <TableCell align="right">
                       {Number(order.total_ttc).toFixed(2)} DT
                     </TableCell>
-                    <TableCell>{order.is_paid ? "Oui" : "Non"}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <Chip
+                          size="small"
+                          label={getPaymentProgressLabel(order)}
+                          color={getPaymentProgressColor(order)}
+                        />
+                        {overdue && (
+                          <Tooltip title="Échéance de paiement dépassée">
+                            <WarningAmberIcon fontSize="small" color="error" />
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
                     <TableCell>
                       {order.payment_method
                         ? PAYMENT_METHOD_LABELS[order.payment_method]
@@ -462,7 +501,8 @@ const B2BOrdersList: React.FC = () => {
                       </Box>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
 
               {filteredOrders.length > 0 && (
