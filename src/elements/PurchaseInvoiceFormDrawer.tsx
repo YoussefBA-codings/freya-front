@@ -126,11 +126,6 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
       return;
     }
 
-    if (!pdfFile) {
-      setError("Veuillez joindre le PDF de la facture.");
-      return;
-    }
-
     setError(null);
     setSaving(true);
 
@@ -150,39 +145,52 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
 
     try {
       if (initialValue) {
-        // Édition : la facture et le PDF sont enregistrés séparément.
-        const documentData = new FormData();
-        documentData.append("file", pdfFile);
-        documentData.append("date", fields.invoice_date);
+        // Édition : la facture et le PDF (s'il est fourni) sont enregistrés
+        // séparément.
+        const savePromise = axios.patch(
+          `${import.meta.env.VITE_API_URL}purchase-invoices/${initialValue.id}`,
+          fields,
+        );
 
-        const [saveResult, uploadResult] = await Promise.allSettled([
-          axios.patch(
-            `${import.meta.env.VITE_API_URL}purchase-invoices/${initialValue.id}`,
-            fields,
-          ),
-          axios.post(
-            `${import.meta.env.VITE_API_URL}purchase-invoices/document`,
-            documentData,
-            { headers: { "Content-Type": "multipart/form-data" } },
-          ),
-        ]);
+        if (!pdfFile) {
+          try {
+            await savePromise;
+          } catch (err) {
+            console.error("Failed to save purchase invoice:", err);
+            setError("Erreur lors de l'enregistrement de la facture.");
+            return;
+          }
+        } else {
+          const documentData = new FormData();
+          documentData.append("file", pdfFile);
+          documentData.append("date", fields.invoice_date);
 
-        if (saveResult.status === "rejected") {
-          console.error("Failed to save purchase invoice:", saveResult.reason);
-          setError("Erreur lors de l'enregistrement de la facture.");
-          return;
-        }
+          const [saveResult, uploadResult] = await Promise.allSettled([
+            savePromise,
+            axios.post(
+              `${import.meta.env.VITE_API_URL}purchase-invoices/document`,
+              documentData,
+              { headers: { "Content-Type": "multipart/form-data" } },
+            ),
+          ]);
 
-        if (uploadResult.status === "rejected") {
-          console.error("Failed to upload invoice PDF:", uploadResult.reason);
-          setError("Facture enregistrée, mais échec de l'envoi du PDF.");
-          return;
+          if (saveResult.status === "rejected") {
+            console.error("Failed to save purchase invoice:", saveResult.reason);
+            setError("Erreur lors de l'enregistrement de la facture.");
+            return;
+          }
+
+          if (uploadResult.status === "rejected") {
+            console.error("Failed to upload invoice PDF:", uploadResult.reason);
+            setError("Facture enregistrée, mais échec de l'envoi du PDF.");
+            return;
+          }
         }
       } else {
-        // Création : la facture et le PDF sont envoyés en une seule requête
-        // multipart/form-data (le PDF est requis par le backend).
+        // Création : la facture et le PDF (s'il est fourni) sont envoyés en
+        // une seule requête multipart/form-data, le PDF étant optionnel.
         const createData = new FormData();
-        createData.append("file", pdfFile);
+        if (pdfFile) createData.append("file", pdfFile);
         Object.entries(fields).forEach(([key, value]) => {
           if (value !== null) createData.append(key, String(value));
         });
@@ -348,13 +356,8 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
           />
 
           <Box>
-            <Button
-              variant="outlined"
-              component="label"
-              fullWidth
-              color={!pdfFile && error ? "error" : "primary"}
-            >
-              {pdfFile ? pdfFile.name : "Joindre le PDF de la facture *"}
+            <Button variant="outlined" component="label" fullWidth>
+              {pdfFile ? pdfFile.name : "Joindre le PDF de la facture (optionnel)"}
               <input
                 type="file"
                 accept="application/pdf"
