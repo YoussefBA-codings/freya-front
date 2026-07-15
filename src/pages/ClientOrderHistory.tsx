@@ -485,6 +485,7 @@ const ClientOrderHistory: React.FC = () => {
         anchor="right"
         open={!!selectedOrder}
         onClose={closeDrawer}
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 2 }}
         PaperProps={{
           sx: {
             width: { xs: "100vw", sm: 480 },
