@@ -21,11 +21,10 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import DownloadIcon from "@mui/icons-material/Download";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { format } from "date-fns";
-import { saveAs } from "file-saver";
-import Papa from "papaparse";
+import { format, startOfMonth } from "date-fns";
+import ExcelJS from "exceljs";
 import PurchaseInvoiceFormDrawer from "../elements/PurchaseInvoiceFormDrawer";
 
 export interface PurchaseInvoice {
@@ -64,6 +63,8 @@ const PurchaseInvoices = () => {
   const [month, setMonth] = useState<Date>(new Date());
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [uploadingJda, setUploadingJda] = useState(false);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<PurchaseInvoice | null>(
@@ -141,24 +142,63 @@ const PurchaseInvoices = () => {
     }
   };
 
-  const handleExportCsv = () => {
-    const rows = invoices.map((invoice) => ({
-      "Numéro facture": invoice.invoice_number,
-      "Date facture": invoice.invoice_date?.slice(0, 10),
-      "Nom fournisseur": invoice.supplier_name,
-      "Total HT": invoice.montant_ht,
-      TVA: invoice.tva,
-      FODEC: invoice.fodec,
-      "Timbre sur téléphonie et internet": invoice.timbre_telephonie,
-      "Timbre sur facture": invoice.timbre_facture,
-      "Total TTC": invoice.montant_ttc,
-      Commentaire: invoice.comment || "",
-    }));
+  const handleUploadJda = async () => {
+    setUploadingJda(true);
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("JDA");
 
-    const csvData = Papa.unparse(rows);
-    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
-    const monthLabel = format(month, "MM-yyyy");
-    saveAs(blob, `JDA_${monthLabel}.csv`);
+      worksheet.columns = [
+        { header: "Numéro facture", key: "invoice_number", width: 20 },
+        { header: "Date facture", key: "invoice_date", width: 15 },
+        { header: "Nom fournisseur", key: "supplier_name", width: 25 },
+        { header: "Total HT", key: "montant_ht", width: 12 },
+        { header: "TVA", key: "tva", width: 12 },
+        { header: "FODEC", key: "fodec", width: 12 },
+        { header: "Timbre sur téléphonie et internet", key: "timbre_telephonie", width: 18 },
+        { header: "Timbre sur facture", key: "timbre_facture", width: 15 },
+        { header: "Total TTC", key: "montant_ttc", width: 12 },
+        { header: "Commentaire", key: "comment", width: 30 },
+      ];
+
+      invoices.forEach((invoice) => {
+        worksheet.addRow({
+          invoice_number: invoice.invoice_number,
+          invoice_date: invoice.invoice_date?.slice(0, 10),
+          supplier_name: invoice.supplier_name,
+          montant_ht: invoice.montant_ht,
+          tva: invoice.tva,
+          fodec: invoice.fodec,
+          timbre_telephonie: invoice.timbre_telephonie,
+          timbre_facture: invoice.timbre_facture,
+          montant_ttc: invoice.montant_ttc,
+          comment: invoice.comment || "",
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const monthLabel = format(month, "MM-yyyy");
+      const file = new File([buffer], `JDA_${monthLabel}.xlsx`, {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const documentData = new FormData();
+      documentData.append("file", file);
+      documentData.append("date", format(startOfMonth(month), "yyyy-MM-dd"));
+
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}purchase-invoices/document`,
+        documentData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+
+      notify("JDA envoyé sur le Drive avec succès.", "success");
+    } catch (error) {
+      console.error("Failed to upload JDA:", error);
+      notify("Erreur lors de l'envoi du JDA sur le Drive.", "error");
+    } finally {
+      setUploadingJda(false);
+    }
   };
 
   const totals = invoices.reduce(
@@ -213,11 +253,17 @@ const PurchaseInvoices = () => {
 
         <Button
           variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportCsv}
-          disabled={invoices.length === 0}
+          startIcon={
+            uploadingJda ? (
+              <CircularProgress size={16} />
+            ) : (
+              <CloudUploadIcon />
+            )
+          }
+          onClick={handleUploadJda}
+          disabled={invoices.length === 0 || uploadingJda}
         >
-          Générer JDA (CSV)
+          Envoyer le JDA sur le Drive
         </Button>
 
         <Button
