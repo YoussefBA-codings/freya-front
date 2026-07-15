@@ -134,7 +134,7 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
     setError(null);
     setSaving(true);
 
-    const payload = {
+    const fields = {
       supplier_name: form.supplier_name.trim(),
       invoice_number: form.invoice_number.trim(),
       invoice_date: format(form.invoice_date, "yyyy-MM-dd"),
@@ -148,43 +148,59 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
       comment: form.comment.trim() || null,
     };
 
-    const savePromise = initialValue
-      ? axios.patch(
-          `${import.meta.env.VITE_API_URL}purchase-invoices/${initialValue.id}`,
-          payload,
-        )
-      : axios.post(`${import.meta.env.VITE_API_URL}purchase-invoices`, payload);
+    try {
+      if (initialValue) {
+        // Édition : la facture et le PDF sont enregistrés séparément.
+        const documentData = new FormData();
+        documentData.append("file", pdfFile);
+        documentData.append("date", fields.invoice_date);
 
-    const documentData = new FormData();
-    documentData.append("file", pdfFile);
-    documentData.append("date", format(form.invoice_date, "yyyy-MM-dd"));
-    const uploadPromise = axios.post(
-      `${import.meta.env.VITE_API_URL}purchase-invoices/document`,
-      documentData,
-      { headers: { "Content-Type": "multipart/form-data" } },
-    );
+        const [saveResult, uploadResult] = await Promise.allSettled([
+          axios.patch(
+            `${import.meta.env.VITE_API_URL}purchase-invoices/${initialValue.id}`,
+            fields,
+          ),
+          axios.post(
+            `${import.meta.env.VITE_API_URL}purchase-invoices/document`,
+            documentData,
+            { headers: { "Content-Type": "multipart/form-data" } },
+          ),
+        ]);
 
-    const [saveResult, uploadResult] = await Promise.allSettled([
-      savePromise,
-      uploadPromise,
-    ]);
+        if (saveResult.status === "rejected") {
+          console.error("Failed to save purchase invoice:", saveResult.reason);
+          setError("Erreur lors de l'enregistrement de la facture.");
+          return;
+        }
 
-    if (saveResult.status === "rejected") {
-      console.error("Failed to save purchase invoice:", saveResult.reason);
+        if (uploadResult.status === "rejected") {
+          console.error("Failed to upload invoice PDF:", uploadResult.reason);
+          setError("Facture enregistrée, mais échec de l'envoi du PDF.");
+          return;
+        }
+      } else {
+        // Création : la facture et le PDF sont envoyés en une seule requête
+        // multipart/form-data (le PDF est requis par le backend).
+        const createData = new FormData();
+        createData.append("file", pdfFile);
+        Object.entries(fields).forEach(([key, value]) => {
+          if (value !== null) createData.append(key, String(value));
+        });
+
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}purchase-invoices`,
+          createData,
+          { headers: { "Content-Type": "multipart/form-data" } },
+        );
+      }
+
+      onSaved();
+    } catch (err) {
+      console.error("Failed to save purchase invoice:", err);
       setError("Erreur lors de l'enregistrement de la facture.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    if (uploadResult.status === "rejected") {
-      console.error("Failed to upload invoice PDF:", uploadResult.reason);
-      setError("Facture enregistrée, mais échec de l'envoi du PDF.");
-      setSaving(false);
-      return;
-    }
-
-    setSaving(false);
-    onSaved();
   };
 
   return (
