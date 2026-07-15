@@ -20,42 +20,24 @@ import {
   Paper,
   Button,
   Chip,
-  IconButton,
   Tooltip,
+  Snackbar,
+  SnackbarContent,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { useNavigate } from "react-router-dom";
 import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
+import OrderB2BDetailDrawer, {
+  OrderB2BDetail,
+  OrderB2BStatus,
+  getOrderStatusColor,
+  getOrderStatusLabel,
+} from "../elements/OrderB2BDetailDrawer";
 
 /* ======================================================
    🔵 TYPES
 ====================================================== */
-
-type OrderB2BStatus = "CREATED" | "SHIPPED" | "DELIVERED";
-type PaymentMethod = "BANK_TRANSFER" | "CASH" | "CHEQUE" | "";
-
-interface OrderB2B {
-  id: number;
-  client_id: number;
-  client: { id: number; name: string };
-  total_ht: string;
-  total_ttc: string;
-  created_at: string;
-  shopify_order_id?: string | null;
-
-  status: OrderB2BStatus;
-  invoice_number?: string | null;
-  invoice_date?: string | null;
-
-  is_paid: boolean;
-  payment_method?: PaymentMethod | null;
-
-  withholding_enabled: boolean;
-  withholding_received: boolean;
-}
 
 type StatusFilter = "ALL" | OrderB2BStatus;
 type PaidFilter = "ALL" | "PAID" | "UNPAID";
@@ -68,18 +50,6 @@ type WithholdingFilter =
   | "PENDING"
   | "EXEMPT";
 
-const STATUS_LABELS: Record<OrderB2BStatus, string> = {
-  CREATED: "Créée",
-  SHIPPED: "Expédiée",
-  DELIVERED: "Livrée",
-};
-
-const STATUS_COLORS: Record<OrderB2BStatus, "info" | "warning" | "success"> = {
-  CREATED: "info",
-  SHIPPED: "warning",
-  DELIVERED: "success",
-};
-
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BANK_TRANSFER: "Virement bancaire",
   CASH: "Espèces",
@@ -91,10 +61,9 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 ====================================================== */
 
 const B2BOrdersList: React.FC = () => {
-  const navigate = useNavigate();
-
-  const [orders, setOrders] = useState<OrderB2B[]>([]);
+  const [orders, setOrders] = useState<OrderB2BDetail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<OrderB2BDetail | null>(null);
 
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -108,10 +77,22 @@ const B2BOrdersList: React.FC = () => {
   const [withholdingFilter, setWithholdingFilter] =
     useState<WithholdingFilter>("ALL");
 
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">(
+    "success",
+  );
+
+  const notify = (message: string, status: "success" | "error") => {
+    setNotifyMessage(message);
+    setNotifyStatus(status);
+    setSnackbarOpen(true);
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get<OrderB2B[]>(
+      const res = await axios.get<OrderB2BDetail[]>(
         `${import.meta.env.VITE_API_URL}order-b2b`,
       );
       setOrders(res.data);
@@ -120,6 +101,16 @@ const B2BOrdersList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOrderUpdated = (updated: OrderB2BDetail) => {
+    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    setSelectedOrder(updated);
+  };
+
+  const handleOrderCancelled = (orderId: number) => {
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    setSelectedOrder(null);
   };
 
   useEffect(() => {
@@ -227,7 +218,7 @@ const B2BOrdersList: React.FC = () => {
     0,
   );
 
-  const getWithholdingLabel = (o: OrderB2B) => {
+  const getWithholdingLabel = (o: OrderB2BDetail) => {
     if (!o.withholding_enabled) {
       return isWithholdingExempt(Number(o.total_ttc))
         ? `Exonérée (< ${WITHHOLDING_THRESHOLD_TTC} DT)`
@@ -238,7 +229,7 @@ const B2BOrdersList: React.FC = () => {
 
   // Anomalie : retenue activée manuellement alors que la commande est
   // légalement exonérée (total TTC sous le seuil). À vérifier au cas par cas.
-  const isWithholdingAnomaly = (o: OrderB2B) =>
+  const isWithholdingAnomaly = (o: OrderB2BDetail) =>
     o.withholding_enabled && isWithholdingExempt(Number(o.total_ttc));
 
   return (
@@ -417,21 +408,28 @@ const B2BOrdersList: React.FC = () => {
                   <TableCell><strong>Payé</strong></TableCell>
                   <TableCell><strong>Méthode de paiement</strong></TableCell>
                   <TableCell><strong>Retenue à la source</strong></TableCell>
-                  <TableCell align="right"><strong>Actions</strong></TableCell>
                 </TableRow>
               </TableHead>
 
               <TableBody>
                 {filteredOrders.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} align="center">
+                    <TableCell colSpan={8} align="center">
                       Aucune commande ne correspond à ces filtres.
                     </TableCell>
                   </TableRow>
                 )}
 
                 {filteredOrders.map((order) => (
-                  <TableRow key={order.id} hover>
+                  <TableRow
+                    key={order.id}
+                    hover
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": { backgroundColor: "grey.50" },
+                    }}
+                    onClick={() => setSelectedOrder(order)}
+                  >
                     <TableCell>{order.client.name}</TableCell>
                     <TableCell>{order.invoice_number || "N/A"}</TableCell>
                     <TableCell>
@@ -440,8 +438,8 @@ const B2BOrdersList: React.FC = () => {
                     <TableCell>
                       <Chip
                         size="small"
-                        label={STATUS_LABELS[order.status]}
-                        color={STATUS_COLORS[order.status]}
+                        label={getOrderStatusLabel(order.status)}
+                        color={getOrderStatusColor(order.status)}
                       />
                     </TableCell>
                     <TableCell align="right">
@@ -463,18 +461,6 @@ const B2BOrdersList: React.FC = () => {
                         )}
                       </Box>
                     </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Voir l'historique du client">
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            navigate(`/b2b/orders/history/${order.client.id}`)
-                          }
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -486,7 +472,7 @@ const B2BOrdersList: React.FC = () => {
                     <TableCell align="right">
                       <strong>{totalTTC.toFixed(2)} DT</strong>
                     </TableCell>
-                    <TableCell colSpan={4} />
+                    <TableCell colSpan={3} />
                   </TableRow>
                 </TableFooter>
               )}
@@ -494,6 +480,27 @@ const B2BOrdersList: React.FC = () => {
           </TableContainer>
         </>
       )}
+
+      <OrderB2BDetailDrawer
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onUpdated={handleOrderUpdated}
+        onCancelled={handleOrderCancelled}
+        onNotify={notify}
+      />
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <SnackbarContent
+          message={notifyMessage}
+          sx={{
+            backgroundColor: notifyStatus === "error" ? "red" : "green",
+          }}
+        />
+      </Snackbar>
     </Box>
   );
 };
