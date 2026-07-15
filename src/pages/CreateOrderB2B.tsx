@@ -635,7 +635,7 @@ const CreateOrderB2B: React.FC = () => {
                   Client sélectionné
                 </Typography>
                 <Typography sx={{ fontWeight: 800 }}>
-                  {selectedClient ? selectedClient.name : "— Aucun client —"}
+                  {selectedClient ? selectedClient.name : "Aucun client sélectionné"}
                 </Typography>
               </Box>
 

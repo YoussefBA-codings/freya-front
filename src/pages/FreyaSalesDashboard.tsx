@@ -145,7 +145,7 @@ const FreyaSalesDashboard: React.FC = () => {
     <Fade in>
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Freya — Tableau de bord des ventes
+          Tableau de bord des ventes
         </Typography>
 
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>

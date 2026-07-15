@@ -625,7 +625,7 @@ const B2BOrdersStats: React.FC = () => {
             variant="h4"
             sx={{ mb: 0.5, fontWeight: 900, letterSpacing: -0.7 }}
           >
-            Commandes B2B — Tableau de bord
+            Commandes B2B · Tableau de bord
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.75 }}>
             Par défaut: mois en cours. KPIs, tendances, risques, top ventes.

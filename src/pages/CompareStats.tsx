@@ -270,7 +270,7 @@ const CompareStats: React.FC = () => {
     <Fade in={!loading}>
       <Box sx={{ padding: 3 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Freya vs TunisiaMarka — Tableau de comparaison des prix
+          Freya vs TunisiaMarka · Tableau de comparaison des prix
         </Typography>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
           Dernière mise à jour : {new Date(data.date).toLocaleString()}

@@ -387,7 +387,7 @@ const CreateCustomerB2B: React.FC = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ m: 0, p: 2 }}>
-          {selectedCustomer ? `Détails du client — ${selectedCustomer.name}` : "Détails du client"}
+          {selectedCustomer ? `Détails du client : ${selectedCustomer.name}` : "Détails du client"}
           <IconButton
             aria-label="close"
             onClick={handleCloseDialog}

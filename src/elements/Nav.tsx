@@ -19,7 +19,6 @@ import HistoryIcon from "@mui/icons-material/History";
 
 import {
   Receipt as InvoiceIcon,
-  AccountCircle as AccountCircleIcon,
   Menu as MenuIcon,
   CheckCircle as CheckIcon,
   UploadFile as UploadFileIcon,
@@ -205,10 +204,6 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
           >
             Freya Hub
           </Typography>
-
-          <IconButton component={Link} to="/profile" sx={{ color: "text.secondary" }}>
-            <AccountCircleIcon />
-          </IconButton>
         </Toolbar>
       </AppBar>
 

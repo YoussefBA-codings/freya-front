@@ -12,7 +12,6 @@ import PrivateRoute from "./elements/PrivateRoute";
 import NotFound from "./pages/NotFound";
 import Navbar from "./elements/Nav";
 import CreateInvoice from "./pages/CreateInvoice";
-import UserProfile from "./pages/UserProfile";
 import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DroppexInvoices } from "./epic/invoices/DroppexInvoices";
@@ -58,17 +57,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <PrivateRoute>
                   <Navbar>
                     <NewInvoices />
-                  </Navbar>
-                </PrivateRoute>
-              }
-            />
-
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <Navbar>
-                    <UserProfile />
                   </Navbar>
                 </PrivateRoute>
               }

@@ -219,7 +219,7 @@ const ProductB2B: React.FC = () => {
                   >
                     <ListItemText
                       primary={p.name}
-                      secondary={`Prix : ${p.price_ht} DT — ID Variante : ${p.variant_id}`}
+                      secondary={`Prix : ${p.price_ht} DT · ID Variante : ${p.variant_id}`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -294,7 +294,7 @@ const ProductB2B: React.FC = () => {
         maxWidth="sm"
       >
         <DialogTitle>
-          {selectedProduct ? `Modifier le produit — ${selectedProduct.name}` : ""}
+          {selectedProduct ? `Modifier le produit : ${selectedProduct.name}` : ""}
           <IconButton
             onClick={handleCloseDialog}
             sx={{ position: "absolute", right: 8, top: 8 }}

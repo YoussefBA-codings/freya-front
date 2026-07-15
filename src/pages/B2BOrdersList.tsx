@@ -433,7 +433,7 @@ const B2BOrdersList: React.FC = () => {
                 {filteredOrders.map((order) => (
                   <TableRow key={order.id} hover>
                     <TableCell>{order.client.name}</TableCell>
-                    <TableCell>{order.invoice_number || "—"}</TableCell>
+                    <TableCell>{order.invoice_number || "N/A"}</TableCell>
                     <TableCell>
                       {new Date(order.created_at).toLocaleDateString("fr-FR")}
                     </TableCell>
@@ -451,13 +451,13 @@ const B2BOrdersList: React.FC = () => {
                     <TableCell>
                       {order.payment_method
                         ? PAYMENT_METHOD_LABELS[order.payment_method]
-                        : "—"}
+                        : "N/A"}
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         {getWithholdingLabel(order)}
                         {isWithholdingAnomaly(order) && (
-                          <Tooltip title="Retenue activée alors que la commande est sous le seuil légal de 1000 DT — à vérifier">
+                          <Tooltip title="Retenue activée alors que la commande est sous le seuil légal de 1000 DT, à vérifier">
                             <WarningAmberIcon fontSize="small" color="warning" />
                           </Tooltip>
                         )}
