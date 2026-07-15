@@ -66,6 +66,7 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
   const [ttcManuallyEdited, setTtcManuallyEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -89,6 +90,7 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
       setForm(emptyForm(defaultExpenseMonth));
       setTtcManuallyEdited(false);
     }
+    setPdfFile(null);
     setError(null);
   }, [open, initialValue, defaultExpenseMonth]);
 
@@ -124,6 +126,11 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
       return;
     }
 
+    if (!pdfFile) {
+      setError("Veuillez joindre le PDF de la facture.");
+      return;
+    }
+
     setError(null);
     setSaving(true);
 
@@ -141,25 +148,43 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
       comment: form.comment.trim() || null,
     };
 
-    try {
-      if (initialValue) {
-        await axios.patch(
+    const savePromise = initialValue
+      ? axios.patch(
           `${import.meta.env.VITE_API_URL}purchase-invoices/${initialValue.id}`,
           payload,
-        );
-      } else {
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}purchase-invoices`,
-          payload,
-        );
-      }
-      onSaved();
-    } catch (err) {
-      console.error("Failed to save purchase invoice:", err);
+        )
+      : axios.post(`${import.meta.env.VITE_API_URL}purchase-invoices`, payload);
+
+    const documentData = new FormData();
+    documentData.append("file", pdfFile);
+    documentData.append("date", format(form.invoice_date, "yyyy-MM-dd"));
+    const uploadPromise = axios.post(
+      `${import.meta.env.VITE_API_URL}purchase-invoices/document`,
+      documentData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+
+    const [saveResult, uploadResult] = await Promise.allSettled([
+      savePromise,
+      uploadPromise,
+    ]);
+
+    if (saveResult.status === "rejected") {
+      console.error("Failed to save purchase invoice:", saveResult.reason);
       setError("Erreur lors de l'enregistrement de la facture.");
-    } finally {
       setSaving(false);
+      return;
     }
+
+    if (uploadResult.status === "rejected") {
+      console.error("Failed to upload invoice PDF:", uploadResult.reason);
+      setError("Facture enregistrée, mais échec de l'envoi du PDF.");
+      setSaving(false);
+      return;
+    }
+
+    setSaving(false);
+    onSaved();
   };
 
   return (
@@ -300,6 +325,38 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
               ),
             }}
           />
+
+          <Box>
+            <Button
+              variant="outlined"
+              component="label"
+              fullWidth
+              color={!pdfFile && error ? "error" : "primary"}
+            >
+              {pdfFile ? pdfFile.name : "Joindre le PDF de la facture *"}
+              <input
+                type="file"
+                accept="application/pdf"
+                hidden
+                onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+              />
+            </Button>
+            {pdfFile && (
+              <Typography
+                variant="caption"
+                onClick={() => setPdfFile(null)}
+                sx={{
+                  display: "inline-block",
+                  mt: 0.5,
+                  cursor: "pointer",
+                  color: "primary.main",
+                  fontWeight: 700,
+                }}
+              >
+                Retirer le PDF
+              </Typography>
+            )}
+          </Box>
 
           <TextField
             label="Commentaire"
