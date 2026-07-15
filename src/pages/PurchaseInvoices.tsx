@@ -22,6 +22,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format, startOfMonth } from "date-fns";
 import ExcelJS from "exceljs";
@@ -40,6 +41,7 @@ export interface PurchaseInvoice {
   fodec: number;
   montant_ttc: number;
   comment: string | null;
+  invoice_pdf_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -327,6 +329,19 @@ const PurchaseInvoices = () => {
                   <TableCell align="right">{formatAmount(invoice.montant_ttc)}</TableCell>
                   <TableCell>{invoice.comment}</TableCell>
                   <TableCell align="right">
+                    {invoice.invoice_pdf_url && (
+                      <Tooltip title="Voir le justificatif">
+                        <IconButton
+                          size="small"
+                          component="a"
+                          href={invoice.invoice_pdf_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <PictureAsPdfIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     <Tooltip title="Modifier">
                       <IconButton size="small" onClick={() => openEditDrawer(invoice)}>
                         <EditIcon fontSize="small" />
