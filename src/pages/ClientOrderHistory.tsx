@@ -25,9 +25,10 @@ import {
   Switch,
   FormControlLabel,
   Chip,
+  Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { alpha } from "@mui/material/styles";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useParams } from "react-router-dom";
 import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
@@ -82,6 +83,20 @@ interface OrderB2B {
 
   items: OrderItemB2B[];
 }
+
+const SummaryField: React.FC<{ label: string; value: React.ReactNode }> = ({
+  label,
+  value,
+}) => (
+  <Box>
+    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+      {label}
+    </Typography>
+    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+      {value}
+    </Typography>
+  </Box>
+);
 
 /* ======================================================
    🔵 COMPONENT
@@ -502,17 +517,43 @@ const ClientOrderHistory: React.FC = () => {
               borderColor: "divider",
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Commande #{selectedOrder?.id}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Commande #{selectedOrder?.id}
+              </Typography>
+              {selectedOrder && (
+                <Chip
+                  size="small"
+                  label={getStatusLabel(selectedOrder.status)}
+                  color={getStatusColor(selectedOrder.status)}
+                />
+              )}
+            </Box>
 
-            <IconButton onClick={closeDrawer}>
-              <CloseIcon />
-            </IconButton>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Tooltip title="Annuler la commande">
+                <span>
+                  <IconButton
+                    color="error"
+                    onClick={handleDeleteOrder}
+                    disabled={deleting || !selectedOrder}
+                  >
+                    {deleting ? (
+                      <CircularProgress size={20} color="error" />
+                    ) : (
+                      <CancelOutlinedIcon />
+                    )}
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <IconButton onClick={closeDrawer}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
           </Box>
 
           {selectedOrder && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box
                 sx={{
                   background: "grey.50",
@@ -522,106 +563,97 @@ const ClientOrderHistory: React.FC = () => {
                   borderColor: "divider",
                 }}
               >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Résumé
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 1.5,
+                  }}
+                >
+                  <SummaryField
+                    label="Date"
+                    value={new Date(selectedOrder.created_at).toLocaleDateString()}
+                  />
+                  <SummaryField
+                    label="N° facture"
+                    value={selectedOrder.invoice_number || "N/A"}
+                  />
+                  <SummaryField
+                    label="N° commande Shopify"
+                    value={selectedOrder.shopify_order_id || "N/A"}
+                  />
+                  <SummaryField
+                    label="Date de facture"
+                    value={
+                      selectedOrder.invoice_date
+                        ? new Date(selectedOrder.invoice_date).toLocaleDateString()
+                        : "N/A"
+                    }
+                  />
+                  <SummaryField
+                    label="Total HT"
+                    value={`${Number(selectedOrder.total_ht).toFixed(2)} DT`}
+                  />
+                  <SummaryField
+                    label="Total TTC"
+                    value={`${Number(selectedOrder.total_ttc).toFixed(2)} DT`}
+                  />
+                </Box>
+
+                {selectedOrder.invoice_pdf_url && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    href={selectedOrder.invoice_pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ mt: 2 }}
+                  >
+                    Télécharger la facture
+                  </Button>
+                )}
+              </Box>
+
+              <Box
+                sx={{
+                  background: "grey.50",
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Statut
                 </Typography>
 
-                <Box sx={{ lineHeight: 1.8 }}>
-                  <Typography>
-                    <strong>Date :</strong>{" "}
-                    {new Date(selectedOrder.created_at).toLocaleDateString()}
-                  </Typography>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Select
+                    fullWidth
+                    size="small"
+                    value={editStatus}
+                    onChange={(e: SelectChangeEvent<OrderB2BStatus>) =>
+                      setEditStatus(e.target.value as OrderB2BStatus)
+                    }
+                  >
+                    <MenuItem value="CREATED">Créée</MenuItem>
+                    <MenuItem value="SHIPPED">Expédiée</MenuItem>
+                    <MenuItem value="DELIVERED">Livrée</MenuItem>
+                  </Select>
 
-                  <Typography>
-                    <strong>N° facture :</strong>{" "}
-                    {selectedOrder.invoice_number || "N/A"}
-                  </Typography>
-
-                  <Typography>
-                    <strong>N° commande Shopify :</strong>{" "}
-                    {selectedOrder.shopify_order_id || "N/A"}
-                  </Typography>
-
-                  <Typography>
-                    <strong>Date de facture :</strong>{" "}
-                    {selectedOrder.invoice_date
-                      ? new Date(
-                          selectedOrder.invoice_date,
-                        ).toLocaleDateString()
-                      : "N/A"}
-                  </Typography>
-
-                  {selectedOrder.invoice_pdf_url && (
-                    <Box sx={{ mt: 2 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        href={selectedOrder.invoice_pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          textTransform: "none",
-                          fontWeight: 600,
-                          borderRadius: 2,
-                          py: 1,
-                          px: 2,
-                        }}
-                      >
-                        📄 Télécharger la facture
-                      </Button>
-                    </Box>
-                  )}
-
-                  <Box sx={{ mt: 2 }}>
-                    <Typography>
-                      <strong>Total HT :</strong>{" "}
-                      {Number(selectedOrder.total_ht).toFixed(2)} DT
-                    </Typography>
-                    <Typography>
-                      <strong>Total TTC :</strong>{" "}
-                      {Number(selectedOrder.total_ttc).toFixed(2)} DT
-                    </Typography>
-                  </Box>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleSaveStatus}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    Enregistrer
+                  </Button>
                 </Box>
               </Box>
 
               <Box
                 sx={{
-                  background: (theme) => alpha(theme.palette.error.main, 0.06),
-                  p: 2,
-                  borderRadius: 2,
-                  border: "1px solid",
-                  borderColor: (theme) => alpha(theme.palette.error.main, 0.24),
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{ fontWeight: 600, mb: 1, color: "error.main" }}
-                >
-                  Annuler la commande
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  sx={{ mb: 2, color: "text.secondary" }}
-                >
-                  Cette action annulera la commande Shopify sans envoyer d’email
-                  au client et restaurera automatiquement le stock des produits.
-                </Typography>
-
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={handleDeleteOrder}
-                  disabled={deleting}
-                  fullWidth
-                >
-                  {deleting ? "Annulation en cours..." : "Annuler la commande"}
-                </Button>
-              </Box>
-
-              <Box
-                sx={{
                   background: "grey.50",
                   p: 2,
                   borderRadius: 2,
@@ -629,93 +661,73 @@ const ClientOrderHistory: React.FC = () => {
                   borderColor: "divider",
                 }}
               >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Statut
-                </Typography>
-
-                <Select
-                  fullWidth
-                  value={editStatus}
-                  onChange={(e: SelectChangeEvent<OrderB2BStatus>) =>
-                    setEditStatus(e.target.value as OrderB2BStatus)
-                  }
-                  sx={{ mb: 2 }}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 1.5,
+                  }}
                 >
-                  <MenuItem value="CREATED">Créée</MenuItem>
-                  <MenuItem value="SHIPPED">Expédiée</MenuItem>
-                  <MenuItem value="DELIVERED">Livrée</MenuItem>
-                </Select>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Paiement
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={selectedOrder.is_paid ? "Payé" : "Non payé"}
+                    color={selectedOrder.is_paid ? "success" : "default"}
+                  />
+                </Box>
 
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleSaveStatus}
-                >
-                  Enregistrer le statut
-                </Button>
-              </Box>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Méthode de paiement</InputLabel>
+                    <Select
+                      label="Méthode de paiement"
+                      value={editPaymentMethod}
+                      onChange={(e: SelectChangeEvent<PaymentMethod>) =>
+                        setEditPaymentMethod(e.target.value as PaymentMethod)
+                      }
+                    >
+                      <MenuItem value="">
+                        <em>Aucune</em>
+                      </MenuItem>
+                      <MenuItem value="BANK_TRANSFER">Virement bancaire</MenuItem>
+                      <MenuItem value="CASH">Espèces</MenuItem>
+                      <MenuItem value="CHEQUE">Chèque</MenuItem>
+                    </Select>
+                  </FormControl>
 
-              <Box
-                sx={{
-                  background: "grey.50",
-                  p: 2,
-                  borderRadius: 2,
-                  border: "1px solid",
-                  borderColor: "divider",
-                }}
-              >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Paiement
-                </Typography>
+                  <Box sx={{ display: "flex", gap: 1.5 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Référence"
+                      value={editPaymentReference}
+                      onChange={(e) => setEditPaymentReference(e.target.value)}
+                    />
 
-                <Typography sx={{ mb: 1 }}>
-                  Statut actuel :{" "}
-                  <strong>{selectedOrder.is_paid ? "Payé" : "Non payé"}</strong>
-                </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Date de paiement"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={editPaymentDate}
+                      onChange={(e) => setEditPaymentDate(e.target.value)}
+                    />
+                  </Box>
 
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Méthode de paiement</InputLabel>
-                  <Select
-                    label="Méthode de paiement"
-                    value={editPaymentMethod}
-                    onChange={(e: SelectChangeEvent<PaymentMethod>) =>
-                      setEditPaymentMethod(e.target.value as PaymentMethod)
-                    }
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color={editIsPaid ? "success" : "primary"}
+                    onClick={handleSavePayment}
+                    sx={{ alignSelf: "flex-end" }}
                   >
-                    <MenuItem value="">
-                      <em>Aucune</em>
-                    </MenuItem>
-                    <MenuItem value="BANK_TRANSFER">Virement bancaire</MenuItem>
-                    <MenuItem value="CASH">Espèces</MenuItem>
-                    <MenuItem value="CHEQUE">Chèque</MenuItem>
-                  </Select>
-                </FormControl>
-
-                <TextField
-                  fullWidth
-                  label="Référence de paiement"
-                  value={editPaymentReference}
-                  onChange={(e) => setEditPaymentReference(e.target.value)}
-                  sx={{ mb: 2 }}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Date de paiement"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={editPaymentDate}
-                  onChange={(e) => setEditPaymentDate(e.target.value)}
-                  sx={{ mb: 2 }}
-                />
-
-                <Button
-                  variant="contained"
-                  color={editIsPaid ? "success" : "primary"}
-                  onClick={handleSavePayment}
-                >
-                  {selectedOrder.is_paid ? "Mettre à jour le paiement" : "Marquer comme payé"}
-                </Button>
+                    {selectedOrder.is_paid ? "Mettre à jour" : "Marquer comme payé"}
+                  </Button>
+                </Box>
               </Box>
 
               <Box
@@ -727,99 +739,96 @@ const ClientOrderHistory: React.FC = () => {
                   borderColor: "divider",
                 }}
               >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                   Retenue à la source
                 </Typography>
 
                 {isWithholdingExempt(Number(selectedOrder.total_ttc)) ? (
-                  <Typography variant="caption" sx={{ display: "block", opacity: 0.7 }}>
-                    Commande exonérée : non exigée par l'administration fiscale
-                    pour les commandes inférieures à {WITHHOLDING_THRESHOLD_TTC}{" "}
-                    DT (total de cette commande :{" "}
-                    {Number(selectedOrder.total_ttc).toFixed(2)} DT).
+                  <Typography variant="caption" color="text.secondary">
+                    Commande exonérée (moins de {WITHHOLDING_THRESHOLD_TTC} DT).
                   </Typography>
                 ) : (
-                  <>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     <FormControlLabel
                       control={
                         <Switch
+                          size="small"
                           checked={editWithholdingEnabled}
                           onChange={(e) =>
                             setEditWithholdingEnabled(e.target.checked)
                           }
                         />
                       }
-                      label="Retenue à la source activée"
-                      sx={{ mb: 1 }}
+                      label="Retenue activée"
                     />
 
-                    <Typography variant="caption" sx={{ display: "block", mb: 2, opacity: 0.7 }}>
-                      Non exigée par l'administration fiscale pour les commandes
-                      inférieures à {WITHHOLDING_THRESHOLD_TTC} DT (total de cette
-                      commande : {Number(selectedOrder.total_ttc).toFixed(2)} DT).
-                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+                      <FormControlLabel
+                        sx={{ flexShrink: 0 }}
+                        control={
+                          <Switch
+                            size="small"
+                            checked={editWithholdingReceived}
+                            onChange={(e) =>
+                              setEditWithholdingReceived(e.target.checked)
+                            }
+                            disabled={!editWithholdingEnabled}
+                          />
+                        }
+                        label="Reçue"
+                      />
 
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={editWithholdingReceived}
-                          onChange={(e) =>
-                            setEditWithholdingReceived(e.target.checked)
-                          }
-                        />
-                      }
-                      label="Document reçu"
-                      disabled={!editWithholdingEnabled}
-                      sx={{ mb: 2 }}
-                    />
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Date"
+                        type="date"
+                        InputLabelProps={{ shrink: true }}
+                        value={editWithholdingDate}
+                        onChange={(e) => setEditWithholdingDate(e.target.value)}
+                        disabled={!editWithholdingEnabled}
+                      />
+                    </Box>
 
-                    <TextField
-                      fullWidth
-                      label="Date de retenue"
-                      type="date"
-                      InputLabelProps={{ shrink: true }}
-                      value={editWithholdingDate}
-                      onChange={(e) => setEditWithholdingDate(e.target.value)}
-                      disabled={!editWithholdingEnabled}
-                      sx={{ mb: 2 }}
-                    />
-
-                    <Button variant="contained" onClick={handleSaveWithholding}>
-                      Enregistrer la retenue
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleSaveWithholding}
+                      sx={{ alignSelf: "flex-end" }}
+                    >
+                      Enregistrer
                     </Button>
-                  </>
+                  </Box>
                 )}
               </Box>
 
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Articles
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Articles ({selectedOrder.items.length})
                 </Typography>
 
-                {selectedOrder.items.map((item) => (
-                  <Box
-                    key={item.id}
-                    sx={{
-                      p: 2,
-                      mb: 2,
-                      borderRadius: 2,
-                      border: "1px solid",
-                      borderColor: "divider",
-                      background: "background.paper",
-                    }}
-                  >
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {item.product.name}
-                    </Typography>
-                    <Typography>Qté : {item.quantity}</Typography>
-                    <Typography>
-                      Total ligne HT : {Number(item.total_line_ht).toFixed(2)} DT
-                    </Typography>
-                    <Typography>
-                      Total ligne TTC : {Number(item.total_line_ttc).toFixed(2)} DT
-                    </Typography>
-                  </Box>
-                ))}
+                <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Produit</TableCell>
+                        <TableCell align="right">Qté</TableCell>
+                        <TableCell align="right">Total TTC</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {selectedOrder.items.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>{item.product.name}</TableCell>
+                          <TableCell align="right">{item.quantity}</TableCell>
+                          <TableCell align="right">
+                            {Number(item.total_line_ttc).toFixed(2)} DT
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
             </Box>
           )}
