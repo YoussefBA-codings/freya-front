@@ -23,7 +23,13 @@ import {
   Inventory as InventoryIcon,
   GroupAdd as GroupAddIcon,
   ShoppingCartOutlined as OrdersIcon,
+  ArrowBackOutlined as ArrowBackIcon,
 } from "@mui/icons-material";
+
+// Portail Freya (racine du hostname Tailscale partagé, voir
+// tools/freyaOMS/docs/ARCHITECTURE.md, "Topologie SSO Freya") — cette app
+// est servie sous /compta sur ce même hostname.
+const PORTAL_URL = "https://ip-172-26-14-45.tail515d61.ts.net/";
 
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -228,6 +234,12 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
           >
             Freya Hub
           </Typography>
+
+          <Tooltip title="Retour au portail Freya" placement="bottom" arrow>
+            <IconButton component="a" href={PORTAL_URL} sx={{ color: "text.secondary" }}>
+              <ArrowBackIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 
