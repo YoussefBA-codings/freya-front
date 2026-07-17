@@ -319,7 +319,12 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
           width: DRAWER_WIDTH,
           flexShrink: 0,
           display: { xs: "none", md: "block" },
-          "& .MuiDrawer-paper": { width: DRAWER_WIDTH, boxSizing: "border-box" },
+          "& .MuiDrawer-paper": {
+            width: DRAWER_WIDTH,
+            boxSizing: "border-box",
+            borderRight: "1px solid",
+            borderColor: "divider",
+          },
         }}
       >
         {drawerHeader}

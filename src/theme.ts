@@ -4,132 +4,55 @@ import { frFR as dataGridFrFR } from "@mui/x-data-grid/locales";
 import { frFR as pickersFrFR } from "@mui/x-date-pickers/locales";
 import type {} from "@mui/x-data-grid/themeAugmentation";
 
-// Identité de marque Freya — mêmes valeurs que tools/freyaOMS/src/lib/theme/theme.ts
-// et chartColors.ts (CHART_INK/STATUS). Deux repos séparés, pas de package
-// partagé : ces constantes doivent être reportées à la main ici si jamais
-// elles changent côté freyaOMS, pour que Freya Hub reste visuellement iso.
-const brand = {
-  primary: "#1B4332",
-  secondary: "#B08968",
-};
-
-const status = {
+// Copie exacte (mêmes clés, mêmes valeurs) de
+// tools/freyaOMS/src/lib/theme/theme.ts - décision équipe 2026-07-18 ("on
+// dirait le même projet", "copier coller"). Rien de plus que ce que
+// freyaOMS définit lui-même : tout ce qui n'est pas explicitement surchargé
+// ici retombe sur les défauts MUI, exactement comme côté freyaOMS. Les
+// imports de locale française (ci-dessus) sont une exception volontaire :
+// ce n'est pas une question de design mais de fonctionnalité i18n (libellés
+// DataGrid/DatePicker en français), freyaOMS n'ayant simplement jamais eu
+// besoin de les configurer.
+const STATUS = {
   good: "#0ca30c",
   warning: "#fab219",
   critical: "#d03b3b",
 };
 
-const ink = {
+const CHART_INK = {
   primary: "#0b0b0b",
   secondary: "#52514e",
-  grid: "#e1e0d9",
   surface: "#fcfcfb",
 };
-
-const pageBackground = "#f9f9f7";
-
-// Échelle d'ombres douce et plate (25 entrées, requis par MUI) — pas une
-// convention freyaOMS (son thème n'a pas d'avis sur les ombres), gardée
-// telle quelle : propre à freya-front, pas de raison de la retirer.
-const subtleShadow = "0 1px 2px rgba(15, 23, 42, 0.06)";
-const softShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
-const shadows = Array(25).fill(softShadow) as any;
-shadows[0] = "none";
-shadows[1] = subtleShadow;
-shadows[2] = subtleShadow;
 
 const baseTheme = createTheme(
   {
     palette: {
-      mode: "light",
-      primary: { main: brand.primary },
-      secondary: { main: brand.secondary },
+      primary: { main: "#1B4332" },
+      secondary: { main: "#B08968" },
+      success: { main: STATUS.good },
+      warning: { main: STATUS.warning },
+      error: { main: STATUS.critical },
       background: {
-        default: pageBackground,
-        paper: ink.surface,
+        default: "#f9f9f7",
+        paper: CHART_INK.surface,
       },
       text: {
-        primary: ink.primary,
-        secondary: ink.secondary,
+        primary: CHART_INK.primary,
+        secondary: CHART_INK.secondary,
       },
-      divider: ink.grid,
-      success: { main: status.good },
-      warning: { main: status.warning },
-      error: { main: status.critical },
-      info: { main: "#0284C7" },
     },
-    shape: {
-      borderRadius: 12,
-    },
-    shadows,
+    shape: { borderRadius: 12 },
     typography: {
-      // system-ui (pas Inter) — même pile de police que freyaOMS.
-      fontFamily: 'system-ui, -apple-system, "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
-      h1: { fontWeight: 700, fontSize: "2.5rem", letterSpacing: "-0.02em" },
-      h2: { fontWeight: 700, fontSize: "2rem", letterSpacing: "-0.02em" },
-      h3: { fontWeight: 700, fontSize: "1.75rem", letterSpacing: "-0.01em" },
-      h4: { fontWeight: 700, fontSize: "1.5rem", letterSpacing: "-0.5px" },
-      h5: { fontWeight: 600, fontSize: "1.25rem" },
-      h6: { fontWeight: 600, fontSize: "1.125rem" },
-      subtitle1: { color: ink.secondary, fontSize: "0.95rem" },
-      subtitle2: { color: ink.secondary, fontWeight: 500 },
-      body1: { fontSize: "0.9375rem" },
-      body2: { fontSize: "0.875rem" },
-      button: { textTransform: "none", fontWeight: 600 },
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
+      h4: { fontWeight: 700, letterSpacing: -0.5 },
+      h6: { fontWeight: 600 },
     },
     components: {
-      MuiCssBaseline: {
-        styleOverrides: {
-          body: {
-            backgroundColor: pageBackground,
-          },
-        },
-      },
       MuiAppBar: {
         defaultProps: { color: "inherit" },
         styleOverrides: {
-          root: {
-            backgroundColor: ink.surface,
-            color: ink.primary,
-            boxShadow: "none",
-            borderBottom: `1px solid ${ink.grid}`,
-          },
-        },
-      },
-      MuiDrawer: {
-        styleOverrides: {
-          paper: {
-            backgroundColor: ink.surface,
-            borderRight: `1px solid ${ink.grid}`,
-          },
-        },
-      },
-      MuiButton: {
-        defaultProps: {
-          disableElevation: true,
-        },
-        styleOverrides: {
-          root: {
-            borderRadius: 8,
-            boxShadow: "none",
-          },
-          contained: {
-            boxShadow: "none",
-            "&:hover": { boxShadow: "none" },
-          },
-        },
-      },
-      MuiPaper: {
-        defaultProps: {
-          elevation: 0,
-        },
-        styleOverrides: {
-          root: {
-            backgroundImage: "none",
-          },
-          outlined: {
-            borderColor: ink.grid,
-          },
+          root: { backgroundColor: CHART_INK.surface },
         },
       },
       MuiCard: {
@@ -140,82 +63,10 @@ const baseTheme = createTheme(
           },
         },
       },
-      MuiTableCell: {
+      MuiButton: {
+        defaultProps: { disableElevation: true },
         styleOverrides: {
-          root: {
-            borderBottom: `1px solid ${ink.grid}`,
-          },
-          head: {
-            backgroundColor: pageBackground,
-            color: ink.secondary,
-            fontWeight: 600,
-            fontSize: "0.8125rem",
-          },
-        },
-      },
-      MuiTableRow: {
-        styleOverrides: {
-          root: {
-            "&:last-child td": { borderBottom: 0 },
-          },
-        },
-      },
-      MuiChip: {
-        styleOverrides: {
-          root: {
-            borderRadius: 6,
-            fontWeight: 600,
-          },
-        },
-      },
-      MuiOutlinedInput: {
-        styleOverrides: {
-          root: {
-            borderRadius: 8,
-          },
-          notchedOutline: {
-            borderColor: ink.grid,
-          },
-        },
-      },
-      MuiListSubheader: {
-        styleOverrides: {
-          root: {
-            backgroundColor: "transparent",
-          },
-        },
-      },
-      MuiTooltip: {
-        styleOverrides: {
-          tooltip: {
-            backgroundColor: ink.primary,
-            fontSize: "0.75rem",
-          },
-        },
-      },
-      MuiDataGrid: {
-        styleOverrides: {
-          root: {
-            border: `1px solid ${ink.grid}`,
-            borderRadius: 12,
-            backgroundColor: ink.surface,
-          },
-          columnHeaders: {
-            backgroundColor: pageBackground,
-            borderBottom: `1px solid ${ink.grid}`,
-          },
-          columnHeaderTitle: {
-            fontWeight: 600,
-            color: ink.secondary,
-          },
-          row: {
-            "&:hover": { backgroundColor: pageBackground },
-          },
-          cell: {
-            borderBottom: `1px solid ${ink.grid}`,
-            "&:focus": { outline: "none" },
-            "&:focus-within": { outline: "none" },
-          },
+          root: { borderRadius: 8, textTransform: "none", fontWeight: 600 },
         },
       },
     },
