@@ -45,7 +45,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     {/* 👉 GLOBAL DATE PICKER CONTEXT */}
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
       <QueryClientProvider client={queryClient}>
-        <Router>
+        {/* Servi sous /compta (voir vite.config.ts, `base`) — basename doit rester synchronisé. */}
+        <Router basename="/compta">
           <Routes>
             {/* Routes sans Navbar */}
             <Route path="/login" element={<Login />} />

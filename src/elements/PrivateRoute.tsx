@@ -1,16 +1,16 @@
 import React, { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
 
-const isAuthenticated = (): boolean => {
-  return localStorage.getItem('isAuthenticated') === 'true';
-};
-
+// La vraie barrière est désormais le réseau : nginx (auth_request contre la
+// session du portail Freya) ne sert cette app QUE si l'utilisateur est déjà
+// authentifié — voir docs/ARCHITECTURE.md de freyaOMS. Ce composant ne fait
+// donc plus de vérification côté client (l'ancien flag localStorage était
+// trivialement contournable et n'a jamais été la vraie protection).
 interface PrivateRouteProps {
   children: ReactNode;
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" />;
+  return <>{children}</>;
 };
 
 export default PrivateRoute;
