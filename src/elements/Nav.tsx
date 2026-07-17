@@ -12,7 +12,6 @@ import {
   ListItemText,
   Collapse,
   Tooltip,
-  useMediaQuery,
 } from "@mui/material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -26,14 +25,43 @@ import {
   ArrowBackOutlined as ArrowBackIcon,
 } from "@mui/icons-material";
 
+import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+
 // Portail Freya (racine du hostname Tailscale partagé, voir
 // tools/freyaOMS/docs/ARCHITECTURE.md, "Topologie SSO Freya") — cette app
 // est servie sous /compta sur ce même hostname.
 const PORTAL_URL = "https://ip-172-26-14-45.tail515d61.ts.net/";
 
-import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { useTheme } from "@mui/material/styles";
+// Même largeur que freyaOMS (tools/freyaOMS/src/components/DashboardNav.tsx,
+// DRAWER_WIDTH) — même seuil de bascule desktop/mobile (breakpoint "md", pas
+// "sm") : les deux apps doivent se comporter et se dimensionner à l'identique.
+const DRAWER_WIDTH = 248;
+
+// Titre de page affiché dans l'AppBar (comme freyaOMS : le nom de l'app vit
+// dans l'en-tête du drawer, l'AppBar montre la page courante) — une seule
+// source de vérité avec les routes de main.tsx.
+const PAGE_TITLES: Record<string, string> = {
+  "/": "Gestion des factures",
+  "/all-invoices": "Gestion des factures",
+  "/stock/status": "État du stock",
+  "/droppex-invoices": "Factures Droppex",
+  "/deposit-b2b": "Déposer une facture",
+  "/create-invoice": "Créer une facture",
+  "/b2b/products": "Gérer les produits",
+  "/b2b/orders/create": "Créer une commande",
+  "/b2b/customers/create": "Créer un client",
+  "/b2b/orders/history": "Historique commandes",
+  "/b2b/orders/stats": "Statistiques",
+  "/b2b/orders/all": "Toutes les commandes",
+  "/achats/factures": "Factures d'achat",
+};
+
+function pageTitleFor(pathname: string): string {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  if (pathname.startsWith("/b2b/orders/history/")) return "Historique client";
+  return "Freya Hub";
+}
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -144,16 +172,16 @@ const NavGroup: React.FC<NavGroupProps> = ({ label, icon, children, onNavigate }
 };
 
 const Navbar: React.FC<NavbarProps> = ({ children }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+  const pageTitle = pageTitleFor(location.pathname);
 
   // Organisé par entité métier (Commandes, Clients, Produits, Factures),
   // pas par ligne d'activité B2C/B2B — comme Shopify.
   const drawerContent = (
-    <List dense disablePadding sx={{ py: 1.5 }}>
+    <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
       <NavGroup
         label="Commandes"
         icon={<OrdersIcon fontSize="small" />}
@@ -212,29 +240,49 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
     </List>
   );
 
+  // En-tête du drawer (nom + sous-titre de l'app) — même emplacement et
+  // même style que "Freya OMS" / "Stock & insights Shopify" dans
+  // tools/freyaOMS/src/components/DashboardNav.tsx : la marque vit dans le
+  // drawer, l'AppBar montre la page courante.
+  const drawerHeader = (
+    <Toolbar sx={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "center", py: 2.5 }}>
+      <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: -0.3 }} color="primary.main">
+        Freya Hub
+      </Typography>
+      <Typography variant="caption" color="text.secondary" noWrap>
+        Comptabilité
+      </Typography>
+    </Toolbar>
+  );
+
   return (
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
-          {isMobile && (
+      <AppBar
+        position="fixed"
+        color="inherit"
+        elevation={0}
+        sx={{
+          width: { xs: "100%", md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <Toolbar sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
             <IconButton
+              color="inherit"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2, color: "text.secondary" }}
+              sx={{ display: { xs: "inline-flex", md: "none" } }}
             >
               <MenuIcon />
             </IconButton>
-          )}
-
-          <Typography
-            variant="h6"
-            component={Link}
-            to="/"
-            sx={{ textDecoration: "none", color: "inherit", flexGrow: 1, fontWeight: 700 }}
-          >
-            Freya Hub
-          </Typography>
-
+            <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
+              {pageTitle}
+            </Typography>
+          </Box>
           <Tooltip title="Retour au portail Freya" placement="bottom" arrow>
             <IconButton component="a" href={PORTAL_URL} sx={{ color: "text.secondary" }}>
               <ArrowBackIcon fontSize="small" />
@@ -243,26 +291,42 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         </Toolbar>
       </AppBar>
 
+      {/* Drawer permanent desktop */}
       <Drawer
-        variant={isMobile ? "temporary" : "permanent"}
-        open={!isMobile || mobileOpen}
-        onClose={handleDrawerToggle}
+        variant="permanent"
         sx={{
-          display: { xs: isMobile ? "block" : "none", md: "block" },
-          "& .MuiDrawer-paper": { width: 240, boxSizing: "border-box" },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          display: { xs: "none", md: "block" },
+          "& .MuiDrawer-paper": { width: DRAWER_WIDTH, boxSizing: "border-box" },
         }}
       >
-        <Toolbar />
-        {drawerContent}
+        {drawerHeader}
+        <Box sx={{ overflow: "auto", px: 1.5 }}>{drawerContent}</Box>
+      </Drawer>
+
+      {/* Drawer temporaire mobile */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": { width: DRAWER_WIDTH, boxSizing: "border-box" },
+        }}
+      >
+        {drawerHeader}
+        <Box sx={{ overflow: "auto", px: 1.5 }}>{drawerContent}</Box>
       </Drawer>
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          marginLeft: { xs: 0, sm: "240px" },
-          width: { xs: "100%", sm: "calc(100% - 240px)" },
+          p: { xs: 2, sm: 3 },
+          width: { xs: "100%", md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          minWidth: 0,
           overflow: "auto",
         }}
       >
