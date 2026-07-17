@@ -4,28 +4,33 @@ import { frFR as dataGridFrFR } from "@mui/x-data-grid/locales";
 import { frFR as pickersFrFR } from "@mui/x-date-pickers/locales";
 import type {} from "@mui/x-data-grid/themeAugmentation";
 
-const slate = {
-  50: "#F8FAFC",
-  100: "#F1F5F9",
-  200: "#E2E8F0",
-  300: "#CBD5E1",
-  400: "#94A3B8",
-  500: "#64748B",
-  600: "#475569",
-  700: "#334155",
-  800: "#1E293B",
-  900: "#0F172A",
+// Identité de marque Freya — mêmes valeurs que tools/freyaOMS/src/lib/theme/theme.ts
+// et chartColors.ts (CHART_INK/STATUS). Deux repos séparés, pas de package
+// partagé : ces constantes doivent être reportées à la main ici si jamais
+// elles changent côté freyaOMS, pour que Freya Hub reste visuellement iso.
+const brand = {
+  primary: "#1B4332",
+  secondary: "#B08968",
 };
 
-const indigo = {
-  light: "#6366F1",
-  main: "#4F46E5",
-  dark: "#4338CA",
+const status = {
+  good: "#0ca30c",
+  warning: "#fab219",
+  critical: "#d03b3b",
 };
 
-// A soft, flat shadow scale (25 entries, as MUI requires) instead of the
-// stock heavy drop-shadows — keeps elevation cues without the dated
-// "raised card" look.
+const ink = {
+  primary: "#0b0b0b",
+  secondary: "#52514e",
+  grid: "#e1e0d9",
+  surface: "#fcfcfb",
+};
+
+const pageBackground = "#f9f9f7";
+
+// Échelle d'ombres douce et plate (25 entrées, requis par MUI) — pas une
+// convention freyaOMS (son thème n'a pas d'avis sur les ombres), gardée
+// telle quelle : propre à freya-front, pas de raison de la retirer.
 const subtleShadow = "0 1px 2px rgba(15, 23, 42, 0.06)";
 const softShadow = "0 4px 12px rgba(15, 23, 42, 0.08)";
 const shadows = Array(25).fill(softShadow) as any;
@@ -37,36 +42,37 @@ const baseTheme = createTheme(
   {
     palette: {
       mode: "light",
-      primary: indigo,
+      primary: { main: brand.primary },
+      secondary: { main: brand.secondary },
       background: {
-        default: slate[50],
-        paper: "#FFFFFF",
+        default: pageBackground,
+        paper: ink.surface,
       },
       text: {
-        primary: slate[900],
-        secondary: slate[500],
+        primary: ink.primary,
+        secondary: ink.secondary,
       },
-      divider: slate[200],
-      grey: slate,
-      success: { main: "#16A34A" },
-      warning: { main: "#D97706" },
-      error: { main: "#DC2626" },
+      divider: ink.grid,
+      success: { main: status.good },
+      warning: { main: status.warning },
+      error: { main: status.critical },
       info: { main: "#0284C7" },
     },
     shape: {
-      borderRadius: 10,
+      borderRadius: 12,
     },
     shadows,
     typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+      // system-ui (pas Inter) — même pile de police que freyaOMS.
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
       h1: { fontWeight: 700, fontSize: "2.5rem", letterSpacing: "-0.02em" },
       h2: { fontWeight: 700, fontSize: "2rem", letterSpacing: "-0.02em" },
       h3: { fontWeight: 700, fontSize: "1.75rem", letterSpacing: "-0.01em" },
-      h4: { fontWeight: 700, fontSize: "1.5rem", letterSpacing: "-0.01em" },
+      h4: { fontWeight: 700, fontSize: "1.5rem", letterSpacing: "-0.5px" },
       h5: { fontWeight: 600, fontSize: "1.25rem" },
       h6: { fontWeight: 600, fontSize: "1.125rem" },
-      subtitle1: { color: slate[500], fontSize: "0.95rem" },
-      subtitle2: { color: slate[500], fontWeight: 500 },
+      subtitle1: { color: ink.secondary, fontSize: "0.95rem" },
+      subtitle2: { color: ink.secondary, fontWeight: 500 },
       body1: { fontSize: "0.9375rem" },
       body2: { fontSize: "0.875rem" },
       button: { textTransform: "none", fontWeight: 600 },
@@ -75,29 +81,33 @@ const baseTheme = createTheme(
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            backgroundColor: slate[50],
+            backgroundColor: pageBackground,
           },
         },
       },
       MuiAppBar: {
+        defaultProps: { color: "inherit" },
         styleOverrides: {
           root: {
-            backgroundColor: "#FFFFFF",
-            color: slate[900],
+            backgroundColor: ink.surface,
+            color: ink.primary,
             boxShadow: "none",
-            borderBottom: `1px solid ${slate[200]}`,
+            borderBottom: `1px solid ${ink.grid}`,
           },
         },
       },
       MuiDrawer: {
         styleOverrides: {
           paper: {
-            backgroundColor: "#FFFFFF",
-            borderRight: `1px solid ${slate[200]}`,
+            backgroundColor: ink.surface,
+            borderRight: `1px solid ${ink.grid}`,
           },
         },
       },
       MuiButton: {
+        defaultProps: {
+          disableElevation: true,
+        },
         styleOverrides: {
           root: {
             borderRadius: 8,
@@ -118,14 +128,14 @@ const baseTheme = createTheme(
             backgroundImage: "none",
           },
           outlined: {
-            borderColor: slate[200],
+            borderColor: ink.grid,
           },
         },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            border: `1px solid ${slate[200]}`,
+            border: "1px solid rgba(11,11,11,0.08)",
             boxShadow: "none",
           },
         },
@@ -133,11 +143,11 @@ const baseTheme = createTheme(
       MuiTableCell: {
         styleOverrides: {
           root: {
-            borderBottom: `1px solid ${slate[200]}`,
+            borderBottom: `1px solid ${ink.grid}`,
           },
           head: {
-            backgroundColor: slate[50],
-            color: slate[600],
+            backgroundColor: pageBackground,
+            color: ink.secondary,
             fontWeight: 600,
             fontSize: "0.8125rem",
           },
@@ -164,7 +174,7 @@ const baseTheme = createTheme(
             borderRadius: 8,
           },
           notchedOutline: {
-            borderColor: slate[200],
+            borderColor: ink.grid,
           },
         },
       },
@@ -173,10 +183,10 @@ const baseTheme = createTheme(
           root: {
             borderRadius: 8,
             "&.Mui-selected": {
-              backgroundColor: alpha(indigo.main, 0.08),
-              color: indigo.main,
-              "& .MuiListItemIcon-root": { color: indigo.main },
-              "&:hover": { backgroundColor: alpha(indigo.main, 0.12) },
+              backgroundColor: alpha(brand.primary, 0.08),
+              color: brand.primary,
+              "& .MuiListItemIcon-root": { color: brand.primary },
+              "&:hover": { backgroundColor: alpha(brand.primary, 0.12) },
             },
           },
         },
@@ -191,7 +201,7 @@ const baseTheme = createTheme(
       MuiTooltip: {
         styleOverrides: {
           tooltip: {
-            backgroundColor: slate[800],
+            backgroundColor: ink.primary,
             fontSize: "0.75rem",
           },
         },
@@ -199,23 +209,23 @@ const baseTheme = createTheme(
       MuiDataGrid: {
         styleOverrides: {
           root: {
-            border: `1px solid ${slate[200]}`,
-            borderRadius: 10,
-            backgroundColor: "#FFFFFF",
+            border: `1px solid ${ink.grid}`,
+            borderRadius: 12,
+            backgroundColor: ink.surface,
           },
           columnHeaders: {
-            backgroundColor: slate[50],
-            borderBottom: `1px solid ${slate[200]}`,
+            backgroundColor: pageBackground,
+            borderBottom: `1px solid ${ink.grid}`,
           },
           columnHeaderTitle: {
             fontWeight: 600,
-            color: slate[600],
+            color: ink.secondary,
           },
           row: {
-            "&:hover": { backgroundColor: slate[50] },
+            "&:hover": { backgroundColor: pageBackground },
           },
           cell: {
-            borderBottom: `1px solid ${slate[100]}`,
+            borderBottom: `1px solid ${ink.grid}`,
             "&:focus": { outline: "none" },
             "&:focus-within": { outline: "none" },
           },
