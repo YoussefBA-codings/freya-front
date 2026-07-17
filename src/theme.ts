@@ -1,4 +1,4 @@
-import { createTheme, alpha } from "@mui/material/styles";
+import { createTheme } from "@mui/material/styles";
 import { frFR as coreFrFR } from "@mui/material/locale";
 import { frFR as dataGridFrFR } from "@mui/x-data-grid/locales";
 import { frFR as pickersFrFR } from "@mui/x-date-pickers/locales";
@@ -175,19 +175,6 @@ const baseTheme = createTheme(
           },
           notchedOutline: {
             borderColor: ink.grid,
-          },
-        },
-      },
-      MuiListItemButton: {
-        styleOverrides: {
-          root: {
-            borderRadius: 8,
-            "&.Mui-selected": {
-              backgroundColor: alpha(brand.primary, 0.08),
-              color: brand.primary,
-              "& .MuiListItemIcon-root": { color: brand.primary },
-              "&:hover": { backgroundColor: alpha(brand.primary, 0.12) },
-            },
           },
         },
       },

@@ -6,16 +6,15 @@ import {
   IconButton,
   Drawer,
   List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Collapse,
-  Tooltip,
 } from "@mui/material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 import {
   Menu as MenuIcon,
@@ -27,11 +26,7 @@ import {
 
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-
-// Portail Freya (racine du hostname Tailscale partagé, voir
-// tools/freyaOMS/docs/ARCHITECTURE.md, "Topologie SSO Freya") — cette app
-// est servie sous /compta sur ce même hostname.
-const PORTAL_URL = "https://ip-172-26-14-45.tail515d61.ts.net/";
+import { PORTAL_URL, getPortalUserEmail, signOutOfPortal } from "../lib/portalAuth";
 
 // Même largeur que freyaOMS (tools/freyaOMS/src/components/DashboardNav.tsx,
 // DRAWER_WIDTH) — même seuil de bascule desktop/mobile (breakpoint "md", pas
@@ -71,18 +66,19 @@ interface NavItemProps {
   to: string;
   label: string;
   icon?: React.ReactNode;
-  tooltip?: string;
   onClick: () => void;
   indent?: boolean;
 }
 
-// Comme Shopify : seules les entrées de premier niveau ont une icône, les
-// sous-catégories dépliées sont juste indentées, sans icône.
+// Même traitement, à l'identique (sx copié), que les NAV_ITEMS de
+// tools/freyaOMS/src/components/DashboardNav.tsx : pas de <ListItem>
+// enveloppant, pas de Tooltip, même pastille verte pleine à l'état
+// sélectionné (pas un simple survol teinté) - copier-coller volontaire,
+// décision équipe 2026-07-18 ("on dirait le même projet").
 const NavItem: React.FC<NavItemProps> = ({
   to,
   label,
   icon,
-  tooltip,
   onClick,
   indent,
 }) => {
@@ -90,33 +86,40 @@ const NavItem: React.FC<NavItemProps> = ({
   const selected = location.pathname === to;
 
   return (
-    <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
-      <Tooltip title={tooltip || label} placement="right" arrow>
-        <ListItemButton
-          component={Link}
-          to={to}
-          onClick={onClick}
-          selected={selected}
-          sx={{ py: 0.75, pl: indent ? 4.5 : 2 }}
-        >
-          {icon && <ListItemIcon sx={{ minWidth: 36 }}>{icon}</ListItemIcon>}
-          <ListItemText
-            primary={label}
-            primaryTypographyProps={{
-              fontSize: "0.875rem",
-              fontWeight: selected ? 600 : 500,
-            }}
-          />
-        </ListItemButton>
-      </Tooltip>
-    </ListItem>
+    <ListItemButton
+      component={Link}
+      to={to}
+      onClick={onClick}
+      selected={selected}
+      sx={{
+        borderRadius: 2,
+        pl: indent ? 4.5 : 2,
+        color: selected ? "primary.main" : "text.secondary",
+        "&.Mui-selected": {
+          bgcolor: "primary.main",
+          color: "primary.contrastText",
+          "&:hover": { bgcolor: "primary.dark" },
+          "& .MuiListItemIcon-root": { color: "primary.contrastText" },
+        },
+      }}
+    >
+      {icon && (
+        <ListItemIcon sx={{ color: "inherit", minWidth: 36 }}>{icon}</ListItemIcon>
+      )}
+      <ListItemText
+        primary={label}
+        primaryTypographyProps={{
+          fontSize: 14,
+          fontWeight: selected ? 600 : 500,
+        }}
+      />
+    </ListItemButton>
   );
 };
 
 interface NavGroupChild {
   to: string;
   label: string;
-  tooltip?: string;
 }
 
 interface NavGroupProps {
@@ -139,28 +142,28 @@ const NavGroup: React.FC<NavGroupProps> = ({ label, icon, children, onNavigate }
 
   return (
     <>
-      <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
-        <ListItemButton onClick={() => setOpen((o) => !o)} sx={{ py: 0.75 }}>
-          <ListItemIcon sx={{ minWidth: 36 }}>{icon}</ListItemIcon>
-          <ListItemText
-            primary={label}
-            primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: 500 }}
-          />
-          {open ? (
-            <ExpandLessIcon fontSize="small" sx={{ color: "text.secondary" }} />
-          ) : (
-            <ExpandMoreIcon fontSize="small" sx={{ color: "text.secondary" }} />
-          )}
-        </ListItemButton>
-      </ListItem>
+      <ListItemButton
+        onClick={() => setOpen((o) => !o)}
+        sx={{ borderRadius: 2, color: "text.secondary" }}
+      >
+        <ListItemIcon sx={{ color: "inherit", minWidth: 36 }}>{icon}</ListItemIcon>
+        <ListItemText
+          primary={label}
+          primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
+        />
+        {open ? (
+          <ExpandLessIcon fontSize="small" sx={{ color: "inherit" }} />
+        ) : (
+          <ExpandMoreIcon fontSize="small" sx={{ color: "inherit" }} />
+        )}
+      </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>
-        <List disablePadding>
+        <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}>
           {children.map((child) => (
             <NavItem
               key={child.to}
               to={child.to}
               label={child.label}
-              tooltip={child.tooltip}
               onClick={onNavigate}
               indent
             />
@@ -174,6 +177,11 @@ const NavGroup: React.FC<NavGroupProps> = ({ label, icon, children, onNavigate }
 const Navbar: React.FC<NavbarProps> = ({ children }) => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    getPortalUserEmail().then(setUserEmail);
+  }, []);
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const pageTitle = pageTitleFor(location.pathname);
@@ -188,16 +196,8 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         onNavigate={handleDrawerToggle}
         children={[
           { to: "/b2b/orders/create", label: "Créer une commande" },
-          {
-            to: "/b2b/orders/all",
-            label: "Toutes les commandes",
-            tooltip: "Toutes les commandes B2B",
-          },
-          {
-            to: "/b2b/orders/stats",
-            label: "Statistiques",
-            tooltip: "Statistiques des commandes B2B",
-          },
+          { to: "/b2b/orders/all", label: "Toutes les commandes" },
+          { to: "/b2b/orders/stats", label: "Statistiques" },
         ]}
       />
 
@@ -214,11 +214,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         onNavigate={handleDrawerToggle}
         children={[
           { to: "/b2b/products", label: "Gérer les produits" },
-          {
-            to: "/stock/status",
-            label: "État du stock",
-            tooltip: "Tableau de bord de surveillance des ruptures de stock Freya",
-          },
+          { to: "/stock/status", label: "État du stock" },
         ]}
       />
 
@@ -229,30 +225,41 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         children={[
           { to: "/all-invoices", label: "Gestion des factures" },
           { to: "/droppex-invoices", label: "Factures Droppex" },
-          {
-            to: "/deposit-b2b",
-            label: "Déposer une facture",
-            tooltip: "Déposer une facture B2B",
-          },
+          { to: "/deposit-b2b", label: "Déposer une facture" },
           { to: "/achats/factures", label: "Factures d'achat" },
         ]}
       />
     </List>
   );
 
-  // En-tête du drawer (nom + sous-titre de l'app) — même emplacement et
-  // même style que "Freya OMS" / "Stock & insights Shopify" dans
+  // En-tête du drawer (nom + sous-titre de l'app, puis lien vers le
+  // portail) — même emplacement et même style que "Freya OMS" / "Stock &
+  // insights Shopify" / "Portail Freya" dans
   // tools/freyaOMS/src/components/DashboardNav.tsx : la marque vit dans le
-  // drawer, l'AppBar montre la page courante.
+  // drawer, l'AppBar montre la page courante. Comportement identique partout
+  // (retour au tableau de bord, décision équipe 2026-07-18).
   const drawerHeader = (
-    <Toolbar sx={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "center", py: 2.5 }}>
-      <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: -0.3 }} color="primary.main">
-        Freya Hub
-      </Typography>
-      <Typography variant="caption" color="text.secondary" noWrap>
-        Comptabilité
-      </Typography>
-    </Toolbar>
+    <>
+      <Toolbar sx={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "center", py: 2.5 }}>
+        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: -0.3 }} color="primary.main">
+          Freya Hub
+        </Typography>
+        <Typography variant="caption" color="text.secondary" noWrap>
+          Comptabilité
+        </Typography>
+      </Toolbar>
+      <Box sx={{ px: 1.5, pb: 1 }}>
+        <ListItemButton component="a" href={PORTAL_URL} sx={{ borderRadius: 2, color: "text.secondary" }}>
+          <ListItemIcon sx={{ color: "inherit", minWidth: 36 }}>
+            <ArrowBackIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText
+            primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
+            primary="Portail Freya"
+          />
+        </ListItemButton>
+      </Box>
+    </>
   );
 
   return (
@@ -283,11 +290,25 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
               {pageTitle}
             </Typography>
           </Box>
-          <Tooltip title="Retour au portail Freya" placement="bottom" arrow>
-            <IconButton component="a" href={PORTAL_URL} sx={{ color: "text.secondary" }}>
-              <ArrowBackIcon fontSize="small" />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+            {userEmail && (
+              <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: "none", sm: "block" } }}>
+                {userEmail}
+              </Typography>
+            )}
+            {/* Attribut `title` natif (pas de Tooltip) — même choix que
+                tools/freyaOMS/src/app/(dashboard)/layout.tsx, pour rester
+                identique même si la raison d'origine (hydration mismatch
+                SSR) ne s'applique pas à ce SPA. */}
+            <IconButton
+              color="inherit"
+              size="small"
+              title="Se déconnecter"
+              onClick={() => signOutOfPortal()}
+            >
+              <LogoutIcon fontSize="small" />
             </IconButton>
-          </Tooltip>
+          </Box>
         </Toolbar>
       </AppBar>
 
