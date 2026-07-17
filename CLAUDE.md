@@ -5,8 +5,5 @@ Outil interne de comptabilité (factures, commandes B2B, historique client). Vit
 ## Déploiement
 
 - Build : `dist/` servi en statique par nginx sur le serveur de prod (13.39.45.220), sous `/compta` (topologie Tailscale unifiée avec freyaOMS et Freya Portal — voir `tools/freyaOMS/docs/ARCHITECTURE.md`). `vite.config.ts` (`base: "/compta/"`) et `main.tsx` (`basename="/compta"`) doivent rester synchronisés.
-- **Tout `npm run build` lancé directement sur le serveur doit être capé en mémoire, sinon le process peut faire planter le serveur entier (OOM constaté le 2026-07-18) :**
-  ```
-  NODE_OPTIONS=--max_old_space_size=2048 npm run build
-  ```
+- **Le serveur de prod n'a que 1,9 Go de RAM totale** (5 process PM2 + Postgres + nginx tournent déjà en permanence) — deux crashes serveur constatés le 2026-07-18 en buildant directement dessus, le second MÊME avec `NODE_OPTIONS=--max_old_space_size=2048` (le cap limite le tas d'UN process Node, pas la mémoire totale du système : si le reste tourne déjà à ~1,1 Go, il ne reste simplement pas assez de marge pour un build Vite lourd, peu importe le cap). **Règle : builder en LOCAL (`npm run build`) puis envoyer `dist/` sur le serveur par `rsync`/`scp`, jamais buildé directement sur le serveur.** Si un build sur le serveur est vraiment inévitable, capé au minimum avec `NODE_OPTIONS=--max_old_space_size=768 npm run build`, et seulement après avoir vérifié la RAM libre (`free -h`) — le serveur a 4 Go de swap (`/swapfile` + `/swapfile2`, ajouté le 2026-07-18 comme filet de sécurité) mais ça ralentit fortement, ce n'est pas une solution en soi.
 - Authentification : la vraie barrière est désormais nginx (`auth_request` contre la session du portail Freya, cookie partagé) — `PrivateRoute.tsx` ne fait plus de vérification côté client (l'ancien flag `localStorage` était trivialement contournable). `Login.tsx` reste en place mais n'est plus atteint dans le flux normal (on se connecte une seule fois, sur le portail).
