@@ -122,9 +122,9 @@ export const Invoices = () => {
       type: "invoice" | "credit_note";
       orderNumber: string;
       invoiceNumber: string;
+      creditNumber: string;
       invoiceDate: string;
       customerName: string;
-      addressLine1: string;
       invoiceUrl: string;
       creditUrl: string;
       montantHT: string;
@@ -144,9 +144,9 @@ export const Invoices = () => {
           type: "invoice",
           orderNumber: invoice.orderNumber,
           invoiceNumber: invoice.invoiceNumber,
+          creditNumber: invoice.creditNumber || "",
           invoiceDate: formatDate(invoice.invoiceDate),
           customerName: invoice.customerName,
-          addressLine1: invoice.addressLine1,
           invoiceUrl: invoice.invoiceUrl,
           creditUrl: "",
           montantHT: invoice.totalAmountExcludingTax,
@@ -168,10 +168,10 @@ export const Invoices = () => {
           rows.push({
             type: "credit_note",
             orderNumber: invoice.orderNumber,
-            invoiceNumber: invoice.creditNumber || invoice.invoiceNumber,
+            invoiceNumber: invoice.invoiceNumber,
+            creditNumber: invoice.creditNumber || "",
             invoiceDate: formatDate(invoice.invoiceDate),
             customerName: invoice.customerName,
-            addressLine1: invoice.addressLine1,
             invoiceUrl: "",
             creditUrl: invoice.creditUrl,
             montantHT: creditHT,
@@ -189,19 +189,19 @@ export const Invoices = () => {
 
     worksheet.columns = [
       { header: "Type", key: "type", width: 14 },
-      { header: "orderNumber", key: "orderNumber", width: 20 },
-      { header: "invoiceNumber", key: "invoiceNumber", width: 22 },
-      { header: "invoiceDate", key: "invoiceDate", width: 14 },
-      { header: "customerName", key: "customerName", width: 25 },
-      { header: "addressLine1", key: "addressLine1", width: 30 },
-      { header: "invoiceUrl", key: "invoiceUrl", width: 32 },
-      { header: "creditUrl", key: "creditUrl", width: 32 },
+      { header: "Numéro de commande", key: "orderNumber", width: 20 },
+      { header: "Numéro de facture", key: "invoiceNumber", width: 22 },
+      { header: "Numéro d'avoir", key: "creditNumber", width: 22 },
+      { header: "Date", key: "invoiceDate", width: 14 },
+      { header: "Client", key: "customerName", width: 25 },
+      { header: "URL facture", key: "invoiceUrl", width: 32 },
+      { header: "URL avoir", key: "creditUrl", width: 32 },
       { header: "Montant HT", key: "montantHT", width: 14 },
       { header: "TVA", key: "tva", width: 12 },
       { header: "Timbre", key: "timbre", width: 10 },
       { header: "TOTAL", key: "total", width: 14 },
-      { header: "gbDroppexRef", key: "gbDroppexRef", width: 18 },
-      { header: "blkDroppexRef", key: "blkDroppexRef", width: 18 },
+      { header: "Réf. Droppex (GB)", key: "gbDroppexRef", width: 18 },
+      { header: "Réf. Droppex (Black)", key: "blkDroppexRef", width: 18 },
     ];
 
     // Vert clair pour une facture, rouge clair pour un avoir - mêmes teintes
