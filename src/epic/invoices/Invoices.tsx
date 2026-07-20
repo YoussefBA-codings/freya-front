@@ -37,6 +37,7 @@ interface Invoice {
   shippingAmount: number;
   invoiceUrl: string;
   creditUrl: string;
+  creditNumber?: string;
   items: Array<{
     sku: string;
     name: string;
@@ -95,53 +96,78 @@ export const Invoices = () => {
   };
 
   const handleExport = () => {
-    const cleanedData = invoices.map((invoice) => {
-      const formatItems = (items: Array<{
-        sku?: string;
-        name?: string;
-        quantity?: number;
-        unit_cost?: number;
-      }>) =>
-        items
-          ?.map(
-            (item) =>
-              `sku: ${item.sku}, name: ${item.name}, unit_cost: ${item.unit_cost}${
-                item.quantity ? `, quantity: ${item.quantity}` : ""
-              }`
-          )
-          .join(" | ") || "";
-  
-      const formatDate = (dateStr?: string) =>
-        dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
-  
-      const cleanDroppexRef = (ref?: string) =>
-        ref?.startsWith("default") ? "" : ref;
-  
-      return {
-        orderNumber: invoice.orderNumber,
-        orderShopifyID: invoice.orderShopifyID,
-        isCancelled: invoice.isCancelled,
-        isInvoiceCreated: invoice.isInvoiceCreated,
-        invoiceNumber: invoice.invoiceNumber,
-        invoiceDate: formatDate(invoice.invoiceDate),
-        customerName: invoice.customerName,
-        addressLine1: invoice.addressLine1,
-        city: invoice.city,
-        invoiceUrl: invoice.invoiceUrl,
-        creditUrl: invoice.creditUrl,
-        items: formatItems(invoice.items),
-        countedProducts: formatItems(invoice.countedProducts || []),
-        ignoredProducts: formatItems(invoice.ignoredProducts || []),
-        totalAmountExcludingTax: invoice.totalAmountExcludingTax,
-        totalAmountIncludingTax: invoice.totalAmountIncludingTax,
-        TVA: invoice.TVA,
-        fiscalStamp: invoice.fiscalStamp,
-        gbDroppexRef: cleanDroppexRef(invoice.gbDroppexRef),
-        blkDroppexRef: cleanDroppexRef(invoice.blkDroppexRef),
-      };
-    });
-  
-    const csvData = Papa.unparse(cleanedData);
+    const formatDate = (dateStr?: string) =>
+      dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
+
+    const cleanDroppexRef = (ref?: string) =>
+      ref?.startsWith("default") ? "" : ref;
+
+    // Les avoirs créditent toujours 100% de la facture d'origine (createCredit
+    // ne gère pas le crédit partiel) - négativer les montants stockés sur la
+    // facture donne donc exactement le montant de l'avoir, sans avoir besoin
+    // de le recalculer ni de le stocker séparément.
+    const negateAmount = (value?: string) => {
+      if (!value) return value ?? "";
+      const num = Number(value);
+      return Number.isNaN(num) ? value : String(-num);
+    };
+
+    // TOTAL = Montant HT + TVA + Timbre (le vrai montant dû, timbre fiscal
+    // inclus - différent de l'ancien totalAmountIncludingTax qui n'incluait
+    // que HT+TVA).
+    const sumAmounts = (...values: Array<string | undefined>) =>
+      values.reduce((sum, v) => sum + (Number(v) || 0), 0).toFixed(2);
+
+    const rows: Record<string, unknown>[] = [];
+
+    invoices
+      .filter((invoice) => invoice.isInvoiceCreated)
+      .forEach((invoice) => {
+        rows.push({
+          type: "invoice",
+          orderNumber: invoice.orderNumber,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceDate: formatDate(invoice.invoiceDate),
+          customerName: invoice.customerName,
+          addressLine1: invoice.addressLine1,
+          invoiceUrl: invoice.invoiceUrl,
+          creditUrl: invoice.creditUrl,
+          "Montant HT": invoice.totalAmountExcludingTax,
+          TVA: invoice.TVA,
+          Timbre: invoice.fiscalStamp,
+          TOTAL: sumAmounts(
+            invoice.totalAmountExcludingTax,
+            invoice.TVA,
+            invoice.fiscalStamp
+          ),
+          gbDroppexRef: cleanDroppexRef(invoice.gbDroppexRef),
+          blkDroppexRef: cleanDroppexRef(invoice.blkDroppexRef),
+        });
+
+        const hasCreditNote = invoice.isCancelled && !!invoice.creditUrl;
+        if (hasCreditNote) {
+          const creditHT = negateAmount(invoice.totalAmountExcludingTax);
+          const creditTVA = negateAmount(invoice.TVA);
+          rows.push({
+            type: "credit_note",
+            orderNumber: invoice.orderNumber,
+            invoiceNumber: invoice.creditNumber || invoice.invoiceNumber,
+            invoiceDate: formatDate(invoice.invoiceDate),
+            customerName: invoice.customerName,
+            addressLine1: invoice.addressLine1,
+            invoiceUrl: invoice.creditUrl,
+            creditUrl: "",
+            "Montant HT": creditHT,
+            TVA: creditTVA,
+            Timbre: "0",
+            TOTAL: sumAmounts(creditHT, creditTVA, "0"),
+            gbDroppexRef: "",
+            blkDroppexRef: "",
+          });
+        }
+      });
+
+    const csvData = Papa.unparse(rows);
     const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "accounting_export.csv");
   };
