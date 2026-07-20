@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { useSyncsInvoicesQuery } from "../../api/invoices/syncInvoice/useSyncInvoiceQuery";
 import { useGenerateRecapQuery } from "../../api/invoices/generateRecap/useGenerateRecapQuery";
 import { saveAs } from "file-saver";
-import Papa from "papaparse";
+import ExcelJS from "exceljs";
 import { format } from "date-fns";
 import InvoiceDetailsDrawer from "./InvoiceDetailsDrawer";
 
@@ -95,7 +95,7 @@ export const Invoices = () => {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const formatDate = (dateStr?: string) =>
       dateStr ? new Date(dateStr).toISOString().split("T")[0] : "";
 
@@ -118,7 +118,24 @@ export const Invoices = () => {
     const sumAmounts = (...values: Array<string | undefined>) =>
       values.reduce((sum, v) => sum + (Number(v) || 0), 0).toFixed(2);
 
-    const rows: Record<string, unknown>[] = [];
+    type ExportRow = {
+      type: "invoice" | "credit_note";
+      orderNumber: string;
+      invoiceNumber: string;
+      invoiceDate: string;
+      customerName: string;
+      addressLine1: string;
+      invoiceUrl: string;
+      creditUrl: string;
+      montantHT: string;
+      tva: string;
+      timbre: string;
+      total: string;
+      gbDroppexRef: string;
+      blkDroppexRef: string;
+    };
+
+    const rows: ExportRow[] = [];
 
     invoices
       .filter((invoice) => invoice.isInvoiceCreated)
@@ -131,17 +148,17 @@ export const Invoices = () => {
           customerName: invoice.customerName,
           addressLine1: invoice.addressLine1,
           invoiceUrl: invoice.invoiceUrl,
-          creditUrl: invoice.creditUrl,
-          "Montant HT": invoice.totalAmountExcludingTax,
-          TVA: invoice.TVA,
-          Timbre: invoice.fiscalStamp,
-          TOTAL: sumAmounts(
+          creditUrl: "",
+          montantHT: invoice.totalAmountExcludingTax,
+          tva: invoice.TVA,
+          timbre: invoice.fiscalStamp,
+          total: sumAmounts(
             invoice.totalAmountExcludingTax,
             invoice.TVA,
             invoice.fiscalStamp
           ),
-          gbDroppexRef: cleanDroppexRef(invoice.gbDroppexRef),
-          blkDroppexRef: cleanDroppexRef(invoice.blkDroppexRef),
+          gbDroppexRef: cleanDroppexRef(invoice.gbDroppexRef) || "",
+          blkDroppexRef: cleanDroppexRef(invoice.blkDroppexRef) || "",
         });
 
         const hasCreditNote = invoice.isCancelled && !!invoice.creditUrl;
@@ -155,21 +172,65 @@ export const Invoices = () => {
             invoiceDate: formatDate(invoice.invoiceDate),
             customerName: invoice.customerName,
             addressLine1: invoice.addressLine1,
-            invoiceUrl: invoice.creditUrl,
-            creditUrl: "",
-            "Montant HT": creditHT,
-            TVA: creditTVA,
-            Timbre: "0",
-            TOTAL: sumAmounts(creditHT, creditTVA, "0"),
+            invoiceUrl: "",
+            creditUrl: invoice.creditUrl,
+            montantHT: creditHT,
+            tva: creditTVA,
+            timbre: "0",
+            total: sumAmounts(creditHT, creditTVA, "0"),
             gbDroppexRef: "",
             blkDroppexRef: "",
           });
         }
       });
 
-    const csvData = Papa.unparse(rows);
-    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "accounting_export.csv");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Factures");
+
+    worksheet.columns = [
+      { header: "Type", key: "type", width: 14 },
+      { header: "orderNumber", key: "orderNumber", width: 20 },
+      { header: "invoiceNumber", key: "invoiceNumber", width: 22 },
+      { header: "invoiceDate", key: "invoiceDate", width: 14 },
+      { header: "customerName", key: "customerName", width: 25 },
+      { header: "addressLine1", key: "addressLine1", width: 30 },
+      { header: "invoiceUrl", key: "invoiceUrl", width: 32 },
+      { header: "creditUrl", key: "creditUrl", width: 32 },
+      { header: "Montant HT", key: "montantHT", width: 14 },
+      { header: "TVA", key: "tva", width: 12 },
+      { header: "Timbre", key: "timbre", width: 10 },
+      { header: "TOTAL", key: "total", width: 14 },
+      { header: "gbDroppexRef", key: "gbDroppexRef", width: 18 },
+      { header: "blkDroppexRef", key: "blkDroppexRef", width: 18 },
+    ];
+
+    // Vert clair pour une facture, rouge clair pour un avoir - mêmes teintes
+    // que les couleurs "good"/"bad" conventionnelles d'Excel, pour rester
+    // lisible sans légende.
+    const INVOICE_FILL: ExcelJS.Fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFC6EFCE" },
+    };
+    const CREDIT_NOTE_FILL: ExcelJS.Fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFFFC7CE" },
+    };
+
+    rows.forEach((rowData) => {
+      const row = worksheet.addRow(rowData);
+      const fill = rowData.type === "credit_note" ? CREDIT_NOTE_FILL : INVOICE_FILL;
+      row.eachCell({ includeEmpty: true }, (cell) => {
+        cell.fill = fill;
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    saveAs(blob, "accounting_export.xlsx");
   };
   
 
