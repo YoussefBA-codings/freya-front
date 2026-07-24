@@ -77,7 +77,7 @@ interface CreateOrderItemPayload {
 interface CreateOrderPayload {
   client_id: number;
   status: string;
-  invoice_number: string;
+  invoice_number?: string;
   invoice_pdf_url?: string;
   invoice_date: string;
   is_paid: boolean;
@@ -462,6 +462,13 @@ const CreateOrderB2B: React.FC = () => {
   ------------------------------------------ */
 
   const handleCreateOrder = async (): Promise<void> => {
+    // Distingue, en cas d'échec, "la commande n'a jamais été créée" (rien à
+    // faire de spécial, on peut resoumettre normalement) de "la commande
+    // existe déjà, seule la facture a échoué" (ne JAMAIS resoumettre tout le
+    // formulaire, ça créerait une commande en double - juste redéposer la
+    // facture pour cette commande).
+    let createdOrderId: number | null = null;
+
     try {
       setCreating(true);
 
@@ -470,29 +477,17 @@ const CreateOrderB2B: React.FC = () => {
       if (selectedProducts.length === 0) throw new Error("Veuillez ajouter des produits.");
 
       const totalPromoAmount = getPromotionTotalAmount();
-      const { pdfBlob, invoiceNumber } = await generateInvoicePdfBlob();
 
-      const formData = new FormData();
-      formData.append(
-        "file",
-        new File([pdfBlob], `invoice-${invoiceNumber}.pdf`, {
-          type: "application/pdf",
-        })
-      );
-      formData.append("effectiveDate", invoiceDate);
-
-      const depositRes = await axios.post<DepositResponse>(
-        `${import.meta.env.VITE_API_URL}invoices/deposit-b2b-auto`,
-        formData
-      );
-
-      const { url } = depositRes.data;
-
+      // La commande Shopify est créée AVANT toute génération/dépôt de
+      // facture - jamais l'inverse. Si createB2BOrder échoue (client
+      // introuvable, stock insuffisant, etc.), on s'arrête ici : aucune
+      // facture n'a été déposée sur le Drive pour une commande qui n'existe
+      // pas (incident du 2026-07-03, client Paramédical Paradiso - un email
+      // cassé avait fait échouer la commande APRÈS que la facture soit déjà
+      // sur le Drive).
       const basePayload: CreateOrderPayload = {
         client_id: selectedClient.id,
         status: "CREATED",
-        invoice_number: invoiceNumber,
-        invoice_pdf_url: url,
         invoice_date: invoiceDate,
         is_paid: false,
         withholding_enabled: withholdingEnabled,
@@ -511,7 +506,40 @@ const CreateOrderB2B: React.FC = () => {
 
       if (totalPromoAmount) payload = { ...payload, promotion_amount: totalPromoAmount };
 
-      await axios.post(`${import.meta.env.VITE_API_URL}order-b2b`, payload);
+      const orderRes = await axios.post<{ id: number }>(
+        `${import.meta.env.VITE_API_URL}order-b2b`,
+        payload
+      );
+      const orderId = orderRes.data.id;
+      createdOrderId = orderId;
+
+      // Commande confirmée créée : on peut maintenant générer et déposer la
+      // facture en toute sécurité. Un échec à partir d'ici n'affecte plus
+      // que la facture (rattrapable en relançant juste l'attache), jamais la
+      // commande elle-même.
+      const { pdfBlob, invoiceNumber } = await generateInvoicePdfBlob();
+
+      const formData = new FormData();
+      formData.append(
+        "file",
+        new File([pdfBlob], `invoice-${invoiceNumber}.pdf`, {
+          type: "application/pdf",
+        })
+      );
+      formData.append("effectiveDate", invoiceDate);
+
+      const depositRes = await axios.post<DepositResponse>(
+        `${import.meta.env.VITE_API_URL}invoices/deposit-b2b-auto`,
+        formData
+      );
+
+      const { url } = depositRes.data;
+
+      await axios.patch(`${import.meta.env.VITE_API_URL}order-b2b/${orderId}/invoice`, {
+        invoice_pdf_url: url,
+        invoice_number: invoiceNumber,
+        invoice_date: invoiceDate,
+      });
 
       setNotifyMessage("Commande créée avec succès !");
       setNotifyStatus("success");
@@ -527,12 +555,14 @@ const CreateOrderB2B: React.FC = () => {
       setTierPromoRate(0);
       setDraftQty({});
     } catch (err: unknown) {
-      let errorMessage = "Échec de la création de la commande.";
+      let errorMessage = createdOrderId
+        ? `Commande #${createdOrderId} créée sur Shopify, mais échec du dépôt de la facture - NE PAS resoumettre le formulaire (doublon). `
+        : "Échec de la création de la commande. ";
 
       if (axios.isAxiosError(err)) {
-        errorMessage = err.response?.data?.message || err.message || "Erreur de requête.";
+        errorMessage += err.response?.data?.message || err.message || "Erreur de requête.";
       } else if (err instanceof Error) {
-        errorMessage = err.message;
+        errorMessage += err.message;
       }
 
       setNotifyMessage(errorMessage);
