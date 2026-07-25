@@ -9,7 +9,10 @@ export interface ClientB2B {
 }
 
 export type InstrumentType = "CHEQUE" | "VIREMENT" | "TRAITE";
-export type InstrumentStatus = "PENDING" | "RECEIVED" | "REJECTED";
+// DEPOSITED : chèque/traite physiquement déposé en banque - jamais pour un
+// virement, qui passe directement de PENDING à RECEIVED/REJECTED (décision
+// équipe 2026-07-25, voir backend PaymentInstrumentService.deposit).
+export type InstrumentStatus = "PENDING" | "DEPOSITED" | "RECEIVED" | "REJECTED";
 
 export interface PaymentInstrumentPayment {
   id: number;
@@ -35,6 +38,7 @@ export interface PaymentInstrument {
   reference: string | null;
   expected_date: string;
   status: InstrumentStatus;
+  deposited_at: string | null;
   confirmed_at: string | null;
   created_at: string;
   payments: PaymentInstrumentPayment[];
@@ -54,15 +58,31 @@ export const TYPE_LABELS: Record<InstrumentType, string> = {
 
 export const STATUS_LABELS: Record<InstrumentStatus, string> = {
   PENDING: "En attente",
+  DEPOSITED: "Déposé",
   RECEIVED: "Encaissé",
   REJECTED: "Rejeté",
 };
 
-export const STATUS_COLORS: Record<InstrumentStatus, "warning" | "success" | "error"> = {
+export const STATUS_COLORS: Record<InstrumentStatus, "warning" | "info" | "success" | "error"> = {
   PENDING: "warning",
+  DEPOSITED: "info",
   RECEIVED: "success",
   REJECTED: "error",
 };
+
+// Un virement n'a pas d'étape de dépôt - il passe directement de PENDING à
+// RECEIVED/REJECTED. Un chèque/traite doit d'abord être déposé (voir
+// requiresDeposit ci-dessous).
+export const requiresDeposit = (type: InstrumentType) => type !== "VIREMENT";
+
+// Statut à partir duquel confirmer/rejeter est possible : DEPOSITED pour un
+// chèque/traite, PENDING directement pour un virement (voir backend
+// PaymentInstrumentService.requiredStatusBeforeConfirmation - même règle,
+// dupliquée ici pour piloter l'affichage des actions dans la liste).
+export const canConfirmOrReject = (i: PaymentInstrument) =>
+  requiresDeposit(i.type) ? i.status === "DEPOSITED" : i.status === "PENDING";
+
+export const canDeposit = (i: PaymentInstrument) => requiresDeposit(i.type) && i.status === "PENDING";
 
 export const isOverdue = (i: PaymentInstrument) =>
   i.status === "PENDING" && new Date(i.expected_date) < new Date();
@@ -72,6 +92,24 @@ export const isDueSoon = (i: PaymentInstrument) => {
   const days = (new Date(i.expected_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
   return days >= 0 && days <= 7;
 };
+
+// Ajoute `days` jours ouvrés (hors samedi/dimanche) à une date - même
+// logique que le backend (payment-instrument.repository.ts:addBusinessDays).
+const addBusinessDays = (date: Date, days: number): Date => {
+  const result = new Date(date);
+  let added = 0;
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const day = result.getDay();
+    if (day !== 0 && day !== 6) added++;
+  }
+  return result;
+};
+
+// Chèque/traite déposé depuis au moins 2 jours ouvrés, toujours en attente
+// de mise à jour (accepté/rejeté) - à vérifier en banque.
+export const needsDepositUpdate = (i: PaymentInstrument) =>
+  i.status === "DEPOSITED" && !!i.deposited_at && addBusinessDays(new Date(i.deposited_at), 2) <= new Date();
 
 export const errorMessageOf = (e: unknown) =>
   axios.isAxiosError(e) ? e.response?.data?.message || e.message : "Erreur inattendue.";

@@ -1,16 +1,17 @@
 // PaymentDueNotificationBell.tsx - cloche de notification globale (visible
-// sur toutes les pages, pas seulement la liste des paiements). Deux
+// sur toutes les pages, pas seulement la liste des paiements). Trois
 // catégories à contrôler, doublées par un récap email quotidien à 10h (voir
 // PaymentInstrumentService.notifyDueInstruments, backend) - demande
 // utilisateur du 2026-07-25 :
 // 1. Chèques/virements/traites PENDING dont la date d'encaissement est atteinte.
-// 2. Commandes impayées dont l'échéance est dépassée (à relancer le client).
+// 2. Chèques/traites DEPOSITED depuis 2 jours ouvrés - à vérifier en banque.
+// 3. Commandes impayées dont l'échéance est dépassée (à relancer le client).
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Badge, Box, IconButton, Menu, MenuItem, Typography, Divider } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate } from "react-router-dom";
-import { PaymentInstrument, TYPE_LABELS, isOverdue } from "../pages/paymentInstruments/shared";
+import { PaymentInstrument, TYPE_LABELS, isOverdue, needsDepositUpdate } from "../pages/paymentInstruments/shared";
 
 interface OverdueUnpaidOrder {
   id: number;
@@ -32,6 +33,7 @@ const PaymentDueNotificationBell: React.FC = () => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [dueInstruments, setDueInstruments] = useState<PaymentInstrument[]>([]);
+  const [depositedAwaiting, setDepositedAwaiting] = useState<PaymentInstrument[]>([]);
   const [overdueOrders, setOverdueOrders] = useState<OverdueUnpaidOrder[]>([]);
 
   const loadDue = () => {
@@ -41,6 +43,13 @@ const PaymentDueNotificationBell: React.FC = () => {
       })
       .then((res) => setDueInstruments(res.data.filter(isOverdue)))
       .catch(() => setDueInstruments([]));
+
+    axios
+      .get<PaymentInstrument[]>(`${import.meta.env.VITE_API_URL}payment-instruments`, {
+        params: { status: "DEPOSITED" },
+      })
+      .then((res) => setDepositedAwaiting(res.data.filter(needsDepositUpdate)))
+      .catch(() => setDepositedAwaiting([]));
 
     axios
       .get<OverdueUnpaidOrder[]>(`${import.meta.env.VITE_API_URL}order-b2b/stats/overdue-unpaid`)
@@ -59,12 +68,20 @@ const PaymentDueNotificationBell: React.FC = () => {
     [dueInstruments],
   );
 
+  const sortedDeposited = useMemo(
+    () =>
+      [...depositedAwaiting].sort(
+        (a, b) => new Date(a.deposited_at || 0).getTime() - new Date(b.deposited_at || 0).getTime(),
+      ),
+    [depositedAwaiting],
+  );
+
   const sortedOrders = useMemo(
     () => [...overdueOrders].sort((a, b) => new Date(a.effective_due_date).getTime() - new Date(b.effective_due_date).getTime()),
     [overdueOrders],
   );
 
-  const totalCount = sortedInstruments.length + sortedOrders.length;
+  const totalCount = sortedInstruments.length + sortedDeposited.length + sortedOrders.length;
 
   const handleOpen = (e: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(e.currentTarget);
@@ -113,6 +130,33 @@ const PaymentDueNotificationBell: React.FC = () => {
                   {daysLate(i.expected_date) > 0
                     ? `${daysLate(i.expected_date)} jour(s) de retard`
                     : "Échéance aujourd'hui"}
+                </Typography>
+              </Box>
+            </MenuItem>
+          ))
+        )}
+
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            Déposés à vérifier en banque
+          </Typography>
+        </Box>
+        <Divider />
+        {sortedDeposited.length === 0 ? (
+          <MenuItem disabled>
+            <Typography variant="body2" color="text.secondary">
+              Rien à vérifier pour le moment.
+            </Typography>
+          </MenuItem>
+        ) : (
+          sortedDeposited.slice(0, 5).map((i) => (
+            <MenuItem key={`deposited-${i.id}`} onClick={handleGoToPayments} sx={{ whiteSpace: "normal" }}>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {i.client.name} - {Number(i.amount).toFixed(2)} DT ({TYPE_LABELS[i.type]})
+                </Typography>
+                <Typography variant="caption" color="info.main">
+                  Déposé le {i.deposited_at ? new Date(i.deposited_at).toLocaleDateString("fr-FR") : "-"}
                 </Typography>
               </Box>
             </MenuItem>

@@ -38,6 +38,7 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddIcon from "@mui/icons-material/Add";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import {
   ConfirmResult,
   InstrumentStatus,
@@ -45,9 +46,12 @@ import {
   STATUS_COLORS,
   STATUS_LABELS,
   TYPE_LABELS,
+  canConfirmOrReject,
+  canDeposit,
   errorMessageOf,
   isDueSoon,
   isOverdue,
+  needsDepositUpdate,
 } from "./paymentInstruments/shared";
 
 const PaymentInstrumentsList: React.FC = () => {
@@ -56,7 +60,8 @@ const PaymentInstrumentsList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"ALL" | InstrumentStatus>("PENDING");
 
-  // Confirmation / rejet / suppression
+  // Dépôt / confirmation / rejet / suppression
+  const [pendingDeposit, setPendingDeposit] = useState<PaymentInstrument | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<PaymentInstrument | null>(null);
   const [pendingReject, setPendingReject] = useState<PaymentInstrument | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PaymentInstrument | null>(null);
@@ -98,6 +103,22 @@ const PaymentInstrumentsList: React.FC = () => {
 
   const overdueCount = useMemo(() => instruments.filter(isOverdue).length, [instruments]);
   const dueSoonCount = useMemo(() => instruments.filter(isDueSoon).length, [instruments]);
+  const depositedAwaitingCount = useMemo(() => instruments.filter(needsDepositUpdate).length, [instruments]);
+
+  const handleDeposit = async () => {
+    if (!pendingDeposit) return;
+    setActionLoading(true);
+    try {
+      await axios.patch(`${import.meta.env.VITE_API_URL}payment-instruments/${pendingDeposit.id}/deposit`);
+      notify("Marqué déposé - à vérifier en banque d'ici 2 jours ouvrés.", "success");
+      loadData();
+    } catch (error) {
+      notify(errorMessageOf(error), "error");
+    } finally {
+      setActionLoading(false);
+      setPendingDeposit(null);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!pendingConfirm) return;
@@ -200,7 +221,7 @@ const PaymentInstrumentsList: React.FC = () => {
         sur les commandes tant que ce n&apos;est pas confirmé.
       </Typography>
 
-      {(overdueCount > 0 || dueSoonCount > 0) && (
+      {(overdueCount > 0 || dueSoonCount > 0 || depositedAwaitingCount > 0) && (
         <Box sx={{ display: "flex", gap: 1.5, mb: 3, flexWrap: "wrap" }}>
           {overdueCount > 0 && (
             <Chip
@@ -218,6 +239,14 @@ const PaymentInstrumentsList: React.FC = () => {
               onClick={() => setStatusFilter("PENDING")}
             />
           )}
+          {depositedAwaitingCount > 0 && (
+            <Chip
+              icon={<AccountBalanceIcon />}
+              color="info"
+              label={`${depositedAwaitingCount} déposé(s) à vérifier en banque`}
+              onClick={() => setStatusFilter("DEPOSITED")}
+            />
+          )}
         </Box>
       )}
 
@@ -231,6 +260,7 @@ const PaymentInstrumentsList: React.FC = () => {
           >
             <MenuItem value="ALL">Tous</MenuItem>
             <MenuItem value="PENDING">En attente</MenuItem>
+            <MenuItem value="DEPOSITED">Déposé</MenuItem>
             <MenuItem value="RECEIVED">Encaissé</MenuItem>
             <MenuItem value="REJECTED">Rejeté</MenuItem>
           </Select>
@@ -341,25 +371,36 @@ const PaymentInstrumentsList: React.FC = () => {
                       )}
                     </TableCell>
                     <TableCell align="right">
-                      {instrument.status === "PENDING" && (
-                        <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-                          <Tooltip title="Confirmer l'encaissement">
-                            <IconButton size="small" color="success" onClick={() => setPendingConfirm(instrument)}>
-                              <CheckCircleOutlineIcon fontSize="small" />
+                      <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
+                        {canDeposit(instrument) && (
+                          <Tooltip title="Marquer déposé en banque">
+                            <IconButton size="small" color="info" onClick={() => setPendingDeposit(instrument)}>
+                              <AccountBalanceIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Marquer rejeté">
-                            <IconButton size="small" color="error" onClick={() => setPendingReject(instrument)}>
-                              <CancelOutlinedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                        )}
+                        {canConfirmOrReject(instrument) && (
+                          <>
+                            <Tooltip title="Confirmer l'encaissement">
+                              <IconButton size="small" color="success" onClick={() => setPendingConfirm(instrument)}>
+                                <CheckCircleOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Marquer rejeté">
+                              <IconButton size="small" color="error" onClick={() => setPendingReject(instrument)}>
+                                <CancelOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                        {(instrument.status === "PENDING" || instrument.status === "DEPOSITED") && (
                           <Tooltip title="Supprimer (erreur de saisie)">
                             <IconButton size="small" onClick={() => setPendingDelete(instrument)}>
                               <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                        </Box>
-                      )}
+                        )}
+                      </Box>
                     </TableCell>
                   </TableRow>
                 );
@@ -368,6 +409,30 @@ const PaymentInstrumentsList: React.FC = () => {
           </Table>
         </TableContainer>
       )}
+
+      {/* Dépôt en banque */}
+      <Dialog open={!!pendingDeposit} onClose={() => setPendingDeposit(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Marquer ce chèque/cette traite déposé(e) en banque ?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {pendingDeposit && (
+              <>
+                <strong>{Number(pendingDeposit.amount).toFixed(2)} DT</strong> ({TYPE_LABELS[pendingDeposit.type]}) du
+                client <strong>{pendingDeposit.client.name}</strong> passera en statut &laquo; Déposé &raquo;. Vous
+                serez relancé pour vérifier en banque et confirmer/rejeter d&apos;ici 2 jours ouvrés.
+              </>
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingDeposit(null)} disabled={actionLoading}>
+            Annuler
+          </Button>
+          <Button variant="contained" color="info" onClick={handleDeposit} disabled={actionLoading}>
+            {actionLoading ? <CircularProgress size={20} /> : "Marquer déposé"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Confirmation d'encaissement */}
       <Dialog open={!!pendingConfirm} onClose={() => setPendingConfirm(null)} maxWidth="sm" fullWidth>
