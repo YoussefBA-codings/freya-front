@@ -48,10 +48,12 @@ import {
   TYPE_LABELS,
   canConfirmOrReject,
   canDeposit,
+  dueActionLabel,
   errorMessageOf,
   isDueSoon,
   isOverdue,
   needsDepositUpdate,
+  requiresDeposit,
 } from "./paymentInstruments/shared";
 
 const PaymentInstrumentsList: React.FC = () => {
@@ -235,7 +237,7 @@ const PaymentInstrumentsList: React.FC = () => {
             <Chip
               icon={<WarningAmberIcon />}
               color="warning"
-              label={`${dueSoonCount} à encaisser dans les 7 jours`}
+              label={`${dueSoonCount} à traiter dans les 7 jours`}
               onClick={() => setStatusFilter("PENDING")}
             />
           )}
@@ -292,7 +294,7 @@ const PaymentInstrumentsList: React.FC = () => {
                 <TableCell><strong>Type</strong></TableCell>
                 <TableCell align="right"><strong>Montant</strong></TableCell>
                 <TableCell><strong>Référence</strong></TableCell>
-                <TableCell><strong>Encaissement prévu</strong></TableCell>
+                <TableCell><strong>Échéance</strong></TableCell>
                 <TableCell><strong>Statut</strong></TableCell>
                 <TableCell><strong>Commandes couvertes</strong></TableCell>
                 <TableCell><strong>Justificatif</strong></TableCell>
@@ -320,12 +322,12 @@ const PaymentInstrumentsList: React.FC = () => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         {new Date(instrument.expected_date).toLocaleDateString("fr-FR")}
                         {overdue && (
-                          <Tooltip title="Échéance dépassée">
+                          <Tooltip title={dueActionLabel(instrument)}>
                             <WarningAmberIcon fontSize="small" color="error" />
                           </Tooltip>
                         )}
                         {!overdue && dueSoon && (
-                          <Tooltip title="À encaisser dans les 7 jours">
+                          <Tooltip title={requiresDeposit(instrument.type) ? "Dépôt en banque à venir" : "Encaissement à venir"}>
                             <WarningAmberIcon fontSize="small" color="warning" />
                           </Tooltip>
                         )}

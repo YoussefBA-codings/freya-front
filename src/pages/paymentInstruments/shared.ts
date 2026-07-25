@@ -93,6 +93,20 @@ export const isDueSoon = (i: PaymentInstrument) => {
   return days >= 0 && days <= 7;
 };
 
+// Un chèque/traite se DÉPOSE en banque à l'échéance (l'encaissement n'a
+// lieu qu'après, une fois la banque passée) ; un virement, lui, s'encaisse
+// directement, sans étape de dépôt (voir requiresDeposit ci-dessus). Ne
+// jamais dire "à encaisser" pour un chèque/une traite pas encore déposé(e) -
+// décision équipe 2026-07-25, terminologie revue pour rester exacte (même
+// logique côté backend, payment-instrument.service.ts:actionLabel).
+export const dueActionLabel = (i: PaymentInstrument): string => {
+  const isDeposit = requiresDeposit(i.type);
+  const days = Math.floor((Date.now() - new Date(i.expected_date).getTime()) / (1000 * 60 * 60 * 24));
+  if (days > 0) return isDeposit ? `Dépôt en retard de ${days} jour(s)` : `Encaissement en retard de ${days} jour(s)`;
+  if (days === 0) return isDeposit ? "À déposer en banque aujourd'hui" : "À encaisser aujourd'hui";
+  return isDeposit ? "Dépôt en banque à venir" : "Encaissement à venir";
+};
+
 // Ajoute `days` jours ouvrés (hors samedi/dimanche) à une date - même
 // logique que le backend (payment-instrument.repository.ts:addBusinessDays).
 const addBusinessDays = (date: Date, days: number): Date => {

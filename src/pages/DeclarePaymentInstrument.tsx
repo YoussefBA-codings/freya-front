@@ -118,7 +118,7 @@ const DeclarePaymentInstrument: React.FC = () => {
     if (!clientId) return notify("Choisissez un client.", "error");
     const amountNum = Number(amount);
     if (!(amountNum > 0)) return notify("Le montant doit être positif.", "error");
-    if (!expectedDate) return notify("La date d'encaissement prévue est requise.", "error");
+    if (!expectedDate) return notify("L'échéance est requise.", "error");
     if (loadingOutstanding) return notify("Chargement des commandes impayées en cours, réessayez.", "error");
 
     setSubmitting(true);
@@ -227,7 +227,7 @@ const DeclarePaymentInstrument: React.FC = () => {
             />
 
             <DatePicker
-              label="Date d'encaissement prévue"
+              label="Échéance (dépôt banque ou encaissement selon le type)"
               value={expectedDate}
               onChange={(v) => setExpectedDate(v)}
             />

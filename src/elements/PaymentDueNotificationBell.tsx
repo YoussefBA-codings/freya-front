@@ -11,7 +11,13 @@ import axios from "axios";
 import { Badge, Box, IconButton, Menu, MenuItem, Typography, Divider } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate } from "react-router-dom";
-import { PaymentInstrument, TYPE_LABELS, isOverdue, needsDepositUpdate } from "../pages/paymentInstruments/shared";
+import {
+  PaymentInstrument,
+  TYPE_LABELS,
+  dueActionLabel,
+  isOverdue,
+  needsDepositUpdate,
+} from "../pages/paymentInstruments/shared";
 
 interface OverdueUnpaidOrder {
   id: number;
@@ -109,14 +115,14 @@ const PaymentDueNotificationBell: React.FC = () => {
       <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={() => setAnchorEl(null)} PaperProps={{ sx: { width: 360 } }}>
         <Box sx={{ px: 2, py: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            Encaissements à faire
+            À traiter (dépôt banque ou encaissement)
           </Typography>
         </Box>
         <Divider />
         {sortedInstruments.length === 0 ? (
           <MenuItem disabled>
             <Typography variant="body2" color="text.secondary">
-              Rien à encaisser pour le moment.
+              Rien à traiter pour le moment.
             </Typography>
           </MenuItem>
         ) : (
@@ -127,9 +133,7 @@ const PaymentDueNotificationBell: React.FC = () => {
                   {i.client.name} - {Number(i.amount).toFixed(2)} DT ({TYPE_LABELS[i.type]})
                 </Typography>
                 <Typography variant="caption" color="error">
-                  {daysLate(i.expected_date) > 0
-                    ? `${daysLate(i.expected_date)} jour(s) de retard`
-                    : "Échéance aujourd'hui"}
+                  {dueActionLabel(i)}
                 </Typography>
               </Box>
             </MenuItem>
