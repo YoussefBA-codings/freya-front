@@ -18,6 +18,7 @@ import {
   SnackbarContent,
   Card,
   CardContent,
+  Alert,
 } from "@mui/material";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -49,6 +50,10 @@ const DeclarePaymentInstrument: React.FC = () => {
   // Résumé des commandes impayées du client sélectionné - même ordre que la
   // répartition FIFO les traiterait (la plus ancienne d'abord).
   const [outstandingOrders, setOutstandingOrders] = useState<OutstandingOrder[]>([]);
+  // Chèques/virements/traites déjà déclarés (PENDING) pour ce client - à
+  // soustraire du total impayé pour estimer le reste à payer réel (voir
+  // backend PaymentInstrumentService.getOutstandingOrders).
+  const [pendingInstrumentsTotal, setPendingInstrumentsTotal] = useState(0);
   const [loadingOutstanding, setLoadingOutstanding] = useState(false);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -71,13 +76,22 @@ const DeclarePaymentInstrument: React.FC = () => {
   useEffect(() => {
     if (!clientId) {
       setOutstandingOrders([]);
+      setPendingInstrumentsTotal(0);
       return;
     }
     setLoadingOutstanding(true);
     axios
-      .get<OutstandingOrder[]>(`${import.meta.env.VITE_API_URL}payment-instruments/outstanding/${clientId}`)
-      .then((res) => setOutstandingOrders(res.data))
-      .catch(() => setOutstandingOrders([]))
+      .get<{ orders: OutstandingOrder[]; pendingInstrumentsTotal: number }>(
+        `${import.meta.env.VITE_API_URL}payment-instruments/outstanding/${clientId}`,
+      )
+      .then((res) => {
+        setOutstandingOrders(res.data.orders);
+        setPendingInstrumentsTotal(res.data.pendingInstrumentsTotal);
+      })
+      .catch(() => {
+        setOutstandingOrders([]);
+        setPendingInstrumentsTotal(0);
+      })
       .finally(() => setLoadingOutstanding(false));
   }, [clientId]);
 
@@ -86,12 +100,19 @@ const DeclarePaymentInstrument: React.FC = () => {
     [outstandingOrders],
   );
 
-  // Contrôle en temps réel, en plus de la vérification à la soumission
-  // (handleDeclare) et de celle côté backend - jamais déclarer plus que ce
-  // que le client doit réellement (voir getPayableAmount pour la retenue à
-  // la source, déjà reflétée dans `remaining`).
-  const amountExceedsOutstanding =
-    !!clientId && !loadingOutstanding && amount !== "" && Number(amount) > outstandingTotal + 0.001;
+  // Reste à payer réel estimé : le total impayé moins ce qui est déjà
+  // couvert par d'autres chèques/virements/traites en attente pour ce
+  // client (pas encore confirmés, donc pas encore déduit de `remaining`
+  // ci-dessus). Purement indicatif - n'empêche jamais de déclarer, voir
+  // amountExceedsEstimate.
+  const estimatedRemaining = Math.max(0, outstandingTotal - pendingInstrumentsTotal);
+
+  // Avertissement en temps réel, jamais bloquant (décision équipe
+  // 2026-07-25 : un chèque peut légitimement arriver un peu au-dessus - le
+  // reliquat non affecté est juste signalé à la confirmation, pas de crédit
+  // client en v1).
+  const amountExceedsEstimate =
+    !!clientId && !loadingOutstanding && amount !== "" && Number(amount) > estimatedRemaining + 0.001;
 
   const handleDeclare = async () => {
     if (!clientId) return notify("Choisissez un client.", "error");
@@ -99,12 +120,6 @@ const DeclarePaymentInstrument: React.FC = () => {
     if (!(amountNum > 0)) return notify("Le montant doit être positif.", "error");
     if (!expectedDate) return notify("La date d'encaissement prévue est requise.", "error");
     if (loadingOutstanding) return notify("Chargement des commandes impayées en cours, réessayez.", "error");
-    if (amountNum > outstandingTotal + 0.001) {
-      return notify(
-        `Le montant dépasse le total des commandes impayées de ce client (${outstandingTotal.toFixed(2)} DT).`,
-        "error",
-      );
-    }
 
     setSubmitting(true);
     try {
@@ -200,10 +215,6 @@ const DeclarePaymentInstrument: React.FC = () => {
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              error={amountExceedsOutstanding}
-              helperText={
-                amountExceedsOutstanding ? `Max ${outstandingTotal.toFixed(2)} DT` : undefined
-              }
               inputProps={{ min: 0, step: "0.001" }}
               sx={{ width: 160 }}
             />
@@ -240,12 +251,24 @@ const DeclarePaymentInstrument: React.FC = () => {
             <Button
               variant="contained"
               onClick={handleDeclare}
-              disabled={submitting || amountExceedsOutstanding}
+              disabled={submitting}
               sx={{ height: 56 }}
             >
               {submitting ? <CircularProgress size={20} /> : "Déclarer"}
             </Button>
           </Box>
+
+          {amountExceedsEstimate && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              Ce montant ({Number(amount).toFixed(2)} DT) dépasse le reste à payer estimé pour ce
+              client ({estimatedRemaining.toFixed(2)} DT
+              {pendingInstrumentsTotal > 0
+                ? `, déjà couvert à hauteur de ${pendingInstrumentsTotal.toFixed(2)} DT par d'autres paiements en attente`
+                : ""}
+              ). La déclaration reste possible, mais une partie du montant pourrait ne pas être
+              affectée à une commande lors de la confirmation.
+            </Alert>
+          )}
 
           {clientId && (
             <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
@@ -262,10 +285,16 @@ const DeclarePaymentInstrument: React.FC = () => {
                 </Typography>
               ) : (
                 <>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: pendingInstrumentsTotal > 0 ? 0.5 : 1 }}>
                     {outstandingOrders.length} commande(s) impayée(s) - {outstandingTotal.toFixed(2)} DT au total
                     (ordre dans lequel un encaissement les couvrirait) :
                   </Typography>
+                  {pendingInstrumentsTotal > 0 && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                      Dont {pendingInstrumentsTotal.toFixed(2)} DT déjà couverts par d&apos;autres paiements en
+                      attente de confirmation - reste à payer estimé : {estimatedRemaining.toFixed(2)} DT.
+                    </Typography>
+                  )}
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                     {outstandingOrders.map((o) => {
                       const hasWithholding = o.payable_amount < o.total_ttc;
