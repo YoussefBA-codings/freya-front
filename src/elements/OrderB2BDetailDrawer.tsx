@@ -10,7 +10,6 @@ import {
   IconButton,
   MenuItem,
   FormControl,
-  InputLabel,
   Select,
   SelectChangeEvent,
   Table,
