@@ -26,6 +26,7 @@ import {
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { useNavigate } from "react-router-dom";
 import { alpha } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
@@ -66,9 +67,11 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 ====================================================== */
 
 const B2BOrdersList: React.FC = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderB2BDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<OrderB2BDetail | null>(null);
+  const [upcomingPayments, setUpcomingPayments] = useState<{ overdue: number; upcoming: number } | null>(null);
 
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -120,6 +123,12 @@ const B2BOrdersList: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    axios
+      .get<{ overdue: number; upcoming: number }>(
+        `${import.meta.env.VITE_API_URL}payment-instruments/stats/upcoming`,
+      )
+      .then((res) => setUpcomingPayments(res.data))
+      .catch(() => setUpcomingPayments(null));
   }, []);
 
   const clientOptions = useMemo(() => {
@@ -257,9 +266,30 @@ const B2BOrdersList: React.FC = () => {
       <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
         Toutes les commandes B2B
       </Typography>
-      <Typography variant="subtitle1" sx={{ mb: 4 }}>
+      <Typography variant="subtitle1" sx={{ mb: 2 }}>
         Vue globale, tous clients confondus
       </Typography>
+
+      {upcomingPayments && (upcomingPayments.overdue > 0 || upcomingPayments.upcoming > 0) && (
+        <Box sx={{ display: "flex", gap: 1.5, mb: 3, flexWrap: "wrap" }}>
+          {upcomingPayments.overdue > 0 && (
+            <Chip
+              icon={<WarningAmberIcon />}
+              color="error"
+              label={`${upcomingPayments.overdue} chèque/virement/traite en retard`}
+              onClick={() => navigate("/b2b/payments")}
+            />
+          )}
+          {upcomingPayments.upcoming > 0 && (
+            <Chip
+              icon={<WarningAmberIcon />}
+              color="warning"
+              label={`${upcomingPayments.upcoming} à encaisser dans les 7 jours`}
+              onClick={() => navigate("/b2b/payments")}
+            />
+          )}
+        </Box>
+      )}
 
       <Box
         sx={{

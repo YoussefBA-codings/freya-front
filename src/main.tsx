@@ -17,6 +17,8 @@ import ProductB2B from "./pages/ProductB2B";
 import CreateOrderB2B from "./pages/CreateOrderB2B";
 import ClientOrderHistory from "./pages/ClientOrderHistory";
 import B2BOrderHistorySelectClient from "./pages/B2BOrderHistorySelectClient";
+import DeclarePaymentInstrument from "./pages/DeclarePaymentInstrument";
+import PaymentInstrumentsList from "./pages/PaymentInstrumentsList";
 
 // 👉 IMPORT MUI X Date Pickers (OBLIGATOIRE)
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -173,6 +175,28 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <PrivateRoute>
                   <Navbar>
                     <B2BOrdersList />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/payments/declare"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <DeclarePaymentInstrument />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/payments"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <PaymentInstrumentsList />
                   </Navbar>
                 </PrivateRoute>
               }

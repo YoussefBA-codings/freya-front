@@ -28,7 +28,6 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { addMonths } from "date-fns";
 import {
@@ -235,19 +234,6 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
   const [deleting, setDeleting] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
 
-  const [editPaymentDueDate, setEditPaymentDueDate] = useState<string>("");
-
-  const [newPaymentAmount, setNewPaymentAmount] = useState<string>("");
-  const [newPaymentMethod, setNewPaymentMethod] = useState<PaymentMethod>("");
-  const [newPaymentReference, setNewPaymentReference] = useState<string>("");
-  const [newPaymentDate, setNewPaymentDate] = useState<string>(
-    new Date().toISOString().slice(0, 10),
-  );
-  const [addingPayment, setAddingPayment] = useState(false);
-  const [deletingPaymentId, setDeletingPaymentId] = useState<number | null>(
-    null,
-  );
-
   const [editWithholdingEnabled, setEditWithholdingEnabled] =
     useState<boolean>(false);
   const [editWithholdingReceived, setEditWithholdingReceived] =
@@ -256,14 +242,6 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
 
   useEffect(() => {
     if (!order) return;
-
-    setEditPaymentDueDate(order.payment_due_date?.slice(0, 10) || "");
-
-    const remaining = getRemainingBalance(order);
-    setNewPaymentAmount(remaining > 0 ? remaining.toFixed(2) : "");
-    setNewPaymentMethod("");
-    setNewPaymentReference("");
-    setNewPaymentDate(new Date().toISOString().slice(0, 10));
 
     const exempt = isWithholdingExempt(Number(order.total_ttc));
     setEditWithholdingEnabled(exempt ? false : order.withholding_enabled);
@@ -313,73 +291,6 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
       onNotify("Échec de la mise à jour du statut.", "error");
     } finally {
       setSavingStatus(false);
-    }
-  };
-
-  const handleSaveDueDate = async () => {
-    if (!order) return;
-    if ((order.payment_due_date?.slice(0, 10) || "") === editPaymentDueDate) {
-      return;
-    }
-
-    try {
-      const res = await axios.patch<OrderB2BDetail>(
-        `${import.meta.env.VITE_API_URL}order-b2b/${order.id}/payment-due-date`,
-        { payment_due_date: editPaymentDueDate || null },
-      );
-
-      onUpdated(res.data);
-      onNotify("Échéance de paiement mise à jour.", "success");
-    } catch {
-      onNotify("Échec de la mise à jour de l'échéance.", "error");
-    }
-  };
-
-  const handleAddPayment = async () => {
-    if (!order) return;
-
-    const amount = Number(newPaymentAmount);
-    if (!amount || amount <= 0) {
-      onNotify("Le montant du versement doit être positif.", "error");
-      return;
-    }
-
-    try {
-      setAddingPayment(true);
-      const res = await axios.post<OrderB2BDetail>(
-        `${import.meta.env.VITE_API_URL}order-b2b/${order.id}/payments`,
-        {
-          amount,
-          payment_method: newPaymentMethod || null,
-          reference: newPaymentReference || null,
-          paid_at: newPaymentDate || null,
-        },
-      );
-
-      onUpdated(res.data);
-      onNotify("Versement enregistré.", "success");
-    } catch {
-      onNotify("Échec de l'enregistrement du versement.", "error");
-    } finally {
-      setAddingPayment(false);
-    }
-  };
-
-  const handleDeletePayment = async (paymentId: number) => {
-    if (!order) return;
-
-    try {
-      setDeletingPaymentId(paymentId);
-      const res = await axios.delete<OrderB2BDetail>(
-        `${import.meta.env.VITE_API_URL}order-b2b/${order.id}/payments/${paymentId}`,
-      );
-
-      onUpdated(res.data);
-      onNotify("Versement supprimé.", "success");
-    } catch {
-      onNotify("Échec de la suppression du versement.", "error");
-    } finally {
-      setDeletingPaymentId(null);
     }
   };
 
@@ -602,19 +513,6 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
                           <TableCell align="right">
                             {Number(p.amount).toFixed(2)} DT
                           </TableCell>
-                          <TableCell align="right" sx={{ width: 40 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeletePayment(p.id)}
-                              disabled={deletingPaymentId === p.id}
-                            >
-                              {deletingPaymentId === p.id ? (
-                                <CircularProgress size={16} />
-                              ) : (
-                                <DeleteOutlineIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -622,121 +520,22 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
                 </TableContainer>
               )}
 
-              {!order.is_paid && (
-                <Box
-                  sx={{
-                    mt: order.payments.length > 0 ? 2.5 : 0,
-                    pt: order.payments.length > 0 ? 2 : 0,
-                    borderTop: order.payments.length > 0 ? "1px solid" : "none",
-                    borderColor: "divider",
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{ display: "block", mb: 1.25, fontWeight: 600 }}
-                    color="text.secondary"
-                  >
-                    NOUVEAU VERSEMENT
-                  </Typography>
-
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Montant (DT)"
-                      type="number"
-                      value={newPaymentAmount}
-                      onChange={(e) => setNewPaymentAmount(e.target.value)}
-                    />
-
-                    <Box sx={{ display: "flex", gap: 1.5 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Méthode</InputLabel>
-                        <Select
-                          label="Méthode"
-                          value={newPaymentMethod}
-                          onChange={(e: SelectChangeEvent<PaymentMethod>) =>
-                            setNewPaymentMethod(e.target.value as PaymentMethod)
-                          }
-                        >
-                          <MenuItem value="">
-                            <em>Aucune</em>
-                          </MenuItem>
-                          <MenuItem value="BANK_TRANSFER">
-                            {PAYMENT_METHOD_LABELS.BANK_TRANSFER}
-                          </MenuItem>
-                          <MenuItem value="CASH">{PAYMENT_METHOD_LABELS.CASH}</MenuItem>
-                          <MenuItem value="CHEQUE">{PAYMENT_METHOD_LABELS.CHEQUE}</MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="Date"
-                        type="date"
-                        InputLabelProps={{ shrink: true }}
-                        value={newPaymentDate}
-                        onChange={(e) => setNewPaymentDate(e.target.value)}
-                      />
-                    </Box>
-
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Référence (optionnel)"
-                      value={newPaymentReference}
-                      onChange={(e) => setNewPaymentReference(e.target.value)}
-                    />
-
-                    <Button
-                      variant="contained"
-                      size="small"
-                      fullWidth
-                      onClick={handleAddPayment}
-                      disabled={addingPayment}
-                      sx={{ mt: 0.5 }}
-                    >
-                      {addingPayment ? (
-                        <CircularProgress size={18} />
-                      ) : (
-                        "Enregistrer le versement"
-                      )}
-                    </Button>
-                  </Box>
-                </Box>
-              )}
             </SectionCard>
 
             <SectionCard title="Échéance de paiement">
-              <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Date d'échéance"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={editPaymentDueDate}
-                  onChange={(e) => setEditPaymentDueDate(e.target.value)}
-                />
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleSaveDueDate}
-                  sx={{ flexShrink: 0 }}
-                >
-                  Enregistrer
-                </Button>
-              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {order.payment_due_date
+                  ? new Date(order.payment_due_date).toLocaleDateString()
+                  : `${getEffectiveDueDate(order).toLocaleDateString()} (implicite)`}
+              </Typography>
               {!order.payment_due_date && (
                 <Typography
                   variant="caption"
                   color="text.secondary"
                   sx={{ display: "block", mt: 1 }}
                 >
-                  Non définie : par défaut, la commande est considérée en
-                  retard 1 mois après la date de facture (
-                  {getEffectiveDueDate(order).toLocaleDateString()}).
+                  Non définie à la création : par défaut, la commande est
+                  considérée en retard 1 mois après la date de facture.
                 </Typography>
               )}
             </SectionCard>

@@ -80,6 +80,7 @@ interface CreateOrderPayload {
   invoice_number?: string;
   invoice_pdf_url?: string;
   invoice_date: string;
+  payment_due_date?: string;
   is_paid: boolean;
   withholding_enabled: boolean;
   items: CreateOrderItemPayload[];
@@ -155,6 +156,7 @@ const CreateOrderB2B: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
 
   const [invoiceDate, setInvoiceDate] = useState<string>("");
+  const [paymentDueDate, setPaymentDueDate] = useState<string>("");
   const [withholdingEnabled, setWithholdingEnabled] = useState<boolean>(false);
   const [withholdingManuallySet, setWithholdingManuallySet] = useState<boolean>(false);
   const [comment, setComment] = useState<string>("");
@@ -489,6 +491,7 @@ const CreateOrderB2B: React.FC = () => {
         client_id: selectedClient.id,
         status: "CREATED",
         invoice_date: invoiceDate,
+        payment_due_date: paymentDueDate || undefined,
         is_paid: false,
         withholding_enabled: withholdingEnabled,
         items: selectedProducts.map((item) => ({
@@ -872,6 +875,18 @@ const CreateOrderB2B: React.FC = () => {
               InputLabelProps={{ shrink: true }}
               value={invoiceDate}
               onChange={(e) => setInvoiceDate(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+
+            {/* PAYMENT DUE DATE */}
+            <TextField
+              fullWidth
+              label="Échéance de paiement (optionnel)"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              value={paymentDueDate}
+              onChange={(e) => setPaymentDueDate(e.target.value)}
+              helperText="Non définie : la commande sera considérée en retard 1 mois après la date de facture."
               sx={{ mb: 2 }}
             />
 

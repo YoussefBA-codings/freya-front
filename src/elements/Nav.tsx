@@ -22,11 +22,13 @@ import {
   GroupAdd as GroupAddIcon,
   ShoppingCartOutlined as OrdersIcon,
   ArrowBackOutlined as ArrowBackIcon,
+  PaymentsOutlined as PaymentsIcon,
 } from "@mui/icons-material";
 
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { PORTAL_URL, getPortalUserEmail, signOutOfPortal } from "../lib/portalAuth";
+import PaymentDueNotificationBell from "./PaymentDueNotificationBell";
 
 // Même largeur que freyaOMS (tools/freyaOMS/src/components/DashboardNav.tsx,
 // DRAWER_WIDTH) — même seuil de bascule desktop/mobile (breakpoint "md", pas
@@ -49,6 +51,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/b2b/orders/history": "Historique commandes",
   "/b2b/orders/stats": "Statistiques",
   "/b2b/orders/all": "Toutes les commandes",
+  "/b2b/payments/declare": "Déclarer un paiement",
+  "/b2b/payments": "Chèques, virements & traites",
   "/achats/factures": "Factures d'achat",
 };
 
@@ -202,6 +206,16 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
       />
 
       <NavGroup
+        label="Paiements"
+        icon={<PaymentsIcon fontSize="small" />}
+        onNavigate={handleDrawerToggle}
+        children={[
+          { to: "/b2b/payments/declare", label: "Déclarer un paiement" },
+          { to: "/b2b/payments", label: "Chèques, virements & traites" },
+        ]}
+      />
+
+      <NavGroup
         label="Clients"
         icon={<GroupAddIcon fontSize="small" />}
         onNavigate={handleDrawerToggle}
@@ -291,6 +305,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+            <PaymentDueNotificationBell />
             {userEmail && (
               <Typography variant="body2" color="text.secondary" noWrap sx={{ display: { xs: "none", sm: "block" } }}>
                 {userEmail}
