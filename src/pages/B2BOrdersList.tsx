@@ -494,7 +494,14 @@ const B2BOrdersList: React.FC = () => {
                     }}
                     onClick={() => setSelectedOrder(order)}
                   >
-                    <TableCell>{order.client.name}</TableCell>
+                    <TableCell>
+                      {order.client.name}
+                      {order.client.responsable_name && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                          {order.client.responsable_name}
+                        </Typography>
+                      )}
+                    </TableCell>
                     <TableCell>{order.invoice_number || "N/A"}</TableCell>
                     <TableCell>
                       {new Date(order.created_at).toLocaleDateString("fr-FR")}

@@ -65,7 +65,7 @@ export interface OrderB2BPayment {
 export interface OrderB2BDetail {
   id: number;
   client_id: number;
-  client: { id: number; name: string };
+  client: { id: number; name: string; responsable_name?: string | null };
   total_ht: string;
   total_ttc: string;
   created_at: string;
