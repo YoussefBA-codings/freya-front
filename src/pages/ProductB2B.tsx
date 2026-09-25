@@ -25,8 +25,13 @@ interface ProductB2B {
   id: number;
   name: string;
   variant_id: string;
-  price_ht: number;
+  // Legacy - n'est plus jamais saisi ici, le prix vit désormais au niveau
+  // de chaque liste de prix (page "Listes de prix").
+  price_ht: number | null;
   tva_rate: number;
+  gamme: string | null;
+  ppr: number | null;
+  points_challenge: number;
   created_at: string;
   updated_at: string;
 }
@@ -46,17 +51,32 @@ const ProductB2B: React.FC = () => {
   // ---- Create fields ----
   const [name, setName] = useState("");
   const [variantId, setVariantId] = useState("");
-  const [priceHT, setPriceHT] = useState("");
   const [tvaRate, setTvaRate] = useState("0.19");
+  const [gamme, setGamme] = useState("");
+  const [ppr, setPpr] = useState("");
 
   // ---- Edit product ----
   const [selectedProduct, setSelectedProduct] = useState<ProductB2B | null>(null);
   const [editName, setEditName] = useState("");
   const [editVariantId, setEditVariantId] = useState("");
-  const [editPriceHT, setEditPriceHT] = useState("");
   const [editTvaRate, setEditTvaRate] = useState("");
+  const [editGamme, setEditGamme] = useState("");
+  const [editPpr, setEditPpr] = useState("");
 
   const [search, setSearch] = useState("");
+
+  // Aperçu en direct - la règle fait foi côté serveur (jamais saisi à la
+  // main), ceci n'affiche que ce qui SERA calculé pour ce nom/PPR.
+  const previewPointsChallenge = (name: string, pprValue: string): number | null => {
+    const isMasquePapier = /mask/i.test(name) && !/stick\s*mask/i.test(name);
+    if (isMasquePapier) return 0.2;
+    if (!pprValue) return null;
+    const pprNum = Number(pprValue);
+    if (!Number.isFinite(pprNum)) return null;
+    if (pprNum < 100) return 1;
+    if (pprNum <= 200) return 2;
+    return 3;
+  };
 
   // Load products
   const loadProducts = async () => {
@@ -95,7 +115,7 @@ const ProductB2B: React.FC = () => {
 
   // Create product
   const handleCreate = async () => {
-    if (!name.trim() || !variantId.trim() || !priceHT.trim()) {
+    if (!name.trim() || !variantId.trim()) {
       setNotifyMessage("Veuillez remplir tous les champs obligatoires.");
       setNotifyStatus("error");
       setSnackbarOpen(true);
@@ -109,20 +129,22 @@ const ProductB2B: React.FC = () => {
         {
           name,
           variant_id: variantId,
-          price_ht: Number(priceHT),
           tva_rate: Number(tvaRate),
+          gamme: gamme || undefined,
+          ppr: ppr ? Number(ppr) : undefined,
         },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setNotifyMessage("Produit créé !");
+      setNotifyMessage("Produit créé ! Pensez à lui donner un prix dans vos listes de prix.");
       setNotifyStatus("success");
       setSnackbarOpen(true);
 
       setName("");
       setVariantId("");
-      setPriceHT("");
       setTvaRate("0.19");
+      setGamme("");
+      setPpr("");
 
       loadProducts();
     } catch (error) {
@@ -143,8 +165,9 @@ const ProductB2B: React.FC = () => {
     setSelectedProduct(product);
     setEditName(product.name);
     setEditVariantId(product.variant_id);
-    setEditPriceHT(String(product.price_ht));
     setEditTvaRate(String(product.tva_rate));
+    setEditGamme(product.gamme ?? "");
+    setEditPpr(product.ppr != null ? String(product.ppr) : "");
   };
 
   const handleCloseDialog = () => setSelectedProduct(null);
@@ -159,8 +182,9 @@ const ProductB2B: React.FC = () => {
         {
           name: editName,
           variant_id: editVariantId,
-          price_ht: Number(editPriceHT),
           tva_rate: Number(editTvaRate),
+          gamme: editGamme || undefined,
+          ppr: editPpr ? Number(editPpr) : undefined,
         },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -219,7 +243,7 @@ const ProductB2B: React.FC = () => {
                   >
                     <ListItemText
                       primary={p.name}
-                      secondary={`Prix : ${p.price_ht} DT · ID Variante : ${p.variant_id}`}
+                      secondary={`PPR : ${p.ppr != null ? `${p.ppr} DT` : "non renseigné"} · ${p.gamme ?? "Gamme non renseignée"} · ${p.points_challenge} pt(s) challenge`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -261,21 +285,40 @@ const ProductB2B: React.FC = () => {
 
         <TextField
           fullWidth
-          label="Prix HT *"
-          value={priceHT}
-          onChange={(e) => setPriceHT(e.target.value)}
-          sx={{ mb: 2 }}
-          type="number"
-        />
-
-        <TextField
-          fullWidth
           label="Taux TVA"
           value={tvaRate}
           onChange={(e) => setTvaRate(e.target.value)}
           sx={{ mb: 2 }}
           type="number"
         />
+
+        <TextField
+          fullWidth
+          label="Gamme (ex: Centella, Tea-Trica...)"
+          value={gamme}
+          onChange={(e) => setGamme(e.target.value)}
+          sx={{ mb: 2 }}
+        />
+
+        <TextField
+          fullWidth
+          label="PPR (Prix Public Recommandé)"
+          value={ppr}
+          onChange={(e) => setPpr(e.target.value)}
+          sx={{ mb: 2 }}
+          type="number"
+        />
+
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+          Ce produit n'a pas de prix ici - donnez-lui un prix dans chacune de vos{" "}
+          <strong>listes de prix</strong> (menu Produits → Listes de prix) une fois créé.
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+          Points challenge (calculé automatiquement, jamais saisi à la main - règle fixe : masque
+          papier = 0,2 pt ; sinon selon le PPR, &lt;100 DT = 1 pt, 100-200 DT = 2 pts, &gt;200 DT = 3 pts) :{" "}
+          <strong>{previewPointsChallenge(name, ppr) ?? "2 (par défaut, PPR non renseigné)"}</strong>
+        </Typography>
 
         <Button
           variant="contained"
@@ -322,21 +365,41 @@ const ProductB2B: React.FC = () => {
 
           <TextField
             fullWidth
-            label="Prix HT"
-            value={editPriceHT}
-            onChange={(e) => setEditPriceHT(e.target.value)}
-            sx={{ mb: 2 }}
-            type="number"
-          />
-
-          <TextField
-            fullWidth
             label="Taux TVA"
             value={editTvaRate}
             onChange={(e) => setEditTvaRate(e.target.value)}
             sx={{ mb: 2 }}
             type="number"
           />
+
+          <TextField
+            fullWidth
+            label="Gamme (ex: Centella, Tea-Trica...)"
+            value={editGamme}
+            onChange={(e) => setEditGamme(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            label="PPR (Prix Public Recommandé)"
+            value={editPpr}
+            onChange={(e) => setEditPpr(e.target.value)}
+            sx={{ mb: 2 }}
+            type="number"
+          />
+
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+            Le prix de ce produit se modifie dans chaque <strong>liste de prix</strong> (menu
+            Produits → Listes de prix), pas ici.
+          </Typography>
+
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+            Points challenge (calculé automatiquement, jamais saisi à la main - règle fixe :
+            masque papier = 0,2 pt ; sinon selon le PPR, &lt;100 DT = 1 pt, 100-200 DT = 2 pts,
+            &gt;200 DT = 3 pts) : <strong>{previewPointsChallenge(editName, editPpr) ?? "2 (par défaut, PPR non renseigné)"}</strong>
+            {" "}(actuel en base : {selectedProduct?.points_challenge})
+          </Typography>
         </DialogContent>
 
         <DialogActions>

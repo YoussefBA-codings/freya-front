@@ -14,10 +14,6 @@ import {
   Snackbar,
   SnackbarContent,
   IconButton,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   Table,
   TableBody,
   TableCell,
@@ -27,6 +23,10 @@ import {
   Paper,
   Chip,
   Drawer,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -48,13 +48,34 @@ interface ClientB2B {
   responsable_name?: string | null;
   responsable_phone?: string | null;
   responsable_email?: string | null;
+  default_price_list_id?: number | null;
+}
+
+interface PriceList {
+  id: number;
+  name: string;
+  is_complete: boolean;
+  nb_prix: number;
+  nb_produits_total: number;
+}
+
+interface PriceListItem {
+  product_id: number;
+  price_ht: number;
+}
+
+interface PriceListDetail {
+  id: number;
+  items: PriceListItem[];
 }
 
 interface ProductB2B {
   id: number;
   name: string;
   variant_id: string;
-  price_ht: number;
+  // Legacy - le prix vit désormais dans la liste sélectionnée (priceMap),
+  // jamais sur le produit lui-même.
+  price_ht: number | null;
   tva_rate: number;
 }
 
@@ -85,7 +106,9 @@ interface CreateOrderPayload {
   withholding_enabled: boolean;
   items: CreateOrderItemPayload[];
   comment?: string;
-  promotion_amount?: number;
+  promo_exceptionnelle_ttc?: number;
+  promo_exceptionnelle_motif?: string;
+  price_list_id: number;
 }
 
 interface InvoiceNumberResponse {
@@ -101,8 +124,6 @@ interface InvoicePdfResult {
   invoiceNumber: string;
 }
 
-type PromoLine = { title: string; amount: string };
-
 /* ------------------------------------------
    UTILS
 ------------------------------------------ */
@@ -111,6 +132,24 @@ const round2 = (n: number) =>
   Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 const clamp0 = (n: number) => (Number.isFinite(n) ? Math.max(0, n) : 0);
+
+// Palier de remise B2B (2026-09) : calculé automatiquement, sur le TTC avant
+// remise, indépendamment pour chaque commande - aucun cumul entre commandes.
+// Doit rester strictement identique à la logique serveur (OrderB2BService),
+// qui seule fait foi - cette copie ne sert qu'à l'aperçu en direct.
+const DISCOUNT_TIERS = [
+  { minTTC: 21000, rate: 0.05 },
+  { minTTC: 14000, rate: 0.03 },
+  { minTTC: 7000, rate: 0.02 },
+  { minTTC: 0, rate: 0 },
+];
+
+const getDiscountRate = (ttcBeforeDiscount: number): number => {
+  for (const tier of DISCOUNT_TIERS) {
+    if (ttcBeforeDiscount >= tier.minTTC) return tier.rate;
+  }
+  return 0;
+};
 
 type BrandKey = "ALL" | "COSRX" | "SKIN1004" | "DR ALTHEA" | "OTHER";
 
@@ -148,6 +187,10 @@ const CreateOrderB2B: React.FC = () => {
 
   const [clients, setClients] = useState<ClientB2B[]>([]);
   const [products, setProducts] = useState<ProductB2BWithStock[]>([]);
+  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
+  const [selectedPriceListId, setSelectedPriceListId] = useState<string>("");
+  const [priceMap, setPriceMap] = useState<Record<number, number>>({});
+  const [priceMapLoading, setPriceMapLoading] = useState<boolean>(false);
 
   const [searchClient, setSearchClient] = useState<string>("");
   const [searchProduct, setSearchProduct] = useState<string>("");
@@ -160,9 +203,8 @@ const CreateOrderB2B: React.FC = () => {
   const [withholdingEnabled, setWithholdingEnabled] = useState<boolean>(false);
   const [withholdingManuallySet, setWithholdingManuallySet] = useState<boolean>(false);
   const [comment, setComment] = useState<string>("");
-
-  const [promoLines, setPromoLines] = useState<PromoLine[]>([{ title: "", amount: "" }]);
-  const [tierPromoRate, setTierPromoRate] = useState<0 | 0.03 | 0.04 | 0.06>(0);
+  const [promoExceptionnelleInput, setPromoExceptionnelleInput] = useState<string>("");
+  const [promoExceptionnelleMotif, setPromoExceptionnelleMotif] = useState<string>("");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [creating, setCreating] = useState<boolean>(false);
@@ -205,6 +247,10 @@ const CreateOrderB2B: React.FC = () => {
         { variant_id: number; inventory_quantity: number }[]
       >(`${import.meta.env.VITE_API_URL}shopify/activeVariantsInventoryLevel`);
 
+      const resPriceLists = await axios.get<PriceList[]>(
+        `${import.meta.env.VITE_API_URL}price-list`
+      );
+
       const inventoryMap = new Map(
         resInventory.data.map((i) => [String(i.variant_id), i.inventory_quantity])
       );
@@ -216,6 +262,7 @@ const CreateOrderB2B: React.FC = () => {
 
       setClients(resClients.data);
       setProducts(productsWithStock);
+      setPriceLists(resPriceLists.data.filter((l) => l.is_complete));
     } catch {
       setNotifyMessage("Échec du chargement des données.");
       setNotifyStatus("error");
@@ -228,6 +275,61 @@ const CreateOrderB2B: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Pré-remplit la liste de prix avec la dernière utilisée pour ce client
+  // (client.default_price_list_id, mis à jour par le back à chaque commande),
+  // mais seulement si cette liste est toujours complète - reste modifiable.
+  useEffect(() => {
+    if (!selectedClient) return;
+    if (
+      selectedClient.default_price_list_id &&
+      priceLists.some((l) => l.id === selectedClient.default_price_list_id)
+    ) {
+      setSelectedPriceListId(String(selectedClient.default_price_list_id));
+    }
+  }, [selectedClient, priceLists]);
+
+  // Charge le tableau de prix de la liste sélectionnée - c'est ce tableau
+  // (et lui seul) qui pilote l'aperçu du panier, jamais product.price_ht une
+  // fois une liste choisie.
+  useEffect(() => {
+    if (!selectedPriceListId) {
+      setPriceMap({});
+      return;
+    }
+    let cancelled = false;
+    setPriceMapLoading(true);
+    axios
+      .get<PriceListDetail>(
+        `${import.meta.env.VITE_API_URL}price-list/${selectedPriceListId}`
+      )
+      .then((res) => {
+        if (cancelled) return;
+        const map: Record<number, number> = {};
+        for (const item of res.data.items) {
+          map[item.product_id] = Number(item.price_ht);
+        }
+        setPriceMap(map);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNotifyMessage("Échec du chargement de la liste de prix.");
+        setNotifyStatus("error");
+        setSnackbarOpen(true);
+      })
+      .finally(() => {
+        if (!cancelled) setPriceMapLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPriceListId]);
+
+  // Prix effectif d'un produit : uniquement celui de la liste sélectionnée -
+  // le produit n'a plus de prix propre. Retourne null tant qu'aucune liste
+  // n'est choisie ou chargée, pour ne jamais afficher un prix inventé.
+  const getEffectivePrice = (product: ProductB2B): number | null =>
+    priceMap[product.id] ?? null;
 
   /* ------------------------------------------
      GET NEXT INVOICE NUMBER
@@ -242,69 +344,45 @@ const CreateOrderB2B: React.FC = () => {
   };
 
   /* ------------------------------------------
-     PROMO LINES HELPERS
-  ------------------------------------------ */
-
-  const updatePromoLine = (index: number, patch: Partial<PromoLine>) => {
-    setPromoLines((prev) =>
-      prev.map((l, i) => (i === index ? { ...l, ...patch } : l))
-    );
-  };
-
-  const addPromoLine = () => setPromoLines((prev) => [...prev, { title: "", amount: "" }]);
-
-  const removePromoLine = (index: number) => {
-    setPromoLines((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  /* ------------------------------------------
      TOTALS (TVA FIXE 19%)
   ------------------------------------------ */
 
   const totals = useMemo(() => {
     const totalHT = selectedProducts.reduce(
       (acc, item) =>
-        acc + (Number(item.product.price_ht) || 0) * (item.quantity || 0),
+        acc + (getEffectivePrice(item.product) ?? 0) * (item.quantity || 0),
       0
     );
 
     const tva = totalHT * 0.19;
     const totalTTC = totalHT + tva;
 
-    const promoFixed = round2(
-      promoLines.reduce((sum, l) => sum + clamp0(Number(l.amount || 0)), 0)
+    const discountRate = getDiscountRate(totalTTC);
+    const tierPromo = round2(totalTTC * discountRate);
+
+    // Remise exceptionnelle : ajoutée par-dessus le palier automatique,
+    // jamais négative, jamais au-delà de ce qu'il reste à remiser - même
+    // plafonnage que côté serveur (OrderB2BService.create), qui seul fait foi.
+    const promoExceptionnelleRaw = Number(promoExceptionnelleInput) || 0;
+    const promoExceptionnelle = round2(
+      clamp0(Math.min(promoExceptionnelleRaw, totalTTC - tierPromo))
     );
 
-    const totalAfterFixed = clamp0(totalTTC - promoFixed);
-    const promoTier = round2(totalAfterFixed * (tierPromoRate || 0));
-
-    const totalPromo = round2(promoFixed + promoTier);
+    const totalPromo = round2(tierPromo + promoExceptionnelle);
     const totalAfterPromo = clamp0(totalTTC - totalPromo);
-
-    const fixedPromosForInvoice = promoLines
-      .map((l) => ({
-        title: (l.title || "").trim(),
-        amount: round2(clamp0(Number(l.amount || 0))),
-      }))
-      .filter((l) => l.amount > 0);
 
     return {
       totalHT: round2(totalHT),
       tva: round2(tva),
       totalTTC: round2(totalTTC),
 
-      promoFixed,
-      fixedPromosForInvoice,
-
-      tierRate: tierPromoRate,
-      promoTier: round2(promoTier),
-
-      totalPromo: round2(totalPromo),
+      discountRate,
+      tierPromo,
+      promoExceptionnelle,
+      totalPromo,
       totalAfterPromo: round2(totalAfterPromo),
     };
-  }, [selectedProducts, promoLines, tierPromoRate]);
-
-  const promoFixedTooHigh = totals.promoFixed > totals.totalTTC;
+  }, [selectedProducts, promoExceptionnelleInput, priceMap]);
 
   // Sous le seuil légal (1000 DT TTC), la commande est exonérée : impossible
   // de forcer la retenue, quelle que soit l'action précédente de l'utilisateur.
@@ -396,32 +474,6 @@ const CreateOrderB2B: React.FC = () => {
   }, [draftQty]);
 
   /* ------------------------------------------
-     PROMO TOTAL (safe)
-  ------------------------------------------ */
-
-  const getPromotionTotalAmount = (): number | null => {
-    const allowedRates = new Set([0, 0.03, 0.04, 0.06]);
-    if (!allowedRates.has(tierPromoRate)) {
-      throw new Error("Taux de promo palier invalide.");
-    }
-
-    if (totals.promoFixed > totals.totalTTC) {
-      throw new Error(
-        `Le montant de la promotion doit être <= au total de la facture (${totals.totalTTC.toFixed(2)} DT).`
-      );
-    }
-
-    const totalPromo = round2(totals.totalPromo);
-
-    if (totalPromo <= 0) return null;
-    if (totalPromo > totals.totalTTC) {
-      throw new Error("Le total de la promotion doit être <= au total de la facture.");
-    }
-
-    return totalPromo;
-  };
-
-  /* ------------------------------------------
      GENERATE PDF
   ------------------------------------------ */
 
@@ -431,12 +483,11 @@ const CreateOrderB2B: React.FC = () => {
     if (selectedProducts.length === 0) throw new Error("Veuillez ajouter au moins un produit.");
 
     const invoiceNumber = await getNextInvoiceNumber(invoiceDate);
-    const totalPromoAmount = getPromotionTotalAmount();
 
     const productsForInvoice = selectedProducts.map((item) => ({
       name: item.product.name,
       variant_id: String(item.product.variant_id),
-      price_ht: item.product.price_ht,
+      price_ht: getEffectivePrice(item.product) ?? 0,
       tva_rate: item.product.tva_rate,
       quantity: item.quantity,
     }));
@@ -446,16 +497,18 @@ const CreateOrderB2B: React.FC = () => {
       productsForInvoice,
       invoiceNumber,
       invoiceDate,
-      {
-        totalPromoAmount: totalPromoAmount ?? 0,
-        promoFixedAmount: totals.promoFixed,
-        fixedPromotions: totals.fixedPromosForInvoice,
-        tierRate: totals.tierRate,
-        promoTierAmount: totals.promoTier,
-      }
+      { totalPromoAmount: totals.totalPromo }
     );
 
-    const pdfBlob = (await html2pdf().from(html).outputPdf("blob")) as Blob;
+    // pagebreak mode "avoid-all" + "css" : renforce le comportement par
+    // défaut de html2pdf (déjà ['css','legacy']) pour qu'aucun bloc/ligne du
+    // template ne soit tranché au milieu par le découpage en pages. Absent
+    // des types fournis par html2pdf.js (option bien réelle à l'exécution),
+    // d'où le cast.
+    const pdfBlob = (await html2pdf()
+      .set({ pagebreak: { mode: ["avoid-all", "css", "legacy"] } } as any)
+      .from(html)
+      .outputPdf("blob")) as Blob;
     return { pdfBlob, invoiceNumber };
   };
 
@@ -477,8 +530,10 @@ const CreateOrderB2B: React.FC = () => {
       if (!selectedClient) throw new Error("Veuillez sélectionner un client.");
       if (!invoiceDate) throw new Error("Veuillez sélectionner une date de facture.");
       if (selectedProducts.length === 0) throw new Error("Veuillez ajouter des produits.");
-
-      const totalPromoAmount = getPromotionTotalAmount();
+      if (!selectedPriceListId) throw new Error("Veuillez sélectionner une liste de prix.");
+      if (totals.promoExceptionnelle > 0 && !promoExceptionnelleMotif.trim()) {
+        throw new Error("Veuillez indiquer un motif pour la remise exceptionnelle.");
+      }
 
       // La commande Shopify est créée AVANT toute génération/dépôt de
       // facture - jamais l'inverse. Si createB2BOrder échoue (client
@@ -489,6 +544,7 @@ const CreateOrderB2B: React.FC = () => {
       // sur le Drive).
       const basePayload: CreateOrderPayload = {
         client_id: selectedClient.id,
+        price_list_id: Number(selectedPriceListId),
         status: "CREATED",
         invoice_date: invoiceDate,
         payment_due_date: paymentDueDate || undefined,
@@ -497,17 +553,23 @@ const CreateOrderB2B: React.FC = () => {
         items: selectedProducts.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
-          price_ht: item.product.price_ht,
+          price_ht: getEffectivePrice(item.product) ?? 0,
           tva_rate: item.product.tva_rate,
         })),
       };
 
       const trimmedComment = comment.trim();
-      let payload: CreateOrderPayload = trimmedComment
-        ? { ...basePayload, comment: trimmedComment }
-        : basePayload;
-
-      if (totalPromoAmount) payload = { ...payload, promotion_amount: totalPromoAmount };
+      const trimmedPromoMotif = promoExceptionnelleMotif.trim();
+      const payload: CreateOrderPayload = {
+        ...basePayload,
+        ...(trimmedComment ? { comment: trimmedComment } : {}),
+        ...(totals.promoExceptionnelle > 0
+          ? {
+              promo_exceptionnelle_ttc: totals.promoExceptionnelle,
+              promo_exceptionnelle_motif: trimmedPromoMotif,
+            }
+          : {}),
+      };
 
       const orderRes = await axios.post<{ id: number }>(
         `${import.meta.env.VITE_API_URL}order-b2b`,
@@ -550,12 +612,13 @@ const CreateOrderB2B: React.FC = () => {
 
       clearCart();
       setSelectedClient(null);
+      setSelectedPriceListId("");
       setInvoiceDate("");
       setWithholdingEnabled(false);
       setWithholdingManuallySet(false);
       setComment("");
-      setPromoLines([{ title: "", amount: "" }]);
-      setTierPromoRate(0);
+      setPromoExceptionnelleInput("");
+      setPromoExceptionnelleMotif("");
       setDraftQty({});
     } catch (err: unknown) {
       let errorMessage = createdOrderId
@@ -670,6 +733,24 @@ const CreateOrderB2B: React.FC = () => {
                 <Typography sx={{ fontWeight: 800 }}>
                   {selectedClient ? selectedClient.name : "Aucun client sélectionné"}
                 </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <FormControl sx={{ minWidth: 220 }} required>
+                  <InputLabel>Liste de prix</InputLabel>
+                  <Select
+                    label="Liste de prix"
+                    value={selectedPriceListId}
+                    onChange={(e) => setSelectedPriceListId(e.target.value)}
+                  >
+                    {priceLists.map((l) => (
+                      <MenuItem key={l.id} value={String(l.id)}>
+                        {l.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {priceMapLoading && <CircularProgress size={20} />}
               </Box>
 
               <Button
@@ -813,7 +894,15 @@ const CreateOrderB2B: React.FC = () => {
 
                                 <TableCell>
                                   <Typography>
-                                    <strong>{round2(p.price_ht).toFixed(2)}</strong> DT
+                                    {getEffectivePrice(p) != null ? (
+                                      <>
+                                        <strong>{round2(getEffectivePrice(p)!).toFixed(2)}</strong> DT
+                                      </>
+                                    ) : (
+                                      <Typography component="span" color="text.secondary">
+                                        Choisir une liste de prix
+                                      </Typography>
+                                    )}
                                   </Typography>
                                 </TableCell>
 
@@ -963,72 +1052,59 @@ const CreateOrderB2B: React.FC = () => {
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
-                Promotions (fixes)
+                Remise automatique
               </Typography>
 
-              {promoLines.map((line, index) => (
-                <Box key={index} sx={{ display: "flex", gap: 1, mb: 1 }}>
-                  <TextField
-                    fullWidth
-                    label="Titre"
-                    value={line.title}
-                    onChange={(e) => updatePromoLine(index, { title: e.target.value })}
-                    placeholder="Ex: geste commercial"
-                  />
-                  <TextField
-                    label="Montant (DT)"
-                    type="number"
-                    value={line.amount}
-                    onChange={(e) => updatePromoLine(index, { amount: e.target.value })}
-                    inputProps={{ min: 0, step: "0.01" }}
-                    sx={{ width: 140 }}
-                  />
-                  <IconButton
-                    color="error"
-                    onClick={() => removePromoLine(index)}
-                    disabled={promoLines.length === 1}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ))}
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Calculée automatiquement sur le total TTC de cette commande, sans
+                saisie manuelle : &lt;7 000 DT = 0% · 7 000-13 999,999 DT = 2% ·
+                14 000-20 999,999 DT = 3% · à partir de 21 000 DT = 5%.
+              </Typography>
 
-              <Button variant="outlined" onClick={addPromoLine} sx={{ mt: 1 }}>
-                + Ajouter une promotion
-              </Button>
+              <Typography sx={{ mt: 1 }}>
+                Taux applicable : <strong>{(totals.discountRate * 100).toFixed(0)}%</strong>
+                {totals.tierPromo > 0 && (
+                  <> — Remise : <strong>-{totals.tierPromo.toFixed(2)} DT</strong></>
+                )}
+              </Typography>
 
-              {promoFixedTooHigh && (
-                <Typography sx={{ mt: 1, color: "error.main" }}>
-                  Le total des promos fixes doit être &lt;= au total TTC ({totals.totalTTC.toFixed(2)} DT)
-                </Typography>
-              )}
+              <Divider sx={{ my: 1.5 }} />
 
-              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
+                Remise exceptionnelle
+              </Typography>
 
-              <FormControl fullWidth>
-                <InputLabel id="tier-promo-label">
-                  Promo pallier (après promos fixes)
-                </InputLabel>
-                <Select
-                  labelId="tier-promo-label"
-                  label="Promo pallier (après promos fixes)"
-                  value={tierPromoRate}
-                  onChange={(e) =>
-                    setTierPromoRate(e.target.value as 0 | 0.03 | 0.04 | 0.06)
+              <Typography variant="body2" sx={{ color: "text.secondary", mb: 1 }}>
+                Remise ponctuelle décidée pour cette commande, en plus de la remise
+                automatique. Un motif est obligatoire dès qu'un montant est saisi.
+              </Typography>
+
+              <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                <TextField
+                  label="Montant (DT TTC)"
+                  type="number"
+                  value={promoExceptionnelleInput}
+                  onChange={(e) => setPromoExceptionnelleInput(e.target.value)}
+                  sx={{ width: 180 }}
+                />
+                <TextField
+                  label="Motif"
+                  value={promoExceptionnelleMotif}
+                  onChange={(e) => setPromoExceptionnelleMotif(e.target.value)}
+                  required={totals.promoExceptionnelle > 0}
+                  error={totals.promoExceptionnelle > 0 && !promoExceptionnelleMotif.trim()}
+                  helperText={
+                    totals.promoExceptionnelle > 0 && !promoExceptionnelleMotif.trim()
+                      ? "Obligatoire"
+                      : " "
                   }
-                >
-                  <MenuItem value={0}>Aucune</MenuItem>
-                  <MenuItem value={0.03}>3%</MenuItem>
-                  <MenuItem value={0.04}>4%</MenuItem>
-                  <MenuItem value={0.06}>6%</MenuItem>
-                </Select>
-              </FormControl>
+                  sx={{ flex: 1, minWidth: 220 }}
+                />
+              </Box>
 
-              {totals.totalPromo > 0 && !promoFixedTooHigh && (
-                <Typography sx={{ mt: 1, color: "text.secondary" }}>
-                  Promo totale: <strong>-{totals.totalPromo.toFixed(2)} DT</strong>
-                  {totals.promoFixed > 0 && <> (fixes: -{totals.promoFixed.toFixed(2)} DT)</>}
-                  {totals.promoTier > 0 && <> (pallier: -{totals.promoTier.toFixed(2)} DT)</>}
+              {totals.promoExceptionnelle > 0 && (
+                <Typography sx={{ mt: 1 }}>
+                  Remise exceptionnelle : <strong>-{totals.promoExceptionnelle.toFixed(2)} DT</strong>
                 </Typography>
               )}
             </Box>
@@ -1072,7 +1148,10 @@ const CreateOrderB2B: React.FC = () => {
                     </Typography>
 
                     <Typography variant="body2" color="text.secondary">
-                      Prix : {round2(item.product.price_ht).toFixed(2)} DT
+                      Prix :{" "}
+                      {getEffectivePrice(item.product) != null
+                        ? `${round2(getEffectivePrice(item.product)!).toFixed(2)} DT`
+                        : "en attente d'une liste de prix"}
                     </Typography>
 
                     <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
@@ -1119,9 +1198,14 @@ const CreateOrderB2B: React.FC = () => {
                 Total TTC: <strong>{totals.totalTTC.toFixed(2)} DT</strong>
               </Typography>
 
-              {totals.totalPromo > 0 && !promoFixedTooHigh && (
+              {totals.tierPromo > 0 && (
                 <Typography variant="body2">
-                  Promo totale: <strong>-{totals.totalPromo.toFixed(2)} DT</strong>
+                  Remise palier: <strong>-{totals.tierPromo.toFixed(2)} DT</strong>
+                </Typography>
+              )}
+              {totals.promoExceptionnelle > 0 && (
+                <Typography variant="body2">
+                  Remise exceptionnelle: <strong>-{totals.promoExceptionnelle.toFixed(2)} DT</strong>
                 </Typography>
               )}
 
@@ -1137,10 +1221,15 @@ const CreateOrderB2B: React.FC = () => {
               color="primary"
               sx={{ mt: 2, py: 1.5, fontWeight: 900 }}
               onClick={handleCreateOrder}
-              disabled={creating}
+              disabled={creating || !selectedPriceListId || priceMapLoading}
             >
               {creating ? <CircularProgress size={22} /> : "Créer la commande"}
             </Button>
+            {!selectedPriceListId && (
+              <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                Sélectionnez une liste de prix pour pouvoir créer la commande.
+              </Typography>
+            )}
           </Box>
         </Box>
       </Box>

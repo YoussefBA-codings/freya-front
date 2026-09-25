@@ -14,11 +14,21 @@ import { DroppexInvoices } from "./epic/invoices/DroppexInvoices";
 import { B2BInvoiceDeposit } from "./epic/invoices/B2BInvoiceUploader";
 import CreateCustomerB2B from "./pages/CreateCustomerB2B";
 import ProductB2B from "./pages/ProductB2B";
+import PriceListsPage from "./pages/PriceListsPage";
 import CreateOrderB2B from "./pages/CreateOrderB2B";
 import ClientOrderHistory from "./pages/ClientOrderHistory";
 import B2BOrderHistorySelectClient from "./pages/B2BOrderHistorySelectClient";
 import DeclarePaymentInstrument from "./pages/DeclarePaymentInstrument";
 import PaymentInstrumentsList from "./pages/PaymentInstrumentsList";
+import ClientB2BSelect from "./pages/ClientB2BSelect";
+import ClientB2BDetail from "./pages/ClientB2BDetail";
+import AnimationsList from "./pages/AnimationsList";
+import AnimationDashboard from "./pages/AnimationDashboard";
+import RelevesMensuelsList from "./pages/RelevesMensuelsList";
+import ChallengeDashboard from "./pages/ChallengeDashboard";
+import HistoriqueVentes from "./pages/HistoriqueVentes";
+import AnimationCreditsDashboard from "./pages/AnimationCreditsDashboard";
+import AnimatricesList from "./pages/AnimatricesList";
 
 // 👉 IMPORT MUI X Date Pickers (OBLIGATOIRE)
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -127,6 +137,17 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             />
 
             <Route
+              path="/b2b/price-lists"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <PriceListsPage />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
               path="/b2b/orders/create"
               element={
                 <PrivateRoute>
@@ -219,6 +240,105 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <PrivateRoute>
                   <Navbar>
                     <PurchaseInvoices />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/clients"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <ClientB2BSelect />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/clients/:clientId"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <ClientB2BDetail />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/animations"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <AnimationsList />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/animations/dashboard"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <AnimationDashboard />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/animatrices"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <AnimatricesList />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/animations/credits"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <AnimationCreditsDashboard />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/releves"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <RelevesMensuelsList />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/challenge/dashboard"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <ChallengeDashboard />
+                  </Navbar>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/b2b/historique-ventes"
+              element={
+                <PrivateRoute>
+                  <Navbar>
+                    <HistoriqueVentes />
                   </Navbar>
                 </PrivateRoute>
               }

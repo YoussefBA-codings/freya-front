@@ -11,6 +11,7 @@ import {
   useGetInvoicesByOrderNameQuery,
   useGetInvoicesQuery,
 } from "../../api/invoices/getInvoices/useGetInvoicesQuery";
+import { AxiosInstance } from "../../api/axios/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useSyncsInvoicesQuery } from "../../api/invoices/syncInvoice/useSyncInvoiceQuery";
@@ -62,6 +63,7 @@ interface Invoice {
   fiscalStamp: string,
   gbDroppexRef: string;
   blkDroppexRef: string;
+  updatedAt?: string;
 
 }
 
@@ -120,6 +122,10 @@ export const Invoices = () => {
 
     type ExportRow = {
       type: "invoice" | "credit_note";
+      // Libellé affiché dans la colonne "Type" de l'export - distinct de
+      // `type` ci-dessus, qui reste le discriminant interne utilisé pour la
+      // couleur de la ligne (ne pas fusionner les deux).
+      typeLabel: "Facture" | "Avoir";
       orderNumber: string;
       invoiceNumber: string;
       creditNumber: string;
@@ -142,6 +148,7 @@ export const Invoices = () => {
       .forEach((invoice) => {
         rows.push({
           type: "invoice",
+          typeLabel: "Facture",
           orderNumber: invoice.orderNumber,
           invoiceNumber: invoice.invoiceNumber,
           creditNumber: invoice.creditNumber || "",
@@ -160,35 +167,47 @@ export const Invoices = () => {
           gbDroppexRef: cleanDroppexRef(invoice.gbDroppexRef) || "",
           blkDroppexRef: cleanDroppexRef(invoice.blkDroppexRef) || "",
         });
-
-        const hasCreditNote = invoice.isCancelled && !!invoice.creditUrl;
-        if (hasCreditNote) {
-          const creditHT = negateAmount(invoice.totalAmountExcludingTax);
-          const creditTVA = negateAmount(invoice.TVA);
-          rows.push({
-            type: "credit_note",
-            orderNumber: invoice.orderNumber,
-            invoiceNumber: invoice.invoiceNumber,
-            creditNumber: invoice.creditNumber || "",
-            invoiceDate: formatDate(invoice.invoiceDate),
-            customerName: invoice.customerName,
-            invoiceUrl: "",
-            creditUrl: invoice.creditUrl,
-            montantHT: creditHT,
-            tva: creditTVA,
-            timbre: "0",
-            total: sumAmounts(creditHT, creditTVA, "0"),
-            gbDroppexRef: "",
-            blkDroppexRef: "",
-          });
-        }
       });
+
+    // Avoirs générés CE mois-ci, indépendamment du mois de leur facture
+    // d'origine (qui peut être antérieure - voir le endpoint dédié
+    // credit-notes-by-month, basé sur le numéro d'avoir "AVR-YYYY-MM-#####"
+    // et non sur invoiceDate). Corrige le bug où un avoir de septembre sur
+    // une facture d'août se retrouvait dans l'export d'août au lieu de
+    // celui de septembre.
+    const { data: creditNotesData } = await AxiosInstance.get(
+      `invoices/credit-notes-by-month?year=${year}&month=${monthNumber}&limit=1000`
+    );
+
+    (creditNotesData?.data ?? []).forEach((invoice: Invoice) => {
+      const creditHT = negateAmount(invoice.totalAmountExcludingTax);
+      const creditTVA = negateAmount(invoice.TVA);
+      rows.push({
+        type: "credit_note",
+        typeLabel: "Avoir",
+        orderNumber: invoice.orderNumber,
+        invoiceNumber: invoice.invoiceNumber,
+        creditNumber: invoice.creditNumber || "",
+        // Date de l'avoir lui-même (updatedAt, posé au moment de sa
+        // génération), jamais invoiceDate qui date la facture d'origine.
+        invoiceDate: formatDate(invoice.updatedAt),
+        customerName: invoice.customerName,
+        invoiceUrl: "",
+        creditUrl: invoice.creditUrl,
+        montantHT: creditHT,
+        tva: creditTVA,
+        timbre: "0",
+        total: sumAmounts(creditHT, creditTVA, "0"),
+        gbDroppexRef: "",
+        blkDroppexRef: "",
+      });
+    });
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Factures");
 
     worksheet.columns = [
-      { header: "Type", key: "type", width: 14 },
+      { header: "Type", key: "typeLabel", width: 14 },
       { header: "Numéro de commande", key: "orderNumber", width: 20 },
       { header: "Numéro de facture", key: "invoiceNumber", width: 22 },
       { header: "Numéro d'avoir", key: "creditNumber", width: 22 },

@@ -146,30 +146,34 @@ export function generateInvoiceHTML(
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding: 40px 30px 160px 30px; 
+  padding: 40px 30px 40px 30px; 
   font-size: 14px;
   color: #222;
   position: relative;
 ">
 
   <style>
-    /* ✅ Fix PDF: empêcher une ligne produit de se couper + header répété */
+    /* Fix PDF: html2pdf/html2canvas rasterise le document puis découpe le
+       canvas en pages - le mode "css" de html2pdf ne sait insérer une
+       coupure propre qu'entre des <div> frères, pas au milieu d'un
+       <table>/<tr> (comportement documenté de html2pdf.js). D'où le
+       tableau produits ci-dessous rendu en <div> (grille flex) plutôt
+       qu'en vrai <table> : chaque ligne peut alors être poussée en entier
+       sur la page suivante au lieu d'être tranchée en deux. */
+    .inv-row, .inv-block {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
     @media print {
-      thead { display: table-header-group; }
-      tfoot { display: table-footer-group; }
-      tr, td, th {
+      .inv-row, .inv-block {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
     }
-    tr, td, th {
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
   </style>
 
   <!-- HEADER -->
-  <div style="display: flex; justify-content: space-between; margin-bottom: 45px;">
+  <div class="inv-block" style="display: flex; justify-content: space-between; margin-bottom: 45px;">
 
     <div>
       <div style="font-size: 28px; font-weight: 700; letter-spacing: -0.3px;">GB Distribution</div>
@@ -191,62 +195,58 @@ export function generateInvoiceHTML(
   </div>
 
   <!-- INVOICE TITLE -->
-  <div style="text-align: right; margin-bottom: 35px;">
+  <div class="inv-block" style="text-align: right; margin-bottom: 35px;">
     <div style="color: ${BLUE}; font-size: 20px; font-weight: 700;">
-      Facture n°${safe(invoiceNumber)}
+      Facture / Bon de livraison n°${safe(invoiceNumber)}
     </div>
     <div style="color:#444;">
       Date de la facture : <strong>${safe(invoiceDate)}</strong>
     </div>
   </div>
 
-  <!-- TABLE -->
-  <table style="width:100%; border-collapse: collapse; margin-bottom: 40px;">
-    <thead>
-      <tr style="background: ${BLUE}; color:white;">
-        <th style="padding: 10px; width: 40px; text-align:center;">N°</th>
-        <th style="padding: 10px; text-align:left;">Désignation</th>
-        <th style="padding: 10px; width: 60px; text-align:center;">Qté</th>
-        <th style="padding: 10px; width: 80px; text-align:right;">PU HT</th>
-        <th style="padding: 10px; width: 60px; text-align:center;">TVA</th>
-        <th style="padding: 10px; width:100px; text-align:right;">Total TTC</th>
-      </tr>
-    </thead>
+  <!-- TABLE (grille flex - voir commentaire de style ci-dessus) -->
+  <div style="width:100%; margin-bottom: 40px;">
+    <div class="inv-row" style="display:flex; background: ${BLUE}; color:white;">
+      <div style="padding: 10px; width: 40px; text-align:center;">N°</div>
+      <div style="padding: 10px; flex:1; text-align:left;">Désignation</div>
+      <div style="padding: 10px; width: 60px; text-align:center;">Qté</div>
+      <div style="padding: 10px; width: 80px; text-align:right;">PU HT</div>
+      <div style="padding: 10px; width: 60px; text-align:center;">TVA</div>
+      <div style="padding: 10px; width:100px; text-align:right;">Total TTC</div>
+    </div>
 
-    <tbody>
-      ${products
-        .map((item, index) => {
-          const qty = Number(item.quantity) || 0;
-          const price = Number(item.price_ht) || 0;
-          const tvaRate = Number(item.tva_rate) || 0;
+    ${products
+      .map((item, index) => {
+        const qty = Number(item.quantity) || 0;
+        const price = Number(item.price_ht) || 0;
+        const tvaRate = Number(item.tva_rate) || 0;
 
-          const lineHT = qty * price;
-          const lineTTC = lineHT * (1 + tvaRate);
+        const lineHT = qty * price;
+        const lineTTC = lineHT * (1 + tvaRate);
 
-          return `
-        <tr style="border-bottom:1px solid #DDD;">
-          <td style="padding: 10px; text-align:center;">${index + 1}</td>
-          <td style="padding: 10px;">${safe(item.name)}</td>
-          <td style="padding: 10px; text-align:center;">${qty}</td>
-          <td style="padding: 10px; text-align:right;">${price.toFixed(2)}</td>
-          <td style="padding: 10px; text-align:center;">${(tvaRate * 100).toFixed(
-            0
-          )}%</td>
-          <td style="padding: 10px; text-align:right;">${lineTTC.toFixed(2)}</td>
-        </tr>`;
-        })
-        .join("")}
-    </tbody>
-  </table>
+        return `
+      <div class="inv-row" style="display:flex; border-bottom:1px solid #DDD;">
+        <div style="padding: 10px; width: 40px; text-align:center;">${index + 1}</div>
+        <div style="padding: 10px; flex:1;">${safe(item.name)}</div>
+        <div style="padding: 10px; width: 60px; text-align:center;">${qty}</div>
+        <div style="padding: 10px; width: 80px; text-align:right;">${price.toFixed(2)}</div>
+        <div style="padding: 10px; width: 60px; text-align:center;">${(tvaRate * 100).toFixed(
+          0
+        )}%</div>
+        <div style="padding: 10px; width:100px; text-align:right;">${lineTTC.toFixed(2)}</div>
+      </div>`;
+      })
+      .join("")}
+  </div>
 
   <!-- PAYMENT INFO -->
-  <div style="margin-bottom: 30px;">
+  <div class="inv-block" style="margin-bottom: 30px;">
     <strong>À régler en espèces ou par virement bancaire.</strong><br/>
     Paiement à réception.
   </div>
 
   <!-- TOTALS BOX -->
-  <div style="display:flex; justify-content:flex-end;">
+  <div class="inv-block" style="display:flex; justify-content:flex-end;">
     <div style="min-width: 260px;">
       <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #EEE;">
         <span>Total HT</span>
@@ -282,8 +282,19 @@ export function generateInvoiceHTML(
     </div>
   </div>
 
+  <!-- SIGNATURE CLIENT (reçu conforme) -->
+  <div class="inv-block" style="margin-top: 50px;">
+    <div style="color:#444; margin-bottom: 10px;">
+      Reçu conforme le : ______________________
+    </div>
+    <div style="color:#444; margin-bottom: 10px;">
+      Cachet et signature du client :
+    </div>
+    <div style="height: 70px; border: 1px solid #CCC; border-radius: 4px;"></div>
+  </div>
+
   <!-- FOOTER -->
-  <div style="
+  <div class="inv-block" style="
   width: 100%;
   margin-top: 60px;
   padding-top: 15px;
@@ -291,9 +302,8 @@ export function generateInvoiceHTML(
   text-align: center;
   font-size: 12px;
   color: #555;
-  page-break-inside: avoid;
 ">
-  GB Distribution — 454, SARAYA EL MENZAH B4, 2037 EL MENZAH 7 BIS, Tunisie — 
+  GB Distribution — 454, SARAYA EL MENZAH B4, 2037 EL MENZAH 7 BIS, Tunisie —
   Téléphone : +216 52 546 103 — SARL — 1872451/G/B/M/000
 </div>
 

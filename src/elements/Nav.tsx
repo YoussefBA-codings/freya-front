@@ -23,6 +23,9 @@ import {
   ShoppingCartOutlined as OrdersIcon,
   ArrowBackOutlined as ArrowBackIcon,
   PaymentsOutlined as PaymentsIcon,
+  EventAvailableOutlined as AnimationsIcon,
+  EmojiEventsOutlined as ChallengeIcon,
+  AssessmentOutlined as VentesIcon,
 } from "@mui/icons-material";
 
 import { Link, useLocation } from "react-router-dom";
@@ -46,6 +49,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/deposit-b2b": "Déposer une facture",
   "/create-invoice": "Créer une facture",
   "/b2b/products": "Gérer les produits",
+  "/b2b/price-lists": "Listes de prix",
   "/b2b/orders/create": "Créer une commande",
   "/b2b/customers/create": "Créer un client",
   "/b2b/orders/history": "Historique commandes",
@@ -54,11 +58,20 @@ const PAGE_TITLES: Record<string, string> = {
   "/b2b/payments/declare": "Déclarer un paiement",
   "/b2b/payments": "Chèques, virements & traites",
   "/achats/factures": "Factures d'achat",
+  "/b2b/clients": "Points de vente",
+  "/b2b/animations": "Animations",
+  "/b2b/animations/dashboard": "Tableau de bord animations",
+  "/b2b/animations/credits": "Suivi des crédits animation",
+  "/b2b/animatrices": "Animatrices",
+  "/b2b/releves": "Relevés mensuels",
+  "/b2b/challenge/dashboard": "Tableau de bord challenge",
+  "/b2b/historique-ventes": "Historique des ventes",
 };
 
 function pageTitleFor(pathname: string): string {
   if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
   if (pathname.startsWith("/b2b/orders/history/")) return "Historique client";
+  if (pathname.startsWith("/b2b/clients/")) return "Fiche point de vente";
   return "Freya Hub";
 }
 
@@ -219,7 +232,41 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         label="Clients"
         icon={<GroupAddIcon fontSize="small" />}
         onNavigate={handleDrawerToggle}
-        children={[{ to: "/b2b/customers/create", label: "Créer un client" }]}
+        children={[
+          { to: "/b2b/customers/create", label: "Créer un client" },
+          { to: "/b2b/clients", label: "Points de vente" },
+        ]}
+      />
+
+      <NavGroup
+        label="Animations"
+        icon={<AnimationsIcon fontSize="small" />}
+        onNavigate={handleDrawerToggle}
+        children={[
+          { to: "/b2b/animations", label: "Toutes les animations" },
+          { to: "/b2b/animatrices", label: "Animatrices" },
+          { to: "/b2b/animations/credits", label: "Suivi des crédits" },
+          { to: "/b2b/animations/dashboard", label: "Tableau de bord animations" },
+        ]}
+      />
+
+      <NavGroup
+        label="Ventes"
+        icon={<VentesIcon fontSize="small" />}
+        onNavigate={handleDrawerToggle}
+        children={[
+          { to: "/b2b/releves", label: "Relevés mensuels" },
+          { to: "/b2b/historique-ventes", label: "Historique des ventes" },
+        ]}
+      />
+
+      <NavGroup
+        label="Challenge"
+        icon={<ChallengeIcon fontSize="small" />}
+        onNavigate={handleDrawerToggle}
+        children={[
+          { to: "/b2b/challenge/dashboard", label: "Tableau de bord challenge" },
+        ]}
       />
 
       <NavGroup
@@ -228,6 +275,7 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
         onNavigate={handleDrawerToggle}
         children={[
           { to: "/b2b/products", label: "Gérer les produits" },
+          { to: "/b2b/price-lists", label: "Listes de prix" },
           { to: "/stock/status", label: "État du stock" },
         ]}
       />

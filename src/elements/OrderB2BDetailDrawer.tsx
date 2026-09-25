@@ -33,6 +33,7 @@ import {
   isWithholdingExempt,
   WITHHOLDING_THRESHOLD_TTC,
 } from "../pages/utils/withholding";
+import CreateCreditB2BDialog from "./CreateCreditB2BDialog";
 
 /* ======================================================
    🔵 TYPES
@@ -62,10 +63,40 @@ export interface OrderB2BPayment {
   paid_at: string;
 }
 
+export type CreditType = "TOTAL" | "PARTIAL";
+
+export interface OrderB2BCreditItem {
+  id: number;
+  order_item_id: number;
+  quantity: number;
+}
+
+export interface OrderB2BCredit {
+  id: number;
+  type: CreditType;
+  credit_number: string;
+  credit_pdf_url: string;
+  credit_date: string;
+  total_ht: string;
+  total_ttc: string;
+  created_at: string;
+  items: OrderB2BCreditItem[];
+}
+
 export interface OrderB2BDetail {
   id: number;
   client_id: number;
-  client: { id: number; name: string; responsable_name?: string | null };
+  client: {
+    id: number;
+    name: string;
+    responsable_name?: string | null;
+    tax_identification_number?: string | null;
+    address?: string | null;
+    zip?: string | null;
+    country?: string | null;
+    responsable_phone?: string | null;
+    responsable_email?: string | null;
+  };
   total_ht: string;
   total_ttc: string;
   created_at: string;
@@ -82,6 +113,7 @@ export interface OrderB2BDetail {
   payment_date?: string | null;
   payment_due_date?: string | null;
   payments: OrderB2BPayment[];
+  credits: OrderB2BCredit[];
 
   withholding_enabled: boolean;
   withholding_received: boolean;
@@ -110,10 +142,33 @@ export const isOrderOverdue = (order: DeadlineOrder & { is_paid: boolean }) =>
 export const getAmountPaid = (order: { payments: OrderB2BPayment[] }) =>
   (order.payments ?? []).reduce((sum, p) => sum + Number(p.amount), 0);
 
+// Un avoir réduit ce qui reste dû exactement comme un versement (voir
+// OrderB2BService.computeIsFullyPaid côté backend, même logique).
+export const getAmountCredited = (order: { credits: OrderB2BCredit[] }) =>
+  (order.credits ?? []).reduce((sum, c) => sum + Number(c.total_ttc), 0);
+
+// Quantité déjà créditée par ligne, tous avoirs confondus - sert à plafonner
+// un nouvel avoir (jamais plus que ce qui a été commandé sur cette ligne).
+export const getCreditedQuantityByItem = (order: {
+  credits: OrderB2BCredit[];
+}) => {
+  const byItemId = new Map<number, number>();
+  for (const credit of order.credits ?? []) {
+    for (const line of credit.items) {
+      byItemId.set(
+        line.order_item_id,
+        (byItemId.get(line.order_item_id) ?? 0) + line.quantity,
+      );
+    }
+  }
+  return byItemId;
+};
+
 type PaymentOrder = {
   is_paid: boolean;
   total_ttc: string;
   payments: OrderB2BPayment[];
+  credits: OrderB2BCredit[];
 };
 
 // is_paid fait foi : une commande peut être marquée payée sans que chaque
@@ -121,12 +176,15 @@ type PaymentOrder = {
 export const getRemainingBalance = (order: PaymentOrder) =>
   order.is_paid
     ? 0
-    : Math.max(0, Number(order.total_ttc) - getAmountPaid(order));
+    : Math.max(
+        0,
+        Number(order.total_ttc) - getAmountPaid(order) - getAmountCredited(order),
+      );
 
 export const getPaymentProgressLabel = (order: PaymentOrder) => {
   if (order.is_paid) return "Payé";
-  const amountPaid = getAmountPaid(order);
-  return amountPaid > 0 && amountPaid < Number(order.total_ttc)
+  const settled = getAmountPaid(order) + getAmountCredited(order);
+  return settled > 0 && settled < Number(order.total_ttc)
     ? "Payé partiellement"
     : "Non payé";
 };
@@ -135,8 +193,8 @@ export const getPaymentProgressColor = (
   order: PaymentOrder,
 ): "success" | "info" | "warning" => {
   if (order.is_paid) return "success";
-  const amountPaid = getAmountPaid(order);
-  return amountPaid > 0 && amountPaid < Number(order.total_ttc)
+  const settled = getAmountPaid(order) + getAmountCredited(order);
+  return settled > 0 && settled < Number(order.total_ttc)
     ? "info"
     : "warning";
 };
@@ -231,6 +289,7 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
   onNotify,
 }) => {
   const [deleting, setDeleting] = useState(false);
+  const [creditDialogOpen, setCreditDialogOpen] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
 
   const [editWithholdingEnabled, setEditWithholdingEnabled] =
@@ -316,14 +375,19 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
   // is_paid fait foi : une commande peut être marquée payée sans que chaque
   // versement ait été détaillé (héritage de l'ancien flux "marquer payé").
   const amountPaid = order ? getAmountPaid(order) : 0;
+  const amountCredited = order ? getAmountCredited(order) : 0;
   const remaining = order ? getRemainingBalance(order) : 0;
   const paidPercent = !order
     ? 0
     : order.is_paid
     ? 100
-    : Math.min(100, (amountPaid / Math.max(Number(order.total_ttc), 0.01)) * 100);
+    : Math.min(
+        100,
+        ((amountPaid + amountCredited) / Math.max(Number(order.total_ttc), 0.01)) * 100,
+      );
 
   return (
+    <>
     <Drawer
       anchor="right"
       open={!!order}
@@ -475,9 +539,11 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
                 sx={{ borderRadius: 1, height: 6, mb: 0.75 }}
               />
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-                {order.is_paid && amountPaid === 0
+                {order.is_paid && amountPaid === 0 && amountCredited === 0
                   ? `Total réglé (${Number(order.total_ttc).toFixed(2)} DT)`
-                  : `${amountPaid.toFixed(2)} DT versés sur ${Number(order.total_ttc).toFixed(2)} DT${
+                  : `${amountPaid.toFixed(2)} DT versés${
+                      amountCredited > 0 ? ` + ${amountCredited.toFixed(2)} DT d'avoirs` : ""
+                    } sur ${Number(order.total_ttc).toFixed(2)} DT${
                       remaining > 0 ? ` · reste ${remaining.toFixed(2)} DT` : ""
                     }`}
               </Typography>
@@ -519,6 +585,58 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
                 </TableContainer>
               )}
 
+            </SectionCard>
+
+            <SectionCard>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: order.credits.length > 0 ? 1 : 0,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Avoirs
+                </Typography>
+                <Button size="small" onClick={() => setCreditDialogOpen(true)}>
+                  Générer un avoir
+                </Button>
+              </Box>
+
+              {order.credits.length > 0 && (
+                <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                  <Table size="small">
+                    <TableBody>
+                      {order.credits.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {new Date(c.credit_date).toLocaleDateString()} · {c.credit_number}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {c.type === "TOTAL" ? "Avoir total" : "Avoir partiel"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            {Number(c.total_ttc).toFixed(2)} DT
+                          </TableCell>
+                          <TableCell align="right">
+                            <Button
+                              size="small"
+                              href={c.credit_pdf_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              PDF
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </SectionCard>
 
             <SectionCard title="Échéance de paiement">
@@ -645,11 +763,32 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
               >
                 Annuler la commande
               </Button>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 0.5 }}
+              >
+                Annule et supprime définitivement la commande (stock restauré),
+                sans générer d'avoir. Pour un retour partiel ou total avec
+                justificatif, utilise plutôt "Générer un avoir" ci-dessus.
+              </Typography>
             </Box>
           </Box>
         )}
       </Box>
     </Drawer>
+
+    <CreateCreditB2BDialog
+      open={creditDialogOpen}
+      order={order}
+      onClose={() => setCreditDialogOpen(false)}
+      onCreated={(updated) => {
+        onUpdated(updated);
+        setCreditDialogOpen(false);
+      }}
+      onNotify={onNotify}
+    />
+    </>
   );
 };
 
