@@ -1,8 +1,7 @@
 import React from "react";
 import { pdfjs } from "react-pdf";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Login from "./pages/Login";
+import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
 import "./index.css";
 import PrivateRoute from "./elements/PrivateRoute";
 import NotFound from "./pages/NotFound";
@@ -53,8 +52,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         {/* Servi sous /compta (voir vite.config.ts, `base`) — basename doit rester synchronisé. */}
         <Router basename="/compta">
           <Routes>
-            {/* Routes sans Navbar */}
-            <Route path="/login" element={<Login />} />
+            {/* Ancienne page de connexion : la session du portail fait foi */}
+            <Route path="/login" element={<Navigate to="/" replace />} />
 
             {/* Routes avec Navbar */}
             <Route
