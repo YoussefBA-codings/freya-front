@@ -24,9 +24,6 @@ import ClientB2BSelect from "./pages/ClientB2BSelect";
 import ClientB2BDetail from "./pages/ClientB2BDetail";
 import AnimationsList from "./pages/AnimationsList";
 import AnimationDashboard from "./pages/AnimationDashboard";
-import RelevesMensuelsList from "./pages/RelevesMensuelsList";
-import ChallengeDashboard from "./pages/ChallengeDashboard";
-import HistoriqueVentes from "./pages/HistoriqueVentes";
 import AnimationCreditsDashboard from "./pages/AnimationCreditsDashboard";
 import AnimatricesList from "./pages/AnimatricesList";
 
@@ -306,39 +303,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 <PrivateRoute>
                   <Navbar>
                     <AnimationCreditsDashboard />
-                  </Navbar>
-                </PrivateRoute>
-              }
-            />
-
-            <Route
-              path="/b2b/releves"
-              element={
-                <PrivateRoute>
-                  <Navbar>
-                    <RelevesMensuelsList />
-                  </Navbar>
-                </PrivateRoute>
-              }
-            />
-
-            <Route
-              path="/b2b/challenge/dashboard"
-              element={
-                <PrivateRoute>
-                  <Navbar>
-                    <ChallengeDashboard />
-                  </Navbar>
-                </PrivateRoute>
-              }
-            />
-
-            <Route
-              path="/b2b/historique-ventes"
-              element={
-                <PrivateRoute>
-                  <Navbar>
-                    <HistoriqueVentes />
                   </Navbar>
                 </PrivateRoute>
               }

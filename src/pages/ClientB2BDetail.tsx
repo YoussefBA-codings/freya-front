@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Box,
@@ -17,8 +17,6 @@ import {
   Collapse,
 } from "@mui/material";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import TimelineIcon from "@mui/icons-material/Timeline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useNavigate, useParams } from "react-router-dom";
@@ -71,10 +69,6 @@ interface LedgerSummary {
   mouvements: LedgerMovement[];
 }
 
-const MOIS_LABELS = [
-  "Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc",
-];
-
 /* ======================================================
    🔵 COMPONENT
 ====================================================== */
@@ -105,14 +99,6 @@ const ClientB2BDetail: React.FC = () => {
       .catch((error) => console.error("Failed to load client detail:", error))
       .finally(() => setLoading(false));
   }, [numericId]);
-
-  const ventesMensuellesTriees = useMemo(
-    () =>
-      [...(dashboard?.ventes_mensuelles ?? [])].sort(
-        (a, b) => b.annee * 12 + b.mois - (a.annee * 12 + a.mois),
-      ),
-    [dashboard],
-  );
 
   if (loading) {
     return (
@@ -211,92 +197,6 @@ const ClientB2BDetail: React.FC = () => {
         >
           Voir les animations
         </Button>
-        <Button
-          variant="outlined"
-          startIcon={<LocalOfferIcon />}
-          onClick={() => navigate(`/b2b/releves?client_id=${numericId}`)}
-        >
-          Voir les relevés mensuels
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<TimelineIcon />}
-          onClick={() => navigate(`/b2b/historique-ventes?client_id=${numericId}`)}
-        >
-          Voir l'historique des ventes
-        </Button>
-      </Box>
-
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2, mb: 3 }}>
-        {/* VENTES MENSUELLES */}
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, p: 2, pb: 0 }}>
-            Ventes mensuelles (relevés)
-          </Typography>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Mois</TableCell>
-                <TableCell align="right">CA</TableCell>
-                <TableCell align="right">Unités</TableCell>
-                <TableCell align="right">Points</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {ventesMensuellesTriees.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    <Typography variant="body2" color="text.secondary">
-                      Aucun relevé mensuel pour ce point de vente.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                ventesMensuellesTriees.map((v) => (
-                  <TableRow key={`${v.annee}-${v.mois}`}>
-                    <TableCell>{MOIS_LABELS[v.mois - 1]} {v.annee}</TableCell>
-                    <TableCell align="right">{v.ca.toFixed(2)} DT</TableCell>
-                    <TableCell align="right">{v.unites}</TableCell>
-                    <TableCell align="right">{v.points}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* PRODUITS PLUS VENDUS */}
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, p: 2, pb: 0 }}>
-            Produits les plus vendus
-          </Typography>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Produit</TableCell>
-                <TableCell align="right">Quantité</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {dashboard.produits_plus_vendus.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={2} align="center">
-                    <Typography variant="body2" color="text.secondary">
-                      Aucune donnée.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                dashboard.produits_plus_vendus.map((p) => (
-                  <TableRow key={p.product_id}>
-                    <TableCell>{p.name}</TableCell>
-                    <TableCell align="right">{p.quantite}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
       </Box>
 
       {/* HISTORIQUE DES MOUVEMENTS (LEDGER) */}

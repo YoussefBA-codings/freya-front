@@ -24,8 +24,6 @@ import {
   ArrowBackOutlined as ArrowBackIcon,
   PaymentsOutlined as PaymentsIcon,
   EventAvailableOutlined as AnimationsIcon,
-  EmojiEventsOutlined as ChallengeIcon,
-  AssessmentOutlined as VentesIcon,
 } from "@mui/icons-material";
 
 import { Link, useLocation } from "react-router-dom";
@@ -63,9 +61,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/b2b/animations/dashboard": "Tableau de bord animations",
   "/b2b/animations/credits": "Suivi des crédits animation",
   "/b2b/animatrices": "Animatrices",
-  "/b2b/releves": "Relevés mensuels",
-  "/b2b/challenge/dashboard": "Tableau de bord challenge",
-  "/b2b/historique-ventes": "Historique des ventes",
 };
 
 function pageTitleFor(pathname: string): string {
@@ -247,25 +242,6 @@ const Navbar: React.FC<NavbarProps> = ({ children }) => {
           { to: "/b2b/animatrices", label: "Animatrices" },
           { to: "/b2b/animations/credits", label: "Suivi des crédits" },
           { to: "/b2b/animations/dashboard", label: "Tableau de bord animations" },
-        ]}
-      />
-
-      <NavGroup
-        label="Ventes"
-        icon={<VentesIcon fontSize="small" />}
-        onNavigate={handleDrawerToggle}
-        children={[
-          { to: "/b2b/releves", label: "Relevés mensuels" },
-          { to: "/b2b/historique-ventes", label: "Historique des ventes" },
-        ]}
-      />
-
-      <NavGroup
-        label="Challenge"
-        icon={<ChallengeIcon fontSize="small" />}
-        onNavigate={handleDrawerToggle}
-        children={[
-          { to: "/b2b/challenge/dashboard", label: "Tableau de bord challenge" },
         ]}
       />
 
