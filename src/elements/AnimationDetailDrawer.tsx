@@ -79,7 +79,6 @@ export interface AnimationDetail {
 interface ProductB2B {
   id: number;
   name: string;
-  points_challenge: string;
 }
 
 interface Vendeuse {
@@ -99,7 +98,6 @@ interface AnimationSaleItem {
   quantite: number;
   prix_vente_unitaire_reel: string;
   montant_total: string;
-  points_challenge_generes: string;
   product: { id: number; name: string };
   vendeuse: { id: number; name: string } | null;
 }

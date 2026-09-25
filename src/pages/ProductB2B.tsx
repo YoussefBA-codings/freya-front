@@ -31,7 +31,6 @@ interface ProductB2B {
   tva_rate: number;
   gamme: string | null;
   ppr: number | null;
-  points_challenge: number;
   created_at: string;
   updated_at: string;
 }
@@ -64,19 +63,6 @@ const ProductB2B: React.FC = () => {
   const [editPpr, setEditPpr] = useState("");
 
   const [search, setSearch] = useState("");
-
-  // Aperçu en direct - la règle fait foi côté serveur (jamais saisi à la
-  // main), ceci n'affiche que ce qui SERA calculé pour ce nom/PPR.
-  const previewPointsChallenge = (name: string, pprValue: string): number | null => {
-    const isMasquePapier = /mask/i.test(name) && !/stick\s*mask/i.test(name);
-    if (isMasquePapier) return 0.2;
-    if (!pprValue) return null;
-    const pprNum = Number(pprValue);
-    if (!Number.isFinite(pprNum)) return null;
-    if (pprNum < 100) return 1;
-    if (pprNum <= 200) return 2;
-    return 3;
-  };
 
   // Load products
   const loadProducts = async () => {
@@ -243,7 +229,7 @@ const ProductB2B: React.FC = () => {
                   >
                     <ListItemText
                       primary={p.name}
-                      secondary={`PPR : ${p.ppr != null ? `${p.ppr} DT` : "non renseigné"} · ${p.gamme ?? "Gamme non renseignée"} · ${p.points_challenge} pt(s) challenge`}
+                      secondary={`PPR : ${p.ppr != null ? `${p.ppr} DT` : "non renseigné"} · ${p.gamme ?? "Gamme non renseignée"}`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -312,12 +298,6 @@ const ProductB2B: React.FC = () => {
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
           Ce produit n'a pas de prix ici - donnez-lui un prix dans chacune de vos{" "}
           <strong>listes de prix</strong> (menu Produits → Listes de prix) une fois créé.
-        </Typography>
-
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-          Points challenge (calculé automatiquement, jamais saisi à la main - règle fixe : masque
-          papier = 0,2 pt ; sinon selon le PPR, &lt;100 DT = 1 pt, 100-200 DT = 2 pts, &gt;200 DT = 3 pts) :{" "}
-          <strong>{previewPointsChallenge(name, ppr) ?? "2 (par défaut, PPR non renseigné)"}</strong>
         </Typography>
 
         <Button
@@ -394,12 +374,6 @@ const ProductB2B: React.FC = () => {
             Produits → Listes de prix), pas ici.
           </Typography>
 
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-            Points challenge (calculé automatiquement, jamais saisi à la main - règle fixe :
-            masque papier = 0,2 pt ; sinon selon le PPR, &lt;100 DT = 1 pt, 100-200 DT = 2 pts,
-            &gt;200 DT = 3 pts) : <strong>{previewPointsChallenge(editName, editPpr) ?? "2 (par défaut, PPR non renseigné)"}</strong>
-            {" "}(actuel en base : {selectedProduct?.points_challenge})
-          </Typography>
         </DialogContent>
 
         <DialogActions>

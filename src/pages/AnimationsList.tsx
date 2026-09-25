@@ -42,7 +42,6 @@ interface ClientB2B {
 interface ProductB2B {
   id: number;
   name: string;
-  points_challenge: string;
 }
 
 interface Animatrice {

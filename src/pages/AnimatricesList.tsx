@@ -42,7 +42,6 @@ interface AnimatriceDashboard {
   nb_animations_realisees: number;
   montant_du_dt: number;
   ca_genere_dt: number;
-  points_generes: number;
   historique: {
     animation_id: number;
     client_name: string;
@@ -310,9 +309,6 @@ const AnimatricesList: React.FC = () => {
                   </Typography>
                   <Typography variant="body2">
                     CA généré : <strong>{selectedDashboard.ca_genere_dt.toFixed(2)} DT</strong>
-                  </Typography>
-                  <Typography variant="body2">
-                    Points challenge : <strong>{selectedDashboard.points_generes}</strong>
                   </Typography>
                 </Box>
               </SectionCard>
