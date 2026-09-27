@@ -21,8 +21,6 @@ import {
   Button,
   Chip,
   Tooltip,
-  Snackbar,
-  SnackbarContent,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -40,6 +38,7 @@ import OrderB2BDetailDrawer, {
   getRemainingBalance,
   isOrderOverdue,
 } from "../elements/OrderB2BDetailDrawer";
+import { notify, notifyError } from "../lib/notify";
 
 /* ======================================================
    🔵 TYPES
@@ -85,17 +84,6 @@ const B2BOrdersList: React.FC = () => {
   const [withholdingFilter, setWithholdingFilter] =
     useState<WithholdingFilter>("ALL");
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">(
-    "success",
-  );
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   const loadData = async () => {
     try {
@@ -105,7 +93,7 @@ const B2BOrdersList: React.FC = () => {
       );
       setOrders(res.data);
     } catch (error) {
-      console.error("Failed to load orders:", error);
+      notifyError(error, "Chargement des commandes impossible");
     } finally {
       setLoading(false);
     }
@@ -583,18 +571,6 @@ const B2BOrdersList: React.FC = () => {
         onNotify={notify}
       />
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{
-            backgroundColor: notifyStatus === "error" ? "red" : "green",
-          }}
-        />
-      </Snackbar>
     </Box>
   );
 };

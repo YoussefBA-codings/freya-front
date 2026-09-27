@@ -1,7 +1,6 @@
 // shared.ts - types/constantes/helpers communs à la page de déclaration
 // (DeclarePaymentInstrument) et à la page de suivi (PaymentInstrumentsList) -
 // scindées en deux pages distinctes (décision équipe 2026-07-25).
-import axios from "axios";
 
 export interface ClientB2B {
   id: number;
@@ -124,6 +123,3 @@ const addBusinessDays = (date: Date, days: number): Date => {
 // de mise à jour (accepté/rejeté) - à vérifier en banque.
 export const needsDepositUpdate = (i: PaymentInstrument) =>
   i.status === "DEPOSITED" && !!i.deposited_at && addBusinessDays(new Date(i.deposited_at), 2) <= new Date();
-
-export const errorMessageOf = (e: unknown) =>
-  axios.isAxiosError(e) ? e.response?.data?.message || e.message : "Erreur inattendue.";

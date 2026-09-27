@@ -38,6 +38,7 @@ import {
   CreditType,
   getCreditedQuantityByItem,
 } from "./OrderB2BDetailDrawer";
+import { notifyError } from "../lib/notify";
 
 interface CreateCreditB2BDialogProps {
   open: boolean;
@@ -182,11 +183,8 @@ const CreateCreditB2BDialog: React.FC<CreateCreditB2BDialogProps> = ({
       onCreated(updatedOrder);
       onNotify(`Avoir ${depositData.invoiceNumber} généré avec succès.`, "success");
       onClose();
-    } catch (err: any) {
-      onNotify(
-        err.response?.data?.message || "Échec de la génération de l'avoir.",
-        "error",
-      );
+    } catch (err) {
+      notifyError(err, "Génération de l'avoir impossible");
     } finally {
       setSubmitting(false);
     }

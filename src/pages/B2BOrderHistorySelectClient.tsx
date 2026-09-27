@@ -11,6 +11,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { notifyError } from "../lib/notify";
 
 interface ClientB2B {
   id: number;
@@ -32,7 +33,7 @@ const B2BOrderHistorySelectClient: React.FC = () => {
       );
       setClients(res.data);
     } catch (error) {
-      console.error("Failed to load clients:", error);
+      notifyError(error, "Chargement des clients impossible");
     } finally {
       setLoading(false);
     }

@@ -25,6 +25,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import { notifyError } from "../lib/notify";
 
 /* ======================================================
    🔵 TYPES
@@ -186,7 +187,7 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
       setPerformance(perfRes.data);
       setVendeuses(vendeusesRes.data);
     } catch (error) {
-      console.error("Failed to load animation sub-resources:", error);
+      notifyError(error, "Chargement du détail de l'animation impossible");
     } finally {
       setLoadingSub(false);
     }
@@ -203,7 +204,10 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
     axios
       .get<Animatrice[]>(`${import.meta.env.VITE_API_URL}animatrice`)
       .then((res) => setAnimatrices(res.data))
-      .catch(() => setAnimatrices([]));
+      .catch((error) => {
+        setAnimatrices([]);
+        notifyError(error, "Chargement des animatrices impossible");
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animation?.id]);
 
@@ -217,8 +221,8 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
       );
       onUpdated(res.data);
       onNotify("Statut mis à jour.", "success");
-    } catch {
-      onNotify("Échec de la mise à jour du statut.", "error");
+    } catch (error) {
+      notifyError(error, "Mise à jour du statut impossible");
     } finally {
       setSavingStatus(false);
     }
@@ -243,8 +247,8 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
         onNotify("Animation mise à jour.", "success");
       }
       loadSub(res.data);
-    } catch {
-      onNotify("Échec de la mise à jour.", "error");
+    } catch (error) {
+      notifyError(error, "Mise à jour de l'animation impossible");
     }
   };
 
@@ -255,8 +259,8 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
       await axios.delete(`${import.meta.env.VITE_API_URL}animation/${animation.id}`);
       onDeleted(animation.id);
       onNotify("Animation supprimée.", "success");
-    } catch {
-      onNotify("Échec de la suppression.", "error");
+    } catch (error) {
+      notifyError(error, "Suppression impossible");
     }
   };
 
@@ -273,8 +277,8 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
       setNewItem({ product_id: "", vendeuse_id: "", quantite: "1", prix: "" });
       onNotify("Vente ajoutée.", "success");
       loadSub(animation);
-    } catch (error: any) {
-      onNotify(error?.response?.data?.message || "Échec de l'ajout.", "error");
+    } catch (error) {
+      notifyError(error, "Ajout impossible");
     }
   };
 
@@ -283,8 +287,8 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}animation-sale-item/${id}`);
       loadSub(animation);
-    } catch {
-      onNotify("Échec de la suppression.", "error");
+    } catch (error) {
+      notifyError(error, "Suppression impossible");
     }
   };
 
@@ -300,8 +304,8 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
       setNewGift({ product_id: "", description: "", quantite: "1" });
       onNotify("Cadeau ajouté.", "success");
       loadSub(animation);
-    } catch (error: any) {
-      onNotify(error?.response?.data?.message || "Échec de l'ajout.", "error");
+    } catch (error) {
+      notifyError(error, "Ajout impossible");
     }
   };
 
@@ -310,8 +314,8 @@ const AnimationDetailDrawer: React.FC<AnimationDetailDrawerProps> = ({
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}animation-gift/${id}`);
       loadSub(animation);
-    } catch {
-      onNotify("Échec de la suppression.", "error");
+    } catch (error) {
+      notifyError(error, "Suppression impossible");
     }
   };
 

@@ -14,8 +14,6 @@ import {
   Button,
   Chip,
   Tooltip,
-  Snackbar,
-  SnackbarContent,
   Card,
   CardContent,
   Alert,
@@ -27,8 +25,9 @@ import {
   ClientB2B,
   InstrumentType,
   OutstandingOrder,
-  errorMessageOf,
 } from "./paymentInstruments/shared";
+import { notify, notifyError } from "../lib/notify";
+import { errorMessage } from "../lib/errors";
 
 const DeclarePaymentInstrument: React.FC = () => {
   const navigate = useNavigate();
@@ -56,21 +55,15 @@ const DeclarePaymentInstrument: React.FC = () => {
   const [pendingInstrumentsTotal, setPendingInstrumentsTotal] = useState(0);
   const [loadingOutstanding, setLoadingOutstanding] = useState(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   useEffect(() => {
     axios
       .get<ClientB2B[]>(`${import.meta.env.VITE_API_URL}client-b2b`)
       .then((res) => setClients(res.data))
-      .catch(() => setClients([]));
+      .catch((error) => {
+        setClients([]);
+        notifyError(error, "Chargement des clients impossible");
+      });
   }, []);
 
   useEffect(() => {
@@ -88,9 +81,10 @@ const DeclarePaymentInstrument: React.FC = () => {
         setOutstandingOrders(res.data.orders);
         setPendingInstrumentsTotal(res.data.pendingInstrumentsTotal);
       })
-      .catch(() => {
+      .catch((error) => {
         setOutstandingOrders([]);
         setPendingInstrumentsTotal(0);
+        notifyError(error, "Chargement des commandes à régler impossible");
       })
       .finally(() => setLoadingOutstanding(false));
   }, [clientId]);
@@ -145,9 +139,9 @@ const DeclarePaymentInstrument: React.FC = () => {
             { headers: { "Content-Type": "multipart/form-data" } },
           );
           notify("Déclaré avec justificatif - il apparaît dans la liste en attente.", "success");
-        } catch {
+        } catch (error) {
           notify(
-            "Déclaré, mais l'envoi du justificatif a échoué - vous pouvez le rajouter depuis la liste des paiements.",
+            errorMessage(error, "Déclaré, mais envoi du justificatif impossible") + " Vous pouvez le rajouter depuis la liste des paiements.",
             "error",
           );
         }
@@ -162,7 +156,7 @@ const DeclarePaymentInstrument: React.FC = () => {
       setExpectedDate(null);
       setJustificatifFile(null);
     } catch (error) {
-      notify(errorMessageOf(error), "error");
+      notifyError(error, "Déclaration impossible");
     } finally {
       setSubmitting(false);
     }
@@ -323,12 +317,6 @@ const DeclarePaymentInstrument: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{ backgroundColor: notifyStatus === "error" ? "red" : "green" }}
-        />
-      </Snackbar>
     </Box>
   );
 };

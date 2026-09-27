@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useNavigate } from "react-router-dom";
+import { notifyError } from "../lib/notify";
 
 interface ClientCreditRow {
   client_id: number;
@@ -49,7 +50,7 @@ const AnimationCreditsDashboard: React.FC = () => {
     axios
       .get<ClientCreditRow[]>(`${import.meta.env.VITE_API_URL}animation-ledger/summary/all`)
       .then((res) => setRows(res.data))
-      .catch((error) => console.error("Failed to load credits dashboard:", error))
+      .catch((error) => notifyError(error, "Chargement des crédits impossible"))
       .finally(() => setLoading(false));
   }, []);
 

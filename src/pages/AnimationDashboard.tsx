@@ -8,6 +8,7 @@ import {
   TextField,
 } from "@mui/material";
 import ClientAutocomplete from "../elements/ClientAutocomplete";
+import { notifyError } from "../lib/notify";
 
 interface ClientB2B {
   id: number;
@@ -61,7 +62,7 @@ const AnimationDashboard: React.FC = () => {
     axios
       .get<AnimationDashboardData>(`${import.meta.env.VITE_API_URL}dashboard/animation`, { params })
       .then((res) => setData(res.data))
-      .catch((error) => console.error("Failed to load animation dashboard:", error))
+      .catch((error) => notifyError(error, "Chargement du tableau de bord impossible"))
       .finally(() => setLoading(false));
   };
 

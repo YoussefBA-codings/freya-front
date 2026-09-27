@@ -22,6 +22,7 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import { format } from "date-fns";
 import axios from "axios";
+import { notifyError } from "../../lib/notify";
 
 interface InvoiceDetailsDrawerProps {
   open: boolean;
@@ -93,8 +94,7 @@ const InvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({ open, onClo
       onClose();
       window.location.reload();
     } catch (error) {
-      console.error("Erreur lors de la suppression :", error);
-      alert("La suppression a échoué.");
+      notifyError(error, "Suppression de la facture impossible");
     } finally {
       setLoadingDelete(false);
     }
@@ -122,8 +122,7 @@ const InvoiceDetailsDrawer: React.FC<InvoiceDetailsDrawerProps> = ({ open, onClo
       setEditDroppexOpen(false);
       window.location.reload();
     } catch (error) {
-      console.error("Erreur lors de la mise à jour :", error);
-      alert("La mise à jour a échoué.");
+      notifyError(error, "Mise à jour de la facture impossible");
     } finally {
       setLoadingUpdate(false);
     }

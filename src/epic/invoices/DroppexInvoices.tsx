@@ -16,6 +16,7 @@ import { useState } from "react";
 import Papa from "papaparse";
 import { saveAs } from "file-saver";
 import { AxiosInstance } from "../../api/axios/axiosInstance";
+import { notifyError } from "../../lib/notify";
 
 interface DroppexInvoice {
   orderNumber: string;
@@ -91,7 +92,7 @@ export const DroppexInvoices = () => {
 
       setData(mergedData);
     } catch (error) {
-      console.error("API Error:", error);
+      notifyError(error, "Chargement des factures Droppex impossible");
     }
     setLoading(false);
   };
@@ -127,7 +128,7 @@ export const DroppexInvoices = () => {
       setPaymentReference("");
       setSelection([]);
     } catch (error) {
-      console.error("Error marking orders as paid", error);
+      notifyError(error, "Marquage des commandes comme encaissées impossible");
     }
   };
   

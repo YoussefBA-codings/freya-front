@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Snackbar,
-  SnackbarContent,
   TextField,
   Button,
   Box,
@@ -20,6 +18,7 @@ import {
   ListItemButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { notify, notifyError } from "../lib/notify";
 
 interface ProductB2B {
   id: number;
@@ -43,9 +42,6 @@ const ProductB2B: React.FC = () => {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingSelected, setLoadingSelected] = useState(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
 
   // ---- Create fields ----
   const [name, setName] = useState("");
@@ -74,10 +70,7 @@ const ProductB2B: React.FC = () => {
       setProducts(res.data);
       setFilteredProducts(res.data);
     } catch (error) {
-      console.error("Failed to load products:", error);
-      setNotifyMessage("Échec du chargement des produits.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notifyError(error, "Chargement des produits impossible");
     } finally {
       setLoadingList(false);
     }
@@ -102,9 +95,7 @@ const ProductB2B: React.FC = () => {
   // Create product
   const handleCreate = async () => {
     if (!name.trim() || !variantId.trim()) {
-      setNotifyMessage("Veuillez remplir tous les champs obligatoires.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notify("Veuillez remplir tous les champs obligatoires.", "error");
       return;
     }
 
@@ -122,9 +113,7 @@ const ProductB2B: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setNotifyMessage("Produit créé ! Pensez à lui donner un prix dans vos listes de prix.");
-      setNotifyStatus("success");
-      setSnackbarOpen(true);
+      notify("Produit créé ! Pensez à lui donner un prix dans vos listes de prix.", "success");
 
       setName("");
       setVariantId("");
@@ -134,10 +123,7 @@ const ProductB2B: React.FC = () => {
 
       loadProducts();
     } catch (error) {
-      console.error("Failed to create product:", error);
-      setNotifyMessage("Échec de la création du produit.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notifyError(error, "Création du produit impossible");
     } finally {
       setLoadingCreate(false);
     }
@@ -175,16 +161,11 @@ const ProductB2B: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setNotifyMessage("Produit mis à jour !");
-      setNotifyStatus("success");
-      setSnackbarOpen(true);
+      notify("Produit mis à jour !", "success");
 
       loadProducts();
     } catch (error) {
-      console.error("Failed to update product:", error);
-      setNotifyMessage("Échec de la mise à jour du produit.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notifyError(error, "Mise à jour du produit impossible");
     } finally {
       setLoadingSelected(false);
     }
@@ -389,18 +370,6 @@ const ProductB2B: React.FC = () => {
       </Dialog>
 
       {/* SNACKBAR */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{
-            backgroundColor: notifyStatus === "error" ? "red" : "green",
-          }}
-        />
-      </Snackbar>
     </Box>
   );
 };

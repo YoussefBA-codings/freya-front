@@ -8,7 +8,7 @@ import NotFound from "./pages/NotFound";
 import Navbar from "./elements/Nav";
 import CreateInvoice from "./pages/CreateInvoice";
 import { Invoices as NewInvoices } from "./epic/invoices/Invoices";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DroppexInvoices } from "./epic/invoices/DroppexInvoices";
 import { B2BInvoiceDeposit } from "./epic/invoices/B2BInvoiceUploader";
 import CreateCustomerB2B from "./pages/CreateCustomerB2B";
@@ -37,8 +37,12 @@ import B2BOrdersStats from "./pages/B2BOrdersStats";
 import B2BOrdersList from "./pages/B2BOrdersList";
 import FreyaSalesDashboard from "./pages/FreyaSalesDashboard";
 import PurchaseInvoices from "./pages/PurchaseInvoices";
+import { Notifier, notifyError } from "./lib/notify";
 
-const queryClient = new QueryClient();
+// Erreurs de chargement des factures (react-query) : affichées comme partout ailleurs
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: (error) => notifyError(error, "Chargement des factures impossible") }),
+});
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -49,6 +53,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     {/* 👉 GLOBAL DATE PICKER CONTEXT */}
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
       <QueryClientProvider client={queryClient}>
+        <Notifier />
         {/* Servi sous /compta (voir vite.config.ts, `base`) — basename doit rester synchronisé. */}
         <Router basename="/compta">
           <Routes>

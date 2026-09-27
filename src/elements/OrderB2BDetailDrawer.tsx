@@ -34,6 +34,7 @@ import {
   WITHHOLDING_THRESHOLD_TTC,
 } from "../pages/utils/withholding";
 import CreateCreditB2BDialog from "./CreateCreditB2BDialog";
+import { notifyError } from "../lib/notify";
 
 /* ======================================================
    🔵 TYPES
@@ -326,8 +327,7 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
       onCancelled(order.id);
       onNotify("Commande annulée et stock restauré.", "success");
     } catch (error) {
-      console.error("Failed to cancel order:", error);
-      onNotify("Erreur lors de l’annulation de la commande.", "error");
+      notifyError(error, "Annulation de la commande impossible");
     } finally {
       setDeleting(false);
     }
@@ -345,8 +345,8 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
 
       onUpdated(res.data);
       onNotify("Statut mis à jour.", "success");
-    } catch {
-      onNotify("Échec de la mise à jour du statut.", "error");
+    } catch (error) {
+      notifyError(error, "Mise à jour du statut impossible");
     } finally {
       setSavingStatus(false);
     }
@@ -367,8 +367,8 @@ const OrderB2BDetailDrawer: React.FC<OrderB2BDetailDrawerProps> = ({
 
       onUpdated(res.data);
       onNotify("Retenue à la source mise à jour.", "success");
-    } catch {
-      onNotify("Échec de la mise à jour de la retenue à la source.", "error");
+    } catch (error) {
+      notifyError(error, "Mise à jour de la retenue à la source impossible");
     }
   };
 

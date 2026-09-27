@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { AxiosInstance } from "../../api/axios/axiosInstance";
+import { errorMessage } from "../../lib/errors";
 
 export const B2BInvoiceDeposit = () => {
   const [invoiceName, setInvoiceName] = useState("");
@@ -56,8 +57,8 @@ export const B2BInvoiceDeposit = () => {
 
       setUploadedUrl(response.data.url);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err.response?.data || "Erreur lors du dépôt.");
+    } catch (err) {
+      setError(errorMessage(err, "Dépôt de la facture impossible"));
     } finally {
       setLoading(false);
     }

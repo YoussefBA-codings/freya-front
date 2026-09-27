@@ -22,11 +22,10 @@ import {
   IconButton,
   Switch,
   FormControlLabel,
-  Snackbar,
-  SnackbarContent,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
+import { notify, notifyError } from "../lib/notify";
 
 interface Animatrice {
   id: number;
@@ -86,15 +85,6 @@ const AnimatricesList: React.FC = () => {
   const [selectedDashboard, setSelectedDashboard] = useState<AnimatriceDashboard | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   const loadAnimatrices = async () => {
     setLoading(true);
@@ -102,8 +92,7 @@ const AnimatricesList: React.FC = () => {
       const res = await axios.get<Animatrice[]>(`${import.meta.env.VITE_API_URL}animatrice`);
       setAnimatrices(res.data);
     } catch (error) {
-      console.error("Failed to load animatrices:", error);
-      notify("Échec du chargement des animatrices.", "error");
+      notifyError(error, "Chargement des animatrices impossible");
     } finally {
       setLoading(false);
     }
@@ -126,8 +115,7 @@ const AnimatricesList: React.FC = () => {
       notify("Animatrice créée.", "success");
       loadAnimatrices();
     } catch (error) {
-      console.error("Failed to create animatrice:", error);
-      notify("Échec de la création.", "error");
+      notifyError(error, "Création de l'animatrice impossible");
     } finally {
       setCreating(false);
     }
@@ -152,8 +140,7 @@ const AnimatricesList: React.FC = () => {
       setEditOpen(null);
       loadAnimatrices();
     } catch (error) {
-      console.error("Failed to update animatrice:", error);
-      notify("Échec de la mise à jour.", "error");
+      notifyError(error, "Mise à jour de l'animatrice impossible");
     }
   };
 
@@ -165,8 +152,7 @@ const AnimatricesList: React.FC = () => {
       );
       setSelectedDashboard(res.data);
     } catch (error) {
-      console.error("Failed to load animatrice dashboard:", error);
-      notify("Échec du chargement de la performance.", "error");
+      notifyError(error, "Chargement de la performance impossible");
     } finally {
       setLoadingDashboard(false);
     }
@@ -351,12 +337,6 @@ const AnimatricesList: React.FC = () => {
         </Box>
       </Drawer>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={() => setSnackbarOpen(false)}>
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{ backgroundColor: notifyStatus === "error" ? "error.main" : "success.main" }}
-        />
-      </Snackbar>
     </Box>
   );
 };

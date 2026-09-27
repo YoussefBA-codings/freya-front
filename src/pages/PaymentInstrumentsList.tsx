@@ -20,8 +20,6 @@ import {
   Button,
   Chip,
   Tooltip,
-  Snackbar,
-  SnackbarContent,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -49,12 +47,12 @@ import {
   canConfirmOrReject,
   canDeposit,
   dueActionLabel,
-  errorMessageOf,
   isDueSoon,
   isOverdue,
   needsDepositUpdate,
   requiresDeposit,
 } from "./paymentInstruments/shared";
+import { notify, notifyError } from "../lib/notify";
 
 const PaymentInstrumentsList: React.FC = () => {
   const navigate = useNavigate();
@@ -72,15 +70,6 @@ const PaymentInstrumentsList: React.FC = () => {
   );
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   const loadData = async () => {
     try {
@@ -88,7 +77,7 @@ const PaymentInstrumentsList: React.FC = () => {
       const res = await axios.get<PaymentInstrument[]>(`${import.meta.env.VITE_API_URL}payment-instruments`);
       setInstruments(res.data);
     } catch (error) {
-      console.error("Failed to load payment instruments:", error);
+      notifyError(error, "Chargement des paiements impossible");
     } finally {
       setLoading(false);
     }
@@ -115,7 +104,7 @@ const PaymentInstrumentsList: React.FC = () => {
       notify("Marqué déposé - à vérifier en banque d'ici 2 jours ouvrés.", "success");
       loadData();
     } catch (error) {
-      notify(errorMessageOf(error), "error");
+      notifyError(error, "Dépôt en banque impossible");
     } finally {
       setActionLoading(false);
       setPendingDeposit(null);
@@ -136,7 +125,7 @@ const PaymentInstrumentsList: React.FC = () => {
       notify("Encaissement confirmé - commandes mises à jour.", "success");
       loadData();
     } catch (error) {
-      notify(errorMessageOf(error), "error");
+      notifyError(error, "Confirmation de l'encaissement impossible");
     } finally {
       setActionLoading(false);
       setPendingConfirm(null);
@@ -151,7 +140,7 @@ const PaymentInstrumentsList: React.FC = () => {
       notify("Marqué rejeté - aucune commande n'est affectée.", "success");
       loadData();
     } catch (error) {
-      notify(errorMessageOf(error), "error");
+      notifyError(error, "Rejet impossible");
     } finally {
       setActionLoading(false);
       setPendingReject(null);
@@ -166,7 +155,7 @@ const PaymentInstrumentsList: React.FC = () => {
       notify("Supprimé.", "success");
       loadData();
     } catch (error) {
-      notify(errorMessageOf(error), "error");
+      notifyError(error, "Suppression impossible");
     } finally {
       setActionLoading(false);
       setPendingDelete(null);
@@ -200,7 +189,7 @@ const PaymentInstrumentsList: React.FC = () => {
       notify("Justificatif ajouté.", "success");
       loadData();
     } catch (error) {
-      notify(errorMessageOf(error), "error");
+      notifyError(error, "Ajout du justificatif impossible");
     } finally {
       setUploadingId(null);
       setUploadTargetId(null);
@@ -533,12 +522,6 @@ const PaymentInstrumentsList: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{ backgroundColor: notifyStatus === "error" ? "red" : "green" }}
-        />
-      </Snackbar>
     </Box>
   );
 };

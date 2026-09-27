@@ -17,8 +17,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Snackbar,
-  SnackbarContent,
   Chip,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -28,6 +26,7 @@ import OrderB2BDetailDrawer, {
   getOrderStatusColor,
   getOrderStatusLabel,
 } from "../elements/OrderB2BDetailDrawer";
+import { notify, notifyError } from "../lib/notify";
 
 /* ======================================================
    🔵 TYPES
@@ -58,17 +57,6 @@ const ClientOrderHistory: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">(
-    "success",
-  );
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   const loadData = async () => {
     try {
@@ -85,8 +73,7 @@ const ClientOrderHistory: React.FC = () => {
       setClient(clientRes.data);
       setOrders(ordersRes.data);
     } catch (error) {
-      console.error("Failed to load:", error);
-      notify("Échec du chargement des données.", "error");
+      notifyError(error, "Chargement de l'historique impossible");
     } finally {
       setLoading(false);
     }
@@ -277,18 +264,6 @@ const ClientOrderHistory: React.FC = () => {
         onNotify={notify}
       />
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{
-            backgroundColor: notifyStatus === "error" ? "red" : "green",
-          }}
-        />
-      </Snackbar>
     </Box>
   );
 };

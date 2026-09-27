@@ -15,6 +15,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format } from "date-fns";
 import { PurchaseInvoice } from "../pages/PurchaseInvoices";
+import { errorMessage } from "../lib/errors";
 
 interface PurchaseInvoiceFormDrawerProps {
   open: boolean;
@@ -156,8 +157,8 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
           try {
             await savePromise;
           } catch (err) {
-            console.error("Failed to save purchase invoice:", err);
-            setError("Erreur lors de l'enregistrement de la facture.");
+            console.error("Enregistrement de la facture d'achat impossible", err);
+            setError(errorMessage(err, "Enregistrement de la facture impossible"));
             return;
           }
         } else {
@@ -204,8 +205,8 @@ const PurchaseInvoiceFormDrawer: React.FC<PurchaseInvoiceFormDrawerProps> = ({
 
       onSaved();
     } catch (err) {
-      console.error("Failed to save purchase invoice:", err);
-      setError("Erreur lors de l'enregistrement de la facture.");
+      console.error("Enregistrement de la facture d'achat impossible", err);
+      setError(errorMessage(err, "Enregistrement de la facture impossible"));
     } finally {
       setSaving(false);
     }

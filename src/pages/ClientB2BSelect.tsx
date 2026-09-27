@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import { useNavigate } from "react-router-dom";
+import { notifyError } from "../lib/notify";
 
 interface ClientB2B {
   id: number;
@@ -34,7 +35,7 @@ const ClientB2BSelect: React.FC = () => {
     axios
       .get<ClientB2B[]>(`${import.meta.env.VITE_API_URL}client-b2b`)
       .then((res) => setClients(res.data))
-      .catch((error) => console.error("Failed to load clients:", error))
+      .catch((error) => notifyError(error, "Chargement des clients impossible"))
       .finally(() => setLoading(false));
   }, []);
 

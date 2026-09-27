@@ -12,8 +12,6 @@ import {
   ListItemText,
   Divider,
   Chip,
-  Snackbar,
-  SnackbarContent,
   Table,
   TableBody,
   TableCell,
@@ -22,6 +20,7 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
+import { notify, notifyError } from "../lib/notify";
 
 interface ProductB2B {
   id: number;
@@ -49,15 +48,6 @@ const PriceListsPage: React.FC = () => {
   const [loadingList, setLoadingList] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   // Panneau d'édition : null id = nouvelle liste
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -75,8 +65,8 @@ const PriceListsPage: React.FC = () => {
       ]);
       setProducts(resProducts.data);
       setPriceLists(resLists.data);
-    } catch {
-      notify("Échec du chargement.", "error");
+    } catch (error) {
+      notifyError(error, "Chargement des listes de prix impossible");
     } finally {
       setLoadingList(false);
     }
@@ -106,8 +96,8 @@ const PriceListsPage: React.FC = () => {
         inputs[item.product_id] = String(item.price_ht);
       }
       setPriceInputs(inputs);
-    } catch {
-      notify("Échec du chargement de la liste.", "error");
+    } catch (error) {
+      notifyError(error, "Chargement de la liste de prix impossible");
     }
   };
 
@@ -160,11 +150,8 @@ const PriceListsPage: React.FC = () => {
         setEditingId(res.data.id);
       }
       await loadAll();
-    } catch (error: any) {
-      notify(
-        error?.response?.data?.message || "Échec de l'enregistrement.",
-        "error"
-      );
+    } catch (error) {
+      notifyError(error, "Enregistrement de la liste de prix impossible");
     } finally {
       setSaving(false);
     }
@@ -178,8 +165,8 @@ const PriceListsPage: React.FC = () => {
       notify("Liste supprimée.", "success");
       resetPanelToNew();
       await loadAll();
-    } catch {
-      notify("Échec de la suppression.", "error");
+    } catch (error) {
+      notifyError(error, "Suppression de la liste de prix impossible");
     }
   };
 
@@ -349,16 +336,6 @@ const PriceListsPage: React.FC = () => {
         )}
       </Box>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{ backgroundColor: notifyStatus === "error" ? "error.main" : "success.main" }}
-        />
-      </Snackbar>
     </Box>
   );
 };

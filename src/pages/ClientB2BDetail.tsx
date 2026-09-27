@@ -20,6 +20,7 @@ import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useNavigate, useParams } from "react-router-dom";
+import { notifyError } from "../lib/notify";
 
 /* ======================================================
    🔵 TYPES
@@ -96,7 +97,7 @@ const ClientB2BDetail: React.FC = () => {
         setDashboard(dashRes.data);
         setLedger(ledgerRes.data);
       })
-      .catch((error) => console.error("Failed to load client detail:", error))
+      .catch((error) => notifyError(error, "Chargement de la fiche client impossible"))
       .finally(() => setLoading(false));
   }, [numericId]);
 

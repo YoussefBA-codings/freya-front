@@ -22,8 +22,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Snackbar,
-  SnackbarContent,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useSearchParams } from "react-router-dom";
@@ -33,6 +31,7 @@ import AnimationDetailDrawer, {
   getAnimationStatusColor,
 } from "../elements/AnimationDetailDrawer";
 import ClientAutocomplete from "../elements/ClientAutocomplete";
+import { notify, notifyError } from "../lib/notify";
 
 interface ClientB2B {
   id: number;
@@ -71,15 +70,6 @@ const AnimationsList: React.FC = () => {
   const [newObjectif, setNewObjectif] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   const loadData = async () => {
     setLoading(true);
@@ -95,8 +85,7 @@ const AnimationsList: React.FC = () => {
       setProducts(prodRes.data);
       setAnimatrices(animatriceRes.data);
     } catch (error) {
-      console.error("Failed to load animations:", error);
-      notify("Échec du chargement des animations.", "error");
+      notifyError(error, "Chargement des animations impossible");
     } finally {
       setLoading(false);
     }
@@ -134,8 +123,8 @@ const AnimationsList: React.FC = () => {
       } else {
         notify("Animation créée.", "success");
       }
-    } catch (error: any) {
-      notify(error?.response?.data?.message || "Échec de la création.", "error");
+    } catch (error) {
+      notifyError(error, "Création de l'animation impossible");
     } finally {
       setCreating(false);
     }
@@ -270,12 +259,6 @@ const AnimationsList: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={() => setSnackbarOpen(false)}>
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{ backgroundColor: notifyStatus === "error" ? "error.main" : "success.main" }}
-        />
-      </Snackbar>
     </Box>
   );
 };

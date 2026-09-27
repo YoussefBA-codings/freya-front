@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import axios from 'axios';
 import {
-  Snackbar,
-  SnackbarContent,
   TextField,
   Button,
   Box,
   Typography,
   CircularProgress,
 } from "@mui/material";
+import { notify, notifyError } from "../lib/notify";
 
 const SyncInvoice: React.FC = () => {
   const [invoiceShopifyId, setInvoiceShopifyId] = useState("");
@@ -16,9 +15,6 @@ const SyncInvoice: React.FC = () => {
   const [forcedDate, setForcedDate] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInvoiceShopifyId(e.target.value);
@@ -27,8 +23,6 @@ const SyncInvoice: React.FC = () => {
   const handleSync = async () => {
     setLoading(true);
     setProgress(0);
-    setNotifyMessage("");
-    setNotifyStatus("success");
 
     try {
       for (let i = 0; i <= 100; i += 10) {
@@ -50,15 +44,11 @@ const SyncInvoice: React.FC = () => {
         }
       );
 
-      setNotifyMessage("Facture synchronisée avec succès !");
-      setNotifyStatus("success");
+      notify("Facture synchronisée avec succès !", "success");
     } catch (error) {
-      console.error("Failed to create invoice:", error);
-      setNotifyMessage("Échec de la création de la facture.");
-      setNotifyStatus("error");
+      notifyError(error, "Création de la facture impossible");
     } finally {
       setLoading(false);
-      setSnackbarOpen(true);
     }
   };
 
@@ -114,16 +104,6 @@ const SyncInvoice: React.FC = () => {
         )}
       </Button>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{ backgroundColor: notifyStatus === "error" ? "red" : "green" }}
-        />
-      </Snackbar>
     </Box>
   );
 };

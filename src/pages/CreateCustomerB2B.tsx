@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Snackbar,
-  SnackbarContent,
   TextField,
   Button,
   Box,
@@ -20,6 +18,7 @@ import {
   ListItemButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { notify, notifyError } from "../lib/notify";
 
 // Type basé sur ton Prisma
 interface ClientB2B {
@@ -44,9 +43,6 @@ const CreateCustomerB2B: React.FC = () => {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingSelected, setLoadingSelected] = useState(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
 
   // ---- Champs pour CREATE ----
   const [name, setName] = useState("");
@@ -81,10 +77,7 @@ const CreateCustomerB2B: React.FC = () => {
       setCustomers(res.data);
       setFilteredCustomers(res.data);
     } catch (error) {
-      console.error("Failed to load customers:", error);
-      setNotifyMessage("Échec du chargement des clients.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notifyError(error, "Chargement des clients impossible");
     } finally {
       setLoadingList(false);
     }
@@ -111,9 +104,7 @@ const CreateCustomerB2B: React.FC = () => {
   // ---- Create customer ----
   const handleCreate = async () => {
     if (!name.trim()) {
-      setNotifyMessage("Le nom est obligatoire.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notify("Le nom est obligatoire.", "error");
       return;
     }
 
@@ -136,9 +127,7 @@ const CreateCustomerB2B: React.FC = () => {
         }
       );
 
-      setNotifyMessage("Client créé avec succès !");
-      setNotifyStatus("success");
-      setSnackbarOpen(true);
+      notify("Client créé avec succès !", "success");
 
       // Reset form create
       setName("");
@@ -152,10 +141,7 @@ const CreateCustomerB2B: React.FC = () => {
 
       await loadCustomers();
     } catch (error) {
-      console.error("Failed to create customer:", error);
-      setNotifyMessage("Échec de la création du client.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notifyError(error, "Création du client impossible");
     } finally {
       setLoadingCreate(false);
     }
@@ -204,9 +190,7 @@ const CreateCustomerB2B: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setNotifyMessage("Client mis à jour avec succès !");
-      setNotifyStatus("success");
-      setSnackbarOpen(true);
+      notify("Client mis à jour avec succès !", "success");
 
       await loadCustomers();
 
@@ -227,10 +211,7 @@ const CreateCustomerB2B: React.FC = () => {
           : prev
       );
     } catch (error) {
-      console.error("Failed to update customer:", error);
-      setNotifyMessage("Échec de la mise à jour du client.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      notifyError(error, "Mise à jour du client impossible");
     } finally {
       setLoadingSelected(false);
     }
@@ -488,18 +469,6 @@ const CreateCustomerB2B: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{
-            backgroundColor: notifyStatus === "error" ? "red" : "green",
-          }}
-        />
-      </Snackbar>
     </Box>
   );
 };

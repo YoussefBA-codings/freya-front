@@ -11,8 +11,6 @@ import {
   CardContent,
   CardActionArea,
   Divider,
-  Snackbar,
-  SnackbarContent,
   IconButton,
   Table,
   TableBody,
@@ -33,6 +31,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import html2pdf from "html2pdf.js";
 import { generateInvoiceHTML } from "./utils/invoiceTemplate";
 import { isWithholdingExempt, WITHHOLDING_THRESHOLD_TTC } from "./utils/withholding";
+import { notify, notifyError } from "../lib/notify";
 
 /* ------------------------------------------
    TYPES
@@ -209,9 +208,6 @@ const CreateOrderB2B: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [creating, setCreating] = useState<boolean>(false);
 
-  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
-  const [notifyMessage, setNotifyMessage] = useState<string>("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">("success");
 
   // ✅ Excel sheet draft
   const [draftQty, setDraftQty] = useState<Record<number, string>>({});
@@ -263,10 +259,8 @@ const CreateOrderB2B: React.FC = () => {
       setClients(resClients.data);
       setProducts(productsWithStock);
       setPriceLists(resPriceLists.data.filter((l) => l.is_complete));
-    } catch {
-      setNotifyMessage("Échec du chargement des données.");
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+    } catch (error) {
+      notifyError(error, "Chargement des clients, produits et listes de prix impossible");
     } finally {
       setLoading(false);
     }
@@ -311,11 +305,9 @@ const CreateOrderB2B: React.FC = () => {
         }
         setPriceMap(map);
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) return;
-        setNotifyMessage("Échec du chargement de la liste de prix.");
-        setNotifyStatus("error");
-        setSnackbarOpen(true);
+        notifyError(error, "Chargement de la liste de prix impossible");
       })
       .finally(() => {
         if (!cancelled) setPriceMapLoading(false);
@@ -606,9 +598,7 @@ const CreateOrderB2B: React.FC = () => {
         invoice_date: invoiceDate,
       });
 
-      setNotifyMessage("Commande créée avec succès !");
-      setNotifyStatus("success");
-      setSnackbarOpen(true);
+      notify("Commande créée avec succès !", "success");
 
       clearCart();
       setSelectedClient(null);
@@ -621,19 +611,13 @@ const CreateOrderB2B: React.FC = () => {
       setPromoExceptionnelleMotif("");
       setDraftQty({});
     } catch (err: unknown) {
-      let errorMessage = createdOrderId
-        ? `Commande #${createdOrderId} créée sur Shopify, mais échec du dépôt de la facture - NE PAS resoumettre le formulaire (doublon). `
-        : "Échec de la création de la commande. ";
-
-      if (axios.isAxiosError(err)) {
-        errorMessage += err.response?.data?.message || err.message || "Erreur de requête.";
-      } else if (err instanceof Error) {
-        errorMessage += err.message;
-      }
-
-      setNotifyMessage(errorMessage);
-      setNotifyStatus("error");
-      setSnackbarOpen(true);
+      // Commande déjà créée sur Shopify : le dire clairement pour éviter un doublon
+      notifyError(
+        err,
+        createdOrderId
+          ? `Commande #${createdOrderId} créée sur Shopify, mais dépôt de la facture impossible (NE PAS resoumettre le formulaire, doublon)`
+          : "Création de la commande impossible",
+      );
     } finally {
       setCreating(false);
     }
@@ -1307,16 +1291,6 @@ const CreateOrderB2B: React.FC = () => {
       </Drawer>
 
       {/* SNACKBAR */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{ backgroundColor: notifyStatus === "error" ? "red" : "green" }}
-        />
-      </Snackbar>
     </Box>
   );
 };

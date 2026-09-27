@@ -14,8 +14,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Snackbar,
-  SnackbarContent,
   Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -27,6 +25,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format, startOfMonth } from "date-fns";
 import ExcelJS from "exceljs";
 import PurchaseInvoiceFormDrawer from "../elements/PurchaseInvoiceFormDrawer";
+import { notify, notifyError } from "../lib/notify";
 
 export interface PurchaseInvoice {
   id: number;
@@ -73,17 +72,6 @@ const PurchaseInvoices = () => {
     null,
   );
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [notifyMessage, setNotifyMessage] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"success" | "error">(
-    "success",
-  );
-
-  const notify = (message: string, status: "success" | "error") => {
-    setNotifyMessage(message);
-    setNotifyStatus(status);
-    setSnackbarOpen(true);
-  };
 
   const loadInvoices = async () => {
     setLoading(true);
@@ -98,8 +86,7 @@ const PurchaseInvoices = () => {
 
       setInvoices(res.data.map(normalizeInvoice));
     } catch (error) {
-      console.error("Failed to load purchase invoices:", error);
-      notify("Erreur lors du chargement des factures.", "error");
+      notifyError(error, "Chargement des factures d'achat impossible");
     } finally {
       setLoading(false);
     }
@@ -139,8 +126,7 @@ const PurchaseInvoices = () => {
       setInvoices((prev) => prev.filter((i) => i.id !== invoice.id));
       notify("Facture supprimée.", "success");
     } catch (error) {
-      console.error("Failed to delete purchase invoice:", error);
-      notify("Erreur lors de la suppression.", "error");
+      notifyError(error, "Suppression de la facture impossible");
     }
   };
 
@@ -196,8 +182,7 @@ const PurchaseInvoices = () => {
 
       notify("JDA envoyé sur le Drive avec succès.", "success");
     } catch (error) {
-      console.error("Failed to upload JDA:", error);
-      notify("Erreur lors de l'envoi du JDA sur le Drive.", "error");
+      notifyError(error, "Envoi du JDA sur le Drive impossible");
     } finally {
       setUploadingJda(false);
     }
@@ -383,18 +368,6 @@ const PurchaseInvoices = () => {
         onSaved={handleSaved}
       />
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <SnackbarContent
-          message={notifyMessage}
-          sx={{
-            backgroundColor: notifyStatus === "success" ? "green" : "red",
-          }}
-        />
-      </Snackbar>
     </Box>
   );
 };

@@ -41,6 +41,7 @@ import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import AccountBalanceRoundedIcon from "@mui/icons-material/AccountBalanceRounded";
 import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
+import { notifyError } from "../lib/notify";
 
 type SummaryRes = {
   period: { from: string | null; to: string | null };
@@ -533,7 +534,9 @@ const B2BOrdersStats: React.FC = () => {
       setStatusBreakdown(statusBreakdownRes.data);
       setAging(agingRes.data);
     } catch (e) {
-      console.error("Failed to load B2B stats:", e);
+      // Rafraîchissement automatique : pas de notification à chaque échec silencieux
+      if (silent) console.error("Rafraîchissement des statistiques B2B impossible", e);
+      else notifyError(e, "Chargement des statistiques B2B impossible");
     } finally {
       if (!silent) setLoading(false);
       setRefreshing(false);

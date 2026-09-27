@@ -27,6 +27,7 @@ import {
   IconButton,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { notifyError } from "../lib/notify";
 
 interface ProductCompare {
   brand: string;
@@ -105,7 +106,7 @@ const CompareStats: React.FC = () => {
         setData(res.data);
         window._compareCache = res.data;
       } catch (err) {
-        console.error("Error fetching /compare:", err);
+        notifyError(err, "Comparaison impossible");
       } finally {
         clearInterval(interval);
         setProgress(100);

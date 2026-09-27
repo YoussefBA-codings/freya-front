@@ -23,6 +23,7 @@ import {
   Divider,
   Button,
 } from "@mui/material";
+import { notifyError } from "../lib/notify";
 
 interface SoldProduct {
   productId: number | null;
@@ -65,7 +66,7 @@ const FreyaSalesDashboard: React.FC = () => {
 
       setData(res.data);
     } catch (error) {
-      console.error("Error fetching sales:", error);
+      notifyError(error, "Chargement des ventes impossible");
       setData(null);
     } finally {
       setLoading(false);
